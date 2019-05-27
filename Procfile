@@ -1,1 +1,1 @@
-worker: bin/candebot
+web: CANDEBOT_PORT=$PORT bin/candebot

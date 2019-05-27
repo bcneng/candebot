@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
+	"net/http"
 
 	"github.com/nlopes/slack"
 
@@ -13,7 +16,13 @@ import (
 
 const version = "0.0.1-alpha"
 
+const (
+	msgCOC        = "Please find our Code Of Conduct here: https://bcneng.github.io/coc/"
+	msgNetiquette = "Please find our Netiquette here: https://bcneng.github.io/netiquette/"
+)
+
 type specification struct {
+	Port         int    `default:"8080"`
 	BotUserToken string `required:"true" split_words:"true"`
 	Debug        bool
 }
@@ -29,6 +38,45 @@ func main() {
 
 	bot := slacker.NewClient(s.BotUserToken, slacker.WithDebug(s.Debug))
 
+	registerCommands(bot)
+	go registerSlashCommands(s)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	err = bot.Listen(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func registerSlashCommands(s specification) {
+	http.HandleFunc("/slash", func(w http.ResponseWriter, r *http.Request) {
+		s, err := slack.SlashCommandParse(r)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		// TODO verify request
+
+		switch s.Command {
+		case "/coc":
+			msg := &slack.Msg{Text: msgCOC}
+			writeSlashResponse(w, msg)
+		case "/netiquette":
+			msg := &slack.Msg{Text: msgNetiquette}
+			writeSlashResponse(w, msg)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	})
+	log.Println("[INFO] Slash server listening on port", s.Port)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", s.Port), nil))
+}
+
+func registerCommands(bot *slacker.Slacker) {
 	bot.DefaultCommand(func(request slacker.Request, response slacker.ResponseWriter) {
 		c, err := channel(bot.Client(), request.Event().Channel)
 		if err != nil {
@@ -49,14 +97,14 @@ func main() {
 	bot.Command("coc", &slacker.CommandDefinition{
 		Description: "Link to the Code Of Conduct of BcnEng",
 		Handler: func(request slacker.Request, response slacker.ResponseWriter) {
-			response.Reply("Please find our Code Of Conduct here: https://bcneng.github.io/coc/")
+			response.Reply(msgCOC)
 		},
 	})
 
 	bot.Command("netiquette", &slacker.CommandDefinition{
 		Description: "Link to the netiquette of BcnEng",
 		Handler: func(request slacker.Request, response slacker.ResponseWriter) {
-			response.Reply("Please find our Netiquette here: https://bcneng.github.io/netiquette/")
+			response.Reply(msgNetiquette)
 		},
 	})
 
@@ -86,14 +134,6 @@ Here is the list of the current staff members:
 			response.Reply("`" + version + "`")
 		},
 	})
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	err = bot.Listen(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
 }
 
 func channel(c *slack.Client, id string) (channel *slack.Channel, err error) {
@@ -118,4 +158,14 @@ func sendEphemeral(c *slack.Client, channelID, userID, msg string) error {
 	}
 
 	return err
+}
+
+func writeSlashResponse(w http.ResponseWriter, msg *slack.Msg) {
+	b, err := json.Marshal(msg)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write(b)
 }
