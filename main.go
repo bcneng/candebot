@@ -41,6 +41,10 @@ func main() {
 	registerCommands(bot)
 	go registerSlashCommands(s)
 
+	http.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
