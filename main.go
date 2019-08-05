@@ -124,7 +124,6 @@ Here is the list of the current staff members:
 • Admins
    • <@mavi>
    • <@sdecandelario>
-• Collaborators
    • <@UAG4H8GMD>
    • <@U7PQZMZ4L>
 `
