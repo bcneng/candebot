@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/nlopes/slack"
 	"log"
 	"net/http"
-
-	"github.com/nlopes/slack"
+	"regexp"
 
 	"github.com/shomali11/slacker"
 
@@ -19,6 +19,11 @@ const version = "0.0.1-alpha"
 const (
 	msgCOC        = "Please find our Code Of Conduct here: https://bcneng.github.io/coc/"
 	msgNetiquette = "Please find our Netiquette here: https://bcneng.github.io/netiquette/"
+)
+
+const (
+	hiringJobBoardChannelID = "C30CUFT2B"
+	hiringJobBoardWrongFormatNotificationChannelID = "G983W7L9F"
 )
 
 type specification struct {
@@ -37,6 +42,7 @@ func main() {
 	}
 
 	bot := slacker.NewClient(s.BotUserToken, slacker.WithDebug(s.Debug))
+	bot.EventHandler(eventHandler(bot.Client()))
 
 	registerCommands(bot)
 	go registerSlashCommands(s)
@@ -52,6 +58,34 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func eventHandler(c *slack.Client) slacker.EventHandler {
+	return func(ctx context.Context, s *slacker.Slacker, msg slack.RTMEvent) error {
+	switch event := msg.Data.(type) {
+	case *slack.MessageEvent:
+		if event.Channel == hiringJobBoardChannelID {
+			r, _ := regexp.Compile(`([^-]{1,})\@([^-]{1,})\-([^-]{1,})\-([^-]{1,})\-([^-]{1,})(\-[^-]{1,}){0,}`)
+			matched := r.MatchString(event.Text)
+			if !matched {
+				link, err := c.GetPermalink(&slack.PermalinkParameters{
+					Channel: event.Channel,
+					Ts:      event.Timestamp,
+				})
+				if err != nil {
+					log.Printf("error fetching permalink for channel %s and ts %s\n", hiringJobBoardWrongFormatNotificationChannelID, event.Timestamp)
+				}
+
+				_ = send(
+					c,
+					hiringJobBoardWrongFormatNotificationChannelID,
+					fmt.Sprintf("new Job post with invalid format: %s", link),
+				)
+			}
+		}
+	}
+	return slacker.DefaultEventHandler(ctx,  s, msg)
+}
 }
 
 func registerSlashCommands(s specification) {
@@ -158,6 +192,16 @@ func sendEphemeral(c *slack.Client, channelID, userID, msg string) error {
 
 	if err != nil {
 		log.Println("error sending ephemeral msg in channel ", channelID)
+	}
+
+	return err
+}
+
+func send(c *slack.Client, channelID, msg string) error {
+	_, _, err := c.PostMessage(channelID, slack.MsgOptionText(msg, true), slack.MsgOptionAsUser(true))
+
+	if err != nil {
+		log.Println("error sending msg in channel ", channelID)
 	}
 
 	return err
