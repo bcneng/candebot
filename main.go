@@ -14,7 +14,8 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
-const version = "0.0.1-alpha"
+// Version is the candebot version. Usually the git commit hash. Passed during building.
+var Version = "unknown"
 
 const (
 	msgCOC        = "Please find our Code Of Conduct here: https://bcneng.github.io/coc/"
@@ -168,7 +169,7 @@ Here is the list of the current staff members:
 
 	bot.Command("version", &slacker.CommandDefinition{
 		Handler: func(request slacker.Request, response slacker.ResponseWriter) {
-			response.Reply("`" + version + "`")
+			response.Reply("`" + Version + "`")
 		},
 	})
 }
