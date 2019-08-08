@@ -66,7 +66,7 @@ func eventHandler(c *slack.Client) slacker.EventHandler {
 	switch event := msg.Data.(type) {
 	case *slack.MessageEvent:
 		if event.Channel == hiringJobBoardChannelID {
-			r, _ := regexp.Compile(`([^-]{1,})\@([^-]{1,})\-([^-]{1,})\-([^-]{1,})\-([^-]{1,})(\-[^-]{1,}){0,}`)
+			r, _ := regexp.Compile(`(?mi)([^-]{1,})\@([^-]{1,})\-([^-]{1,})\-([^-]{1,})\-([^-]{1,})(\-[^-]{1,}){0,}`)
 			matched := r.MatchString(event.Text)
 			if !matched {
 				link, err := c.GetPermalink(&slack.PermalinkParameters{
