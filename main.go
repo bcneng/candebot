@@ -65,7 +65,16 @@ func eventHandler(c *slack.Client) slacker.EventHandler {
 	return func(ctx context.Context, s *slacker.Slacker, msg slack.RTMEvent) error {
 	switch event := msg.Data.(type) {
 	case *slack.MessageEvent:
+		if len(event.User) == 0 ||  len(event.BotID) > 0 {
+			break
+		}
+		
 		if event.Channel == hiringJobBoardChannelID {
+			if event.SubType != "" {
+				// We only want messages posted by humans. We also skip join/leave channel messages, etc by doing this.
+				break
+			}
+
 			r, _ := regexp.Compile(`(?mi)([^-]{1,})\@([^-]{1,})\-([^-]{1,})\-([^-]{1,})\-([^-]{1,})(\-[^-]{1,}){0,}`)
 			matched := r.MatchString(event.Text)
 			if !matched {
