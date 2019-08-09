@@ -70,8 +70,9 @@ func eventHandler(c *slack.Client) slacker.EventHandler {
 		}
 		
 		if event.Channel == hiringJobBoardChannelID {
-			if event.SubType != "" {
+			if event.SubType != "" || event.ThreadTimestamp != "" {
 				// We only want messages posted by humans. We also skip join/leave channel messages, etc by doing this.
+				// Thread messages are also skipped.
 				break
 			}
 
