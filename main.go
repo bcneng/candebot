@@ -52,6 +52,10 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 	})
 
+	http.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusTeapot)
+	})
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
