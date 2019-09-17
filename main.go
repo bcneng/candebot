@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"time"
 
 	"github.com/shomali11/slacker"
 
@@ -20,6 +21,10 @@ var Version = "unknown"
 const (
 	msgCOC        = "Please find our Code Of Conduct here: https://bcneng.github.io/coc/"
 	msgNetiquette = "Please find our Netiquette here: https://bcneng.github.io/netiquette/"
+)
+
+const (
+	sdecandelarioBirthday = "17/09/2019"
 )
 
 const (
@@ -161,6 +166,23 @@ func registerCommands(bot *slacker.Slacker) {
 		},
 	})
 
+	dob, _ := time.Parse("2/1/2006", sdecandelarioBirthday) // nolint: errcheck
+	bot.Command("candebirthday", &slacker.CommandDefinition{
+		Description: "Days until @sdecandelario birthday!",
+		Handler: func(request slacker.Request, response slacker.ResponseWriter) {
+			d := calculateTimeUntilBirthday(dob)
+
+			var msg string
+			if d.Hours() == 0 {
+				msg = ":birthdaypartyparrot: :party: :birthday: HAPPY BIRTHDAY @sdecandelario! :birthday: :party: :birthdaypartyparrot:"
+			} else {
+				msg = fmt.Sprintf(":birthday: %s days until @sdecandelario birthday! :birthday:", int(d.Hours()/24))
+			}
+
+			response.Reply(msg)
+		},
+	})
+
 	bot.Command("staff", &slacker.CommandDefinition{
 		Description: "Info about the staff behind BcnEng",
 		Handler: func(request slacker.Request, response slacker.ResponseWriter) {
@@ -230,4 +252,17 @@ func writeSlashResponse(w http.ResponseWriter, msg *slack.Msg) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_, _ = w.Write(b)
+}
+
+func calculateTimeUntilBirthday(t time.Time) time.Duration {
+	n := time.Now()
+	today := time.Date(n.Year(), n.Month(), n.Day(), 0, 0, 0, 0, n.Location())
+	birthday := time.Date(today.Year(), t.Month(), t.Day(), 0, 0, 0, 0, n.Location())
+
+	if birthday.Before(today) {
+		// birthday next year!
+		birthday = birthday.AddDate(1, 0, 0)
+	}
+
+	return birthday.Sub(today)
 }
