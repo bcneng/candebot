@@ -136,18 +136,7 @@ func registerSlashCommands(s specification) {
 
 func registerCommands(bot *slacker.Slacker) {
 	bot.DefaultCommand(func(request slacker.Request, response slacker.ResponseWriter) {
-		c, err := channel(bot.Client(), request.Event().Channel)
-		if err != nil {
-			return
-		}
-
 		msg := "Say what?, try typing `help` to see all the things I can do for you ;)"
-		if !c.IsGeneral {
-			response.Reply(msg)
-
-			return
-		}
-
 		_ = sendEphemeral(bot.Client(), request.Event().Channel, request.Event().User, msg)
 
 	})
