@@ -165,7 +165,7 @@ func registerCommands(bot *slacker.Slacker) {
 			if d.Hours() == 0 {
 				msg = ":birthdaypartyparrot: :party: :birthday: HAPPY BIRTHDAY <@sdecandelario>! :birthday: :party: :birthdaypartyparrot:"
 			} else {
-				msg = fmt.Sprintf(":birthday: %s days until <@sdecandelario> birthday! :birthday:", int(d.Hours()/24))
+				msg = fmt.Sprintf(":birthday: %d days until <@sdecandelario> birthday! :birthday:", int(d.Hours()/24))
 			}
 
 			response.Reply(msg)
