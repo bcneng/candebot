@@ -21,6 +21,7 @@ var Version = "unknown"
 const (
 	msgCOC        = "Please find our Code Of Conduct here: https://bcneng.github.io/coc/"
 	msgNetiquette = "Please find our Netiquette here: https://bcneng.github.io/netiquette/"
+	msgBanHammer = ":banhamer:"
 )
 
 const (
@@ -152,6 +153,14 @@ func registerCommands(bot *slacker.Slacker) {
 		Description: "Link to the netiquette of BcnEng",
 		Handler: func(request slacker.Request, response slacker.ResponseWriter) {
 			response.Reply(msgNetiquette)
+		},
+	})
+	
+	
+	bot.Command("ban", &slacker.CommandDefinition{
+		Description: "Ban hammer!",
+		Handler: func(request slacker.Request, response slacker.ResponseWriter) {
+			response.Reply(msgBanHammer)
 		},
 	})
 
