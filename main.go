@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/nlopes/slack"
 	"log"
 	"net/http"
 	"regexp"
 	"time"
+
+	"github.com/nlopes/slack"
 
 	"github.com/shomali11/slacker"
 
@@ -28,7 +29,7 @@ const (
 )
 
 const (
-	hiringJobBoardChannelID = "C30CUFT2B"
+	hiringJobBoardChannelID                        = "C30CUFT2B"
 	hiringJobBoardWrongFormatNotificationChannelID = "G983W7L9F"
 )
 
@@ -72,40 +73,40 @@ func main() {
 
 func eventHandler(c *slack.Client) slacker.EventHandler {
 	return func(ctx context.Context, s *slacker.Slacker, msg slack.RTMEvent) error {
-	switch event := msg.Data.(type) {
-	case *slack.MessageEvent:
-		if len(event.User) == 0 ||  len(event.BotID) > 0 {
-			break
-		}
-		
-		if event.Channel == hiringJobBoardChannelID {
-			if event.SubType != "" || event.ThreadTimestamp != "" {
-				// We only want messages posted by humans. We also skip join/leave channel messages, etc by doing this.
-				// Thread messages are also skipped.
+		switch event := msg.Data.(type) {
+		case *slack.MessageEvent:
+			if len(event.User) == 0 || len(event.BotID) > 0 {
 				break
 			}
 
-			r, _ := regexp.Compile(`(?mi)([^-]{1,})\@([^-]{1,})\-([^-]{1,})\-([^-]{1,})\-([^-]{1,})(\-[^-]{1,}){0,}`)
-			matched := r.MatchString(event.Text)
-			if !matched {
-				link, err := c.GetPermalink(&slack.PermalinkParameters{
-					Channel: event.Channel,
-					Ts:      event.Timestamp,
-				})
-				if err != nil {
-					log.Printf("error fetching permalink for channel %s and ts %s\n", hiringJobBoardWrongFormatNotificationChannelID, event.Timestamp)
+			if event.Channel == hiringJobBoardChannelID {
+				if event.SubType != "" || event.ThreadTimestamp != "" {
+					// We only want messages posted by humans. We also skip join/leave channel messages, etc by doing this.
+					// Thread messages are also skipped.
+					break
 				}
 
-				_ = send(
-					c,
-					hiringJobBoardWrongFormatNotificationChannelID,
-					fmt.Sprintf("new Job post with invalid format: %s", link),
-				)
+				r, _ := regexp.Compile(`(?mi)([^-]{1,})\@([^-]{1,})\-([^-]{1,})\-([^-]{1,})\-([^-]{1,})(\-[^-]{1,}){0,}`)
+				matched := r.MatchString(event.Text)
+				if !matched {
+					link, err := c.GetPermalink(&slack.PermalinkParameters{
+						Channel: event.Channel,
+						Ts:      event.Timestamp,
+					})
+					if err != nil {
+						log.Printf("error fetching permalink for channel %s and ts %s\n", hiringJobBoardWrongFormatNotificationChannelID, event.Timestamp)
+					}
+
+					_ = send(
+						c,
+						hiringJobBoardWrongFormatNotificationChannelID,
+						fmt.Sprintf("new Job post with invalid format: %s", link),
+					)
+				}
 			}
 		}
+		return slacker.DefaultEventHandler(ctx, s, msg)
 	}
-	return slacker.DefaultEventHandler(ctx,  s, msg)
-}
 }
 
 func registerSlashCommands(s specification) {
@@ -138,7 +139,6 @@ func registerCommands(bot *slacker.Slacker) {
 	bot.DefaultCommand(func(request slacker.Request, response slacker.ResponseWriter) {
 		msg := "Say what?, try typing `help` to see all the things I can do for you ;)"
 		_ = sendEphemeral(bot.Client(), request.Event().Channel, request.Event().User, msg)
-
 	})
 
 	bot.Command("coc", &slacker.CommandDefinition{
@@ -215,7 +215,6 @@ func channel(c *slack.Client, id string) (channel *slack.Channel, err error) {
 
 func sendEphemeral(c *slack.Client, channelID, userID, msg string) error {
 	_, err := c.PostEphemeral(channelID, userID, slack.MsgOptionText(msg, true), slack.MsgOptionAsUser(true))
-
 	if err != nil {
 		log.Println("error sending ephemeral msg in channel ", channelID)
 	}
@@ -225,7 +224,6 @@ func sendEphemeral(c *slack.Client, channelID, userID, msg string) error {
 
 func send(c *slack.Client, channelID, msg string) error {
 	_, _, err := c.PostMessage(channelID, slack.MsgOptionText(msg, true), slack.MsgOptionAsUser(true))
-
 	if err != nil {
 		log.Println("error sending msg in channel ", channelID)
 	}
