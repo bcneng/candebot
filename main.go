@@ -39,8 +39,6 @@ type specification struct {
 	Debug        bool
 }
 
-var channels = make(map[string]*slack.Channel)
-
 func main() {
 	var s specification
 	err := envconfig.Process("candebot", &s)
@@ -197,20 +195,6 @@ Here is the list of the current staff members:
 			response.Reply("`" + Version + "`")
 		},
 	})
-}
-
-func channel(c *slack.Client, id string) (channel *slack.Channel, err error) {
-	if channel, ok := channels[id]; ok {
-		return channel, nil
-	}
-
-	channel, err = c.GetChannelInfo(id)
-	if err != nil {
-		log.Println("error on retrieving channel info: ", err.Error())
-	}
-
-	channels[id] = channel
-	return
 }
 
 func sendEphemeral(c *slack.Client, channelID, userID, msg string) error {
