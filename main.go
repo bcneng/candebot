@@ -176,13 +176,11 @@ func registerCommands(bot *slacker.Slacker) {
 			m := `
 Here is the list of the current staff members:
 
-• Owners
-   • <@gonzaloserrano>
-   • <@smoya>
-• Admins
-   • <@mavi>
-   • <@sdecandelario>
-   • <@U7PQZMZ4L>
+• <@gonzaloserrano>
+• <@smoya>
+• <@mavi>
+• <@sdecandelario>
+• <@U7PQZMZ4L>
 `
 
 			response.Reply(m)
