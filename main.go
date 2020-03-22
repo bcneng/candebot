@@ -53,6 +53,7 @@ var (
 type specification struct {
 	Port         int    `default:"8080"`
 	BotUserToken string `required:"true" split_words:"true"`
+	UserToken    string `required:"true" split_words:"true"`
 	Debug        bool
 }
 
@@ -63,8 +64,9 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
+	adminClient := slack.New(s.UserToken)
 	bot := slacker.NewClient(s.BotUserToken, slacker.WithDebug(s.Debug))
-	bot.EventHandler(eventHandler(bot.Client()))
+	bot.EventHandler(eventHandler(bot.Client(), adminClient))
 
 	registerCommands(bot)
 	go registerSlashCommands(s)
@@ -86,7 +88,7 @@ func main() {
 	}
 }
 
-func eventHandler(c *slack.Client) slacker.EventHandler {
+func eventHandler(c, adminClient *slack.Client) slacker.EventHandler {
 	return func(ctx context.Context, s *slacker.Slacker, msg slack.RTMEvent) error {
 		switch event := msg.Data.(type) {
 		case *slack.MessageEvent:
