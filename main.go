@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/nlopes/slack"
@@ -31,6 +33,21 @@ const (
 const (
 	hiringJobBoardChannelID                        = "C30CUFT2B"
 	hiringJobBoardWrongFormatNotificationChannelID = "G983W7L9F"
+	candebotTestingChannelID                       = "CK32YCX5M"
+)
+
+var staff = []string{
+	"U2Y6QQHST", //<@gonzaloserrano>
+	"U2WPLA0KA", //<@smoya>
+	"U3256HZH9", //<@mavi>
+	"U36H6F3CN", //<@sdecandelario>
+	"U7PQZMZ4L", //<@koe>
+}
+
+// Cache and optimizations
+var (
+	staffMap             map[string]struct{}
+	channelNameToIDCache map[string]string
 )
 
 type specification struct {
@@ -77,11 +94,17 @@ func eventHandler(c *slack.Client) slacker.EventHandler {
 				break
 			}
 
-			if event.Channel == hiringJobBoardChannelID {
+			if event.Channel == hiringJobBoardChannelID || event.Channel == candebotTestingChannelID {
 				if event.SubType != "" || event.ThreadTimestamp != "" {
 					// We only want messages posted by humans. We also skip join/leave channel messages, etc by doing this.
 					// Thread messages are also skipped.
 					break
+				}
+
+				if event.Channel == candebotTestingChannelID {
+					// Playground here
+
+					return nil
 				}
 
 				r, _ := regexp.Compile(`(?mi)([^-]{1,})\@([^-]{1,})\-([^-]{1,})\-([^-]{1,})\-([^-]{1,})(\-[^-]{1,}){0,}`)
@@ -99,6 +122,7 @@ func eventHandler(c *slack.Client) slacker.EventHandler {
 						c,
 						hiringJobBoardWrongFormatNotificationChannelID,
 						fmt.Sprintf("new Job post with invalid format: %s", link),
+						true,
 					)
 				}
 			}
@@ -173,17 +197,53 @@ func registerCommands(bot *slacker.Slacker) {
 	bot.Command("staff", &slacker.CommandDefinition{
 		Description: "Info about the staff behind BcnEng",
 		Handler: func(request slacker.Request, response slacker.ResponseWriter) {
-			m := `
-Here is the list of the current staff members:
+			// Shuffle the order of members list
+			shuffledMembers := staff
+			rand.Shuffle(len(shuffledMembers), func(i, j int) {
+				shuffledMembers[i], shuffledMembers[j] = shuffledMembers[j], shuffledMembers[i]
+			})
 
-• <@gonzaloserrano>
-• <@smoya>
-• <@mavi>
-• <@sdecandelario>
-• <@U7PQZMZ4L>
-`
+			members := strings.Join(shuffledMembers, ">\n• <@")
+			m := fmt.Sprintf("Here is the list of the current staff members: \n\n• <@%s>", members)
 
 			response.Reply(m)
+		},
+	})
+
+	bot.Command("echo <channel> <message>", &slacker.CommandDefinition{
+		Description: "Sends a message as Candebot",
+		Example:     "echo #general Hi folks!",
+		AuthorizationFunc: func(request slacker.Request) bool {
+			return isStaff(request.Event().User)
+		},
+		Handler: func(request slacker.Request, response slacker.ResponseWriter) {
+			channel := strings.TrimPrefix(request.Param("channel"), "#")
+			msg := request.Param("message")
+
+			if channel == "" || msg == "" {
+				_ = sendEphemeral(bot.Client(), request.Event().Channel, request.Event().User, "Channel and message are required.")
+				return
+			}
+
+			// Fixes the lack of support of multi word params.
+			if i := strings.Index(channel, " "); i > 0 {
+				msg = channel[i:] + " " + msg
+				channel = channel[0:i]
+			}
+
+			channelID, err := findChannelIDByName(bot.Client(), channel)
+			if err != nil {
+				log.Println(err.Error())
+				_ = sendEphemeral(bot.Client(), request.Event().Channel, request.Event().User, "Internal error. Try again.")
+				return
+			}
+
+			err = send(bot.Client(), channelID, msg, false)
+			if err != nil {
+				log.Println(err.Error())
+				_ = sendEphemeral(bot.Client(), request.Event().Channel, request.Event().User, "Internal error. Try again.")
+				return
+			}
 		},
 	})
 
@@ -192,6 +252,43 @@ Here is the list of the current staff members:
 			response.Reply("`" + Version + "`")
 		},
 	})
+}
+
+func findChannelIDByName(client *slack.Client, channel string) (string, error) {
+	if channelNameToIDCache == nil {
+		channelNameToIDCache = make(map[string]string)
+	}
+
+	id, ok := channelNameToIDCache[channel]
+	if ok {
+		return id, nil
+	}
+
+	chans, err := client.GetChannels(true, slack.GetChannelsOptionExcludeMembers())
+	if err != nil {
+		return "", err
+	}
+
+	for _, c := range chans {
+		if c.Name == channel {
+			return c.ID, nil
+		}
+	}
+
+	privateChans, err := client.GetGroups(true)
+	if err != nil {
+		return "", err
+	}
+
+	for _, c := range privateChans {
+		if c.Name == channel {
+			channelNameToIDCache[channel] = c.ID // It is fine to not lock.
+
+			return c.ID, nil
+		}
+	}
+
+	return "", fmt.Errorf("channel %s not found", channel)
 }
 
 func sendEphemeral(c *slack.Client, channelID, userID, msg string) error {
@@ -203,8 +300,8 @@ func sendEphemeral(c *slack.Client, channelID, userID, msg string) error {
 	return err
 }
 
-func send(c *slack.Client, channelID, msg string) error {
-	_, _, err := c.PostMessage(channelID, slack.MsgOptionText(msg, true), slack.MsgOptionAsUser(true))
+func send(c *slack.Client, channelID, msg string, scape bool) error {
+	_, _, err := c.PostMessage(channelID, slack.MsgOptionText(msg, scape), slack.MsgOptionAsUser(true))
 	if err != nil {
 		log.Println("error sending msg in channel ", channelID)
 	}
@@ -233,4 +330,18 @@ func calculateTimeUntilBirthday(t time.Time) time.Duration {
 	}
 
 	return birthday.Sub(today)
+}
+
+func isStaff(userID string) bool {
+	if staffMap == nil {
+		staffMap = make(map[string]struct{}, len(staff)) // It is fine to not lock.
+		for _, u := range staff {
+			staffMap[u] = struct{}{}
+		}
+
+	}
+
+	_, ok := staffMap[userID]
+
+	return ok
 }
