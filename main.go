@@ -41,7 +41,9 @@ regardless of age, body size, visible or invisible disability, ethnicity, sex ch
 and expression, level of experience, education, socio-economic status, nationality, personal appearance, race, religion, 
 or sexual identity and orientation.
 
-We invite you to take a look to our channels, to enjoy and *have fun*. And why not? Say hello to everyone in #general.
+We invite you to take a look at our channels, to enjoy and *have fun*. And why not? Say hello to everyone in #general.
+
+Remember that BcnEng has a lot of members, so try to be specific and choose the appropriate channels for your messages. Finally, take a look at the topics of the channels before posting, because some of them have specific rules about content and format.
 
 By the way, I'm *Candebot*, your BcnEng's assistant and I'm here to _<help>_ you.
 `
