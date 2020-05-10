@@ -24,6 +24,29 @@ var Version = "unknown"
 const (
 	msgCOC        = "Please find our Code Of Conduct here: https://bcneng.github.io/coc/"
 	msgNetiquette = "Please find our Netiquette here: https://bcneng.github.io/netiquette/"
+	msgWelcome    = `*Welcome to BcnEng's Slack!*
+
+BcnEng’s mission is to let Barcelona’s tech hub to become one of the best tech communities around the globe.
+
+How?
+
+- Promoting and spreading technical knowledge
+- Enhancing personal and professional relationships in a frame of diversity
+- Foment training among the community
+
+Thanks for reading and accepting our <https://bcneng.org/coc|Code Of Conduct>. Please *take your time* reading our <https://bcneng.org/netiquette|Netiquette> as well.
+
+We as members, contributors, and admins pledge to make participation in our community a harassment-free experience for everyone, 
+regardless of age, body size, visible or invisible disability, ethnicity, sex characteristics, gender identity 
+and expression, level of experience, education, socio-economic status, nationality, personal appearance, race, religion, 
+or sexual identity and orientation.
+
+We invite you to take a look at our channels, to enjoy and *have fun*. And why not? Say hello to everyone in #general.
+
+Remember that BcnEng has a lot of members, so try to be specific and choose the appropriate channels for your messages. Finally, take a look at the topics of the channels before posting, because some of them have specific rules about content and format.
+
+By the way, I'm *Candebot*, your BcnEng's assistant and I'm here to _<help>_ you.
+`
 )
 
 const (
@@ -31,9 +54,10 @@ const (
 )
 
 const (
-	hiringJobBoardChannelID                        = "C30CUFT2B"
-	hiringJobBoardWrongFormatNotificationChannelID = "G983W7L9F"
-	candebotTestingChannelID                       = "CK32YCX5M"
+	channelGeneral                               = "C2Y6L58TX"
+	channelHiringJobBoard                        = "C30CUFT2B"
+	channelHiringJobBoardWrongFormatNotification = "G983W7L9F"
+	channelCandebotTesting                       = "CK32YCX5M"
 )
 
 var staff = []string{
@@ -96,19 +120,19 @@ func eventHandler(c, adminClient *slack.Client) slacker.EventHandler {
 				break
 			}
 
-			if event.Channel == hiringJobBoardChannelID || event.Channel == candebotTestingChannelID {
-				if event.SubType != "" || event.ThreadTimestamp != "" {
-					// We only want messages posted by humans. We also skip join/leave channel messages, etc by doing this.
-					// Thread messages are also skipped.
-					break
+			if event.SubType != "" || event.ThreadTimestamp != "" {
+				// We only want messages posted by humans. We also skip join/leave channel messages, etc by doing this.
+				// Thread messages are also skipped.
+				break
+			}
+
+			switch event.Channel {
+			case channelGeneral:
+				if event.Type == "team_join" {
+					// Welcome user
+					_ = send(c, event.User, msgWelcome, false)
 				}
-
-				if event.Channel == candebotTestingChannelID {
-					// Playground here
-
-					return nil
-				}
-
+			case channelHiringJobBoard:
 				r, _ := regexp.Compile(`(?mi)([^-]{1,})\@([^-]{1,})\-([^-]{1,})\-([^-]{1,})\-([^-]{1,})(\-[^-]{1,}){0,}`)
 				matched := r.MatchString(event.Text)
 				if !matched {
@@ -117,16 +141,18 @@ func eventHandler(c, adminClient *slack.Client) slacker.EventHandler {
 						Ts:      event.Timestamp,
 					})
 					if err != nil {
-						log.Printf("error fetching permalink for channel %s and ts %s\n", hiringJobBoardWrongFormatNotificationChannelID, event.Timestamp)
+						log.Printf("error fetching permalink for channel %s and ts %s\n", channelHiringJobBoardWrongFormatNotification, event.Timestamp)
 					}
 
 					_ = send(
 						c,
-						hiringJobBoardWrongFormatNotificationChannelID,
+						channelHiringJobBoardWrongFormatNotification,
 						fmt.Sprintf("new Job post with invalid format: %s", link),
 						true,
 					)
 				}
+			case channelCandebotTesting:
+				// Playground here
 			}
 		}
 		return slacker.DefaultEventHandler(ctx, s, msg)
