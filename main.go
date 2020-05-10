@@ -43,7 +43,7 @@ or sexual identity and orientation.
 
 We invite you to take a look to our channels, to enjoy and *have fun*. And why not? Say hello to everyone in #general.
 
-Btw, I'm *Candebot*, your BcnEng's assistant and I'm here to _<help>_ you.
+By the way, I'm *Candebot*, your BcnEng's assistant and I'm here to _<help>_ you.
 `
 )
 
