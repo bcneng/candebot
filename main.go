@@ -34,7 +34,7 @@ How?
 - Enhancing personal and professional relationships in a frame of diversity
 - Foment training among the community
 
-Thanks for read and accept our <https://bcneng.org/coc|Code Of Conduct>. Please *take your time* reading our <https://bcneng.org/netiquette|Netiquette> as well.
+Thanks for reading and accepting our <https://bcneng.org/coc|Code Of Conduct>. Please *take your time* reading our <https://bcneng.org/netiquette|Netiquette> as well.
 
 We as members, contributors, and admins pledge to make participation in our community a harassment-free experience for everyone, 
 regardless of age, body size, visible or invisible disability, ethnicity, sex characteristics, gender identity 
