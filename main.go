@@ -22,8 +22,8 @@ import (
 var Version = "unknown"
 
 const (
-	msgCOC        = "Please find our Code Of Conduct here: https://bcneng.github.io/coc/"
-	msgNetiquette = "Please find our Netiquette here: https://bcneng.github.io/netiquette/"
+	msgCOC        = "Please find our Code Of Conduct here: https://bcneng.org/coc"
+	msgNetiquette = "Please find our Netiquette here: https://bcneng.org/netiquette"
 	msgWelcome    = `*Welcome to BcnEng's Slack!*
 
 BcnEng’s mission is to let Barcelona’s tech hub to become one of the best tech communities around the globe.
