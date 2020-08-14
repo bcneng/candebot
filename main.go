@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nlopes/slack"
+	"github.com/slack-go/slack"
 
 	"github.com/shomali11/slacker"
 
@@ -89,9 +89,7 @@ func main() {
 	}
 
 	adminClient := slack.New(s.UserToken)
-	bot := slacker.NewClient(s.BotUserToken, slacker.WithDebug(s.Debug))
-	bot.EventHandler(eventHandler(bot.Client(), adminClient))
-
+	bot := slacker.NewClient(s.BotUserToken, slacker.WithDebug(s.Debug), slacker.WithEventHandler(eventHandler(adminClient)))
 	registerCommands(bot)
 	go registerSlashCommands(s)
 
@@ -112,8 +110,9 @@ func main() {
 	}
 }
 
-func eventHandler(c, adminClient *slack.Client) slacker.EventHandler {
+func eventHandler(adminClient *slack.Client) slacker.EventHandler {
 	return func(ctx context.Context, s *slacker.Slacker, msg slack.RTMEvent) error {
+
 		switch event := msg.Data.(type) {
 		case *slack.MessageEvent:
 			if len(event.User) == 0 || len(event.BotID) > 0 {
@@ -130,13 +129,13 @@ func eventHandler(c, adminClient *slack.Client) slacker.EventHandler {
 			case channelGeneral:
 				if event.Type == "team_join" {
 					// Welcome user
-					_ = send(c, event.User, msgWelcome, false)
+					_ = send(s.Client(), event.User, msgWelcome, false)
 				}
 			case channelHiringJobBoard:
 				r, _ := regexp.Compile(`(?mi)([^-]{1,})\@([^-]{1,})\-([^-]{1,})\-([^-]{1,})\-([^-]{1,})(\-[^-]{1,}){0,}`)
 				matched := r.MatchString(event.Text)
 				if !matched {
-					link, err := c.GetPermalink(&slack.PermalinkParameters{
+					link, err := s.Client().GetPermalink(&slack.PermalinkParameters{
 						Channel: event.Channel,
 						Ts:      event.Timestamp,
 					})
@@ -145,7 +144,7 @@ func eventHandler(c, adminClient *slack.Client) slacker.EventHandler {
 					}
 
 					_ = send(
-						c,
+						s.Client(),
 						channelHiringJobBoardWrongFormatNotification,
 						fmt.Sprintf("new Job post with invalid format: %s", link),
 						true,
@@ -184,23 +183,22 @@ func registerSlashCommands(s specification) {
 	log.Println("[INFO] Slash server listening on port", s.Port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", s.Port), nil))
 }
-
 func registerCommands(bot *slacker.Slacker) {
-	bot.DefaultCommand(func(request slacker.Request, response slacker.ResponseWriter) {
+	bot.DefaultCommand(func(botContext slacker.BotContext, request slacker.Request, response slacker.ResponseWriter) {
 		msg := "Say what?, try typing `help` to see all the things I can do for you ;)"
-		_ = sendEphemeral(bot.Client(), request.Event().Channel, request.Event().User, msg)
+		_ = sendEphemeral(bot.Client(), botContext.Event().Channel, botContext.Event().User, msg)
 	})
 
 	bot.Command("coc", &slacker.CommandDefinition{
 		Description: "Link to the Code Of Conduct of BcnEng",
-		Handler: func(request slacker.Request, response slacker.ResponseWriter) {
+		Handler: func(botContext slacker.BotContext, request slacker.Request, response slacker.ResponseWriter) {
 			response.Reply(msgCOC)
 		},
 	})
 
 	bot.Command("netiquette", &slacker.CommandDefinition{
 		Description: "Link to the netiquette of BcnEng",
-		Handler: func(request slacker.Request, response slacker.ResponseWriter) {
+		Handler: func(botContext slacker.BotContext, request slacker.Request, response slacker.ResponseWriter) {
 			response.Reply(msgNetiquette)
 		},
 	})
@@ -208,7 +206,7 @@ func registerCommands(bot *slacker.Slacker) {
 	dob, _ := time.Parse("2/1/2006", sdecandelarioBirthday) // nolint: errcheck
 	bot.Command("candebirthday", &slacker.CommandDefinition{
 		Description: "Days until @sdecandelario birthday!",
-		Handler: func(request slacker.Request, response slacker.ResponseWriter) {
+		Handler: func(botContext slacker.BotContext, request slacker.Request, response slacker.ResponseWriter) {
 			d := calculateTimeUntilBirthday(dob)
 
 			var msg string
@@ -224,7 +222,7 @@ func registerCommands(bot *slacker.Slacker) {
 
 	bot.Command("staff", &slacker.CommandDefinition{
 		Description: "Info about the staff behind BcnEng",
-		Handler: func(request slacker.Request, response slacker.ResponseWriter) {
+		Handler: func(botContext slacker.BotContext, request slacker.Request, response slacker.ResponseWriter) {
 			// Shuffle the order of members list
 			shuffledMembers := staff
 			rand.Shuffle(len(shuffledMembers), func(i, j int) {
@@ -241,15 +239,15 @@ func registerCommands(bot *slacker.Slacker) {
 	bot.Command("echo <channel> <message>", &slacker.CommandDefinition{
 		Description: "Sends a message as Candebot",
 		Example:     "echo #general Hi folks!",
-		AuthorizationFunc: func(request slacker.Request) bool {
-			return isStaff(request.Event().User)
+		AuthorizationFunc: func(botContext slacker.BotContext, request slacker.Request) bool {
+			return isStaff(botContext.Event().User)
 		},
-		Handler: func(request slacker.Request, response slacker.ResponseWriter) {
+		Handler: func(botContext slacker.BotContext, request slacker.Request, response slacker.ResponseWriter) {
 			channel := strings.TrimPrefix(request.Param("channel"), "#")
 			msg := request.Param("message")
 
 			if channel == "" || msg == "" {
-				_ = sendEphemeral(bot.Client(), request.Event().Channel, request.Event().User, "Channel and message are required.")
+				_ = sendEphemeral(bot.Client(), botContext.Event().Channel, botContext.Event().User, "Channel and message are required.")
 				return
 			}
 
@@ -262,21 +260,21 @@ func registerCommands(bot *slacker.Slacker) {
 			channelID, err := findChannelIDByName(bot.Client(), channel)
 			if err != nil {
 				log.Println(err.Error())
-				_ = sendEphemeral(bot.Client(), request.Event().Channel, request.Event().User, "Internal error. Try again.")
+				_ = sendEphemeral(bot.Client(), botContext.Event().Channel, botContext.Event().User, "Internal error. Try again.")
 				return
 			}
 
 			err = send(bot.Client(), channelID, msg, false)
 			if err != nil {
 				log.Println(err.Error())
-				_ = sendEphemeral(bot.Client(), request.Event().Channel, request.Event().User, "Internal error. Try again.")
+				_ = sendEphemeral(bot.Client(), botContext.Event().Channel, botContext.Event().User, "Internal error. Try again.")
 				return
 			}
 		},
 	})
 
 	bot.Command("version", &slacker.CommandDefinition{
-		Handler: func(request slacker.Request, response slacker.ResponseWriter) {
+		Handler: func(botContext slacker.BotContext, request slacker.Request, response slacker.ResponseWriter) {
 			response.Reply("`" + Version + "`")
 		},
 	})
