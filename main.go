@@ -27,7 +27,7 @@ func main() {
 	defer cancel()
 
 	ensureInterruptionsGracefullyShutdown(cancel)
-	if err := bot.WakeUp(ctx, conf); err != nil {
+	if err := bot.WakeUp(ctx, conf); err != nil && err != context.Canceled {
 		log.Fatal(err)
 	}
 }
