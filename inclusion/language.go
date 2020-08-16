@@ -1,0 +1,71 @@
+package inclusion
+
+import (
+	"regexp"
+	"strings"
+	"unicode"
+
+	"golang.org/x/text/runes"
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
+)
+
+type InclusiveFilter struct {
+	Filter string // Supports regex
+	Reply  string
+	regex  *regexp.Regexp // do not fill. Just used for caching the regex once compiled.
+}
+
+var inclusiveFilters = []InclusiveFilter{
+	// When someone says, Candebot replies (privately).
+	// English: Based on https://github.com/randsleadershipslack/documents-and-resources/blob/master/RandsInclusiveLanguage.tsv
+	{Filter: "you guys", Reply: "Instead of *guys*, perhaps you mean *pals*?... *[Please consider editing your message so it's more inclusive]*"},
+	{Filter: "these guys", Reply: "Instead of *guys*, perhaps you mean *gang*?... *[Please consider editing your message so it's more inclusive]*"},
+	{Filter: "my guys", Reply: "Instead of *guys*, perhaps you mean *crew*?... *[Please consider editing your message so it's more inclusive]*"},
+	{Filter: "those guys", Reply: "Instead of *guys*, perhaps you mean *people*?... *[Please consider editing your message so it's more inclusive]*"},
+	{Filter: "hey guys", Reply: "Instead of *guys*, perhaps you mean *y'all*?... *[Please consider editing your message so it's more inclusive]*"},
+	{Filter: "hi guys", Reply: "Instead of *guys*, perhaps you mean *everyone*?... *[Please consider editing your message so it's more inclusive]*"},
+	{Filter: "the guys", Reply: "Instead of *guys*, perhaps you mean *folks*?... *[Please consider editing your message so it's more inclusive]*"},
+	{Filter: "guys", Reply: "Instead of *guys*, have you considered a more gender-neutral pronoun like *folks*? *[Please consider editing your message so it's more inclusive]*"},
+	{Filter: "CHWD", Reply: `Cisgender Hetero White Dude. But please consider using the full term "cisgender, heterosexual white man” or similar. That would both make it more approachable for those unfamiliar with this obscure initialism, and prevent reducing people down to initialisms.`},
+	{Filter: "URP", Reply: `Underrepresented person(s). But please consider using the full term "members of traditionally underrepresented groups" or similar; people don't like to be made into acronyms, _especially_ when they are already marginalized. See: en.wikipedia.org/wiki/Underrepresented_group`},
+	{Filter: "URPs", Reply: `Underrepresented person(s). But please consider using the full term "members of traditionally underrepresented groups" or similar; people don't like to be made into acronyms, _especially_ when they are already marginalized. See: en.wikipedia.org/wiki/Underrepresented_group`},
+	{Filter: "URM", Reply: `Underrepresented minorit(y|ies). But please consider using the full term "members of traditionally underrepresented groups" or similar; people don't like to be made into acronyms, _especially_ when they are already marginalized. See: en.wikipedia.org/wiki/Underrepresented_group`},
+	{Filter: "URG", Reply: `Underrepresented group(s). But please consider using the full term "members of traditionally underrepresented groups" or similar; people don't like to be made into acronyms, _especially_ when they are already marginalized. See: en.wikipedia.org/wiki/Underrepresented_group`},
+	{Filter: "crazy", Reply: "Using the word *crazy* is considered by some to be insensitive to sufferers of mental illness, maybe you mean *outrageous*, *unthinkable*, *nonsensical*, *incomprehensible*? Have you considered a different adjective like *ridiculous*?"},
+	{Filter: "insane", Reply: "The word *insane* is considered by some to be insensitive to sufferers of mental illness. Perhaps you mean *outrageous*, *unthinkable*, *nonsensical*, *incomprehensible*? Have you considered a different adjective like *ridiculous*?"},
+	{Filter: "slave", Reply: `If you are referring to a data replication strategy, please consider a term such as ""follower"" or ""replica"".`},
+
+	// Spanish: Based on https://www.cocemfe.es/wp-content/uploads/2019/02/20181010_COCEMFE_Lenguaje_inclusivo.pdf
+	{Filter: "discapacitad(a|o)", Reply: "Ante todo somos personas, y no queremos que se nos etiquete, puesto que la discapacidad es una característica más de todas las que se tiene, no lo único por lo que se debe reconocer.\nPor eso es importante anteponer la palabra *persona* y lo más aconsejable es utilizar el término *persona con discapacidad* y no *discapacitado*.\nMás info en https://www.cocemfe.es/wp-content/uploads/2019/02/20181010_COCEMFE_Lenguaje_inclusivo.pdf"},
+	{Filter: "discapacitad(a|o) fisic(a|o)", Reply: "Ante todo somos personas, y no queremos que se nos etiquete, puesto que la discapacidad es una característica más de todas las que se tiene, no lo único por lo que se debe reconocer.\nPor eso es importante anteponer la palabra *persona* y lo más aconsejable es utilizar el término *persona con discapacidad* y no *discapacitada física*.\nMás info en https://www.cocemfe.es/wp-content/uploads/2019/02/20181010_COCEMFE_Lenguaje_inclusivo.pdf"},
+	{Filter: "minusvalid(a|o)", Reply: "*Minusválido* es un término peyorativo y vulnera la dignidad de las personas con discapacidad, al atribuirse un nulo o reducido valor a una persona, o utilizarse generalmente con elevada carga negativa. Considera usar *persona con discapacidad*.\nMás info en Más info en https://www.cocemfe.es/wp-content/uploads/2019/02/20181010_COCEMFE_Lenguaje_inclusivo.pdf"},
+	{Filter: "diversidad funcional", Reply: "COCEMFE considera que el término *diversidad funcional* es un eufemismo, cargado de condescendencia que genera confusión, inseguridad jurídica y rebaja la protección que todavía es necesaria. El término *discapacidad* es el que aglutina derechos reconocidos legalmente y que cuenta con el mayor respaldo social. Considera usarlo.\nMás info en Más info en https://www.cocemfe.es/wp-content/uploads/2019/02/20181010_COCEMFE_Lenguaje_inclusivo.pdf"},
+
+	// Our own list
+	{Filter: "los chicos de", Reply: "En vez de *los chicos de*, quizá quisiste decir *el equipo de*, *los integrantes de*?... *[Considera editar tu mensaje para que sea más inclusivo]*"},
+	{Filter: "chicos", Reply: "En vez de *chicos*, quizá quisiste decir *chiques*, *colegas*, *grupo*, *personas*?... *[Considera editar tu mensaje para que sea más inclusivo]*"},
+	{Filter: "(?:^|\\W)lgtb(?:$|[^\\w+])", Reply: "Desde hace un tiempo, el colectivo *LGTB+* recomienda añadir el carácter `+` a la palabra *LGTB*, pues existen orientaciones e identidades que, a pesar de no ser tan predominantes, representan a muchas personas. *[Considera editar tu mensaje para que sea más inclusivo]*"},
+	{Filter: "locura", Reply: "La palabra *locura* es considerada por algunas personas como irrespetuosa hacia las personas que sufren alguna enfermedad mental.\nQuizá quisiste decir *indignante*, *impensable*, *absurdo*, *incomprensible*? Has considerado usar un adjetivo diferente como *ridículo*?"},
+	{Filter: "locuron", Reply: "La palabra *locurón* o *locura* es considerada por algunas personas como irrespetuosa hacia las personas que sufren alguna enfermedad mental.\nQuizá quisiste decir *indignante*, *impensable*, *absurdo*, *incomprensible*? Has considerado usar un adjetivo diferente como *ridículo*?"},
+	{Filter: "loc(a|o)", Reply: "La palabra *loco/loca* es considerada por algunas personas como irrespetuosa hacia las personas que sufren alguna enfermedad mental.\nQuizá quisiste decir *indignante*, *impensable*, *absurdo*, *incomprensible*? Has considerado usar un adjetivo diferente como *ridículo*?"},
+}
+
+func Filter(input string, extraFilters ...InclusiveFilter) string {
+	// Removing accents and others before matching
+	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
+	text, _, _ := transform.String(t, strings.ToLower(input))
+
+	filters := append(inclusiveFilters, extraFilters...)
+	for _, word := range filters {
+		if word.regex == nil {
+			word.regex, _ = regexp.Compile(word.Filter)
+		}
+
+		if word.regex.MatchString(text) {
+			return word.Reply
+		}
+	}
+
+	return ""
+}
