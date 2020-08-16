@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bcneng/candebot/inclusion"
 	"github.com/shomali11/slacker"
 	"github.com/slack-go/slack"
 )
@@ -128,6 +129,9 @@ func eventHandler(adminClient *slack.Client) slacker.EventHandler {
 			case channelCandebotTesting:
 				// Playground here
 			}
+
+			// behaviors that apply to all channels
+			go checkLanguage(s, event)
 		}
 		return slacker.DefaultEventHandler(ctx, s, msg)
 	}
@@ -346,4 +350,10 @@ func isStaff(userID string) bool {
 	_, ok := staffMap[userID]
 
 	return ok
+}
+
+func checkLanguage(bot *slacker.Slacker, event *slack.MessageEvent) {
+	if reply := inclusion.Filter(event.Text); reply != "" {
+		_ = sendEphemeral(bot.Client(), event.Channel, event.User, reply)
+	}
 }
