@@ -13,11 +13,13 @@ func TestFilter(t *testing.T) {
 		filtered bool
 	}{
 		{name: "LGTB should be LGTB+", input: "I do really support LGTB groups", filtered: true},
+		{name: "abcdlgtbe is ok", input: "abcdlgtbe", filtered: false},
 		{name: "LGTB+ should be ok", input: "I do really support LGTB+ groups", filtered: false},
-		{name: "minusvalida debería ser persona discapacitada", input: "Mi vecina es minusvalida", filtered: true},
-		{name: "persona con discapacidad es correcto", input: "Mi vecino es una persona con discapacitad", filtered: false},
+		{name: "'minusvalida' should be 'persona discapacitada'", input: "Mi vecina es minusvalida", filtered: true},
+		{name: "'persona con discapacidad' is right ", input: "Mi vecino es una persona con discapacidad", filtered: false},
 		{name: "bcneng sucks is rude", input: "bcneng sucks", filtered: true},
 		{name: "bcneng is awesome is nice", input: "bcneng is awesome", filtered: false},
+		{name: "'buena localización' is right even though contains the word 'loca'", input: "buena localización", filtered: false},
 	}
 
 	extraFilters := []InclusiveFilter{

@@ -1,6 +1,7 @@
 package inclusion
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 	"unicode"
@@ -45,7 +46,7 @@ var inclusiveFilters = []InclusiveFilter{
 	// Our own list
 	{Filter: "los chicos de", Reply: "En vez de *los chicos de*, quizá quisiste decir *el equipo de*, *los integrantes de*?... *[Considera editar tu mensaje para que sea más inclusivo]*"},
 	{Filter: "chicos", Reply: "En vez de *chicos*, quizá quisiste decir *chiques*, *colegas*, *grupo*, *personas*?... *[Considera editar tu mensaje para que sea más inclusivo]*"},
-	{Filter: "(?:^|\\W)lgtb(?:$|[^\\w+])", Reply: "Desde hace un tiempo, el colectivo *LGTB+* recomienda añadir el carácter `+` a la palabra *LGTB*, pues existen orientaciones e identidades que, a pesar de no ser tan predominantes, representan a muchas personas. *[Considera editar tu mensaje para que sea más inclusivo]*"},
+	{Filter: "lgtb", Reply: "Desde hace un tiempo, el colectivo *LGTB+* recomienda añadir el carácter `+` a la palabra *LGTB*, pues existen orientaciones e identidades que, a pesar de no ser tan predominantes, representan a muchas personas. *[Considera editar tu mensaje para que sea más inclusivo]*"},
 	{Filter: "locura", Reply: "La palabra *locura* es considerada por algunas personas como irrespetuosa hacia las personas que sufren alguna enfermedad mental.\nQuizá quisiste decir *indignante*, *impensable*, *absurdo*, *incomprensible*? Has considerado usar un adjetivo diferente como *ridículo*?"},
 	{Filter: "locuron", Reply: "La palabra *locurón* o *locura* es considerada por algunas personas como irrespetuosa hacia las personas que sufren alguna enfermedad mental.\nQuizá quisiste decir *indignante*, *impensable*, *absurdo*, *incomprensible*? Has considerado usar un adjetivo diferente como *ridículo*?"},
 	{Filter: "loc(a|o)", Reply: "La palabra *loco/loca* es considerada por algunas personas como irrespetuosa hacia las personas que sufren alguna enfermedad mental.\nQuizá quisiste decir *indignante*, *impensable*, *absurdo*, *incomprensible*? Has considerado usar un adjetivo diferente como *ridículo*?"},
@@ -59,6 +60,11 @@ func Filter(input string, extraFilters ...InclusiveFilter) string {
 	filters := append(inclusiveFilters, extraFilters...)
 	for _, word := range filters {
 		if word.regex == nil {
+			// If it's just one word, ensure its bounded as it should.
+			if !strings.Contains(word.Filter, " ") {
+				word.Filter = fmt.Sprintf("(?:^|\\W)%s(?:$|[^\\w+])", word.Filter)
+			}
+
 			word.regex, _ = regexp.Compile(word.Filter)
 		}
 
