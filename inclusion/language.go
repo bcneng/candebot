@@ -16,6 +16,8 @@ type InclusiveFilter struct {
 	regex  *regexp.Regexp // do not fill. Just used for caching the regex once compiled.
 }
 
+var conductLinks = "\nIn case of doubts please check our <https://bcneng.org/coc|Code of Conduct> and/or our <https://bcneng.org/netiquette|Netiquette> "
+
 var inclusiveFilters = []InclusiveFilter{
 	// When someone says, Candebot replies (privately).
 	// English: Based on https://github.com/randsleadershipslack/documents-and-resources/blob/master/RandsInclusiveLanguage.tsv
@@ -65,7 +67,7 @@ func Filter(input string, extraFilters ...InclusiveFilter) string {
 		}
 
 		if word.regex.MatchString(text) {
-			return word.Reply
+			return word.Reply + conductLinks
 		}
 	}
 
