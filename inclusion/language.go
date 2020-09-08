@@ -17,6 +17,8 @@ type InclusiveFilter struct {
 	regex  *regexp.Regexp // do not fill. Just used for caching the regex once compiled.
 }
 
+var conductLinks = "\nIn case of doubts please check our <https://bcneng.org/coc|Code of Conduct> and/or our <https://bcneng.org/netiquette|Netiquette> "
+
 var inclusiveFilters = []InclusiveFilter{
 	// When someone says, Candebot replies (privately).
 	// English: Based on https://github.com/randsleadershipslack/documents-and-resources/blob/master/RandsInclusiveLanguage.tsv
@@ -42,7 +44,9 @@ var inclusiveFilters = []InclusiveFilter{
 	{Filter: "discapacitad(a|o) fisic(a|o)", Reply: "Ante todo somos personas, y no queremos que se nos etiquete, puesto que la discapacidad es una característica más de todas las que se tiene, no lo único por lo que se debe reconocer.\nPor eso es importante anteponer la palabra *persona* y lo más aconsejable es utilizar el término *persona con discapacidad* y no *discapacitada física*.\nMás info en https://www.cocemfe.es/wp-content/uploads/2019/02/20181010_COCEMFE_Lenguaje_inclusivo.pdf"},
 	{Filter: "minusvalid(a|o)", Reply: "*Minusválido* es un término peyorativo y vulnera la dignidad de las personas con discapacidad, al atribuirse un nulo o reducido valor a una persona, o utilizarse generalmente con elevada carga negativa. Considera usar *persona con discapacidad*.\nMás info en Más info en https://www.cocemfe.es/wp-content/uploads/2019/02/20181010_COCEMFE_Lenguaje_inclusivo.pdf"},
 	{Filter: "diversidad funcional", Reply: "COCEMFE considera que el término *diversidad funcional* es un eufemismo, cargado de condescendencia que genera confusión, inseguridad jurídica y rebaja la protección que todavía es necesaria. El término *discapacidad* es el que aglutina derechos reconocidos legalmente y que cuenta con el mayor respaldo social. Considera usarlo.\nMás info en Más info en https://www.cocemfe.es/wp-content/uploads/2019/02/20181010_COCEMFE_Lenguaje_inclusivo.pdf"},
-
+	{Filter: "retrasad(a|o)", Reply: "*Retrasado* y *Retraso mental* son términos despectivos eliminados del vocabulario psiquiátrico y, según la OMS, la forma correcta para referiste a ese grupo de enfermedades y transtornos es *Trastorno del desarrollo intelectual* "}
+	{Filter: "retraso mental", Reply: "*Retrasado* y *Retraso mental* son términos despectivos eliminados del vocabulario psiquiátrico y, según la OMS, la forma correcta para referiste a ese grupo de enfermedades y transtornos es *Trastorno del desarrollo intelectual* "}
+	
 	// Our own list
 	{Filter: "los chicos de", Reply: "En vez de *los chicos de*, quizá quisiste decir *el equipo de*, *los integrantes de*?... *[Considera editar tu mensaje para que sea más inclusivo]*"},
 	{Filter: "chicos", Reply: "En vez de *chicos*, quizá quisiste decir *chiques*, *colegas*, *grupo*, *personas*?... *[Considera editar tu mensaje para que sea más inclusivo]*"},
@@ -69,7 +73,7 @@ func Filter(input string, extraFilters ...InclusiveFilter) string {
 		}
 
 		if word.regex.MatchString(text) {
-			return word.Reply
+			return word.Reply + conductLinks
 		}
 	}
 
