@@ -326,7 +326,8 @@ func writeSlashResponse(w http.ResponseWriter, msg *slack.Msg) {
 }
 
 func calculateTimeUntilBirthday(t time.Time) time.Duration {
-	n := time.Now()
+	loc, _ := time.LoadLocation("Europe/Madrid")
+	n := time.Now().In(loc)
 	today := time.Date(n.Year(), n.Month(), n.Day(), 0, 0, 0, 0, n.Location())
 	birthday := time.Date(today.Year(), t.Month(), t.Day(), 0, 0, 0, 0, n.Location())
 
