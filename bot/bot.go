@@ -69,6 +69,8 @@ var (
 	channelNameToIDCache map[string]string
 )
 
+var jobOfferRegex = regexp.MustCompile(`(?is)^:computer:\s([^-]{1,50})\s@\s([^-]{1,50})\s-\s:moneybag:\s([^-]{1,10})?\s?-\s([^-]{1,20})\s-\s:round_pushpin:\s(.+)\s-\s:link:\s((?:http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+(?:[\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(?::[0-9]{1,5})?(?:\/.*)?)\s-\s:raised_hands:\sMore\sinfo\sDM\s([^-]+)$`)
+
 // WakeUp wakes up Candebot.
 func WakeUp(ctx context.Context, conf Config) error {
 	adminClient := slack.New(conf.UserToken)
@@ -108,9 +110,9 @@ func eventHandler(adminClient *slack.Client) slacker.EventHandler {
 					_ = send(s.Client(), event.User, msgWelcome, false)
 				}
 			case channelHiringJobBoard:
-				r, _ := regexp.Compile(`(?mi)([^-]{1,})\@([^-]{1,})\-([^-]{1,})\-([^-]{1,})\-([^-]{1,})(\-[^-]{1,}){0,}`)
-				matched := r.MatchString(event.Text)
-				if !matched {
+				// This regex check ensures that the message contains all the required fields. Even though posted with
+				// a workflow, people can still introduce wrong values.
+				if !isValidJobOffer(event.Text) {
 					link, err := s.Client().GetPermalink(&slack.PermalinkParameters{
 						Channel: event.Channel,
 						Ts:      event.Timestamp,
@@ -125,6 +127,17 @@ func eventHandler(adminClient *slack.Client) slacker.EventHandler {
 						fmt.Sprintf("new Job post with invalid format: %s", link),
 						true,
 					)
+				}
+
+				if !isStaff(event.User) {
+					// If the message was not posted by any member of the Staff, delete it. Messages posted by workflows are not affected.
+					_, _, err := adminClient.DeleteMessage(event.Channel, event.Timestamp)
+					if err != nil {
+						log.Printf("error deleting message: Error: %s\n", err.Error())
+					}
+
+					log.Printf("message has been removed: %s: %s\n", event.Msg.User, event.Msg.Text)
+					_ = sendEphemeral(s.Client(), event.Channel, event.Msg.User, "Regular posting on this channel is not allowed. Submit an offer by using the `New Job Post` workflow (:zap: button)")
 				}
 			case channelCandebotTesting:
 				// Playground here
@@ -258,6 +271,17 @@ func registerCommands(conf Config, bot *slacker.Slacker) {
 			response.Reply("`" + conf.Version + "`")
 		},
 	})
+}
+
+func isValidJobOffer(text string) bool {
+	lines := strings.Split(text, "\n")
+	for _, l := range lines {
+		if !jobOfferRegex.MatchString(l) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func findChannelIDByName(client *slack.Client, channel string) (string, error) {
