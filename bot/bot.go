@@ -14,34 +14,12 @@ import (
 	"github.com/bcneng/candebot/inclusion"
 	"github.com/shomali11/slacker"
 	"github.com/slack-go/slack"
+	"github.com/slack-go/slack/slackevents"
 )
 
 const (
 	msgCOC        = "Please find our Code Of Conduct here: https://bcneng.org/coc"
 	msgNetiquette = "Please find our Netiquette here: https://bcneng.org/netiquette"
-	msgWelcome    = `*Welcome to BcnEng's Slack!*
-
-BcnEng’s mission is to let Barcelona’s tech hub to become one of the best tech communities around the globe.
-
-How?
-
-- Promoting and spreading technical knowledge
-- Enhancing personal and professional relationships in a frame of diversity
-- Foment training among the community
-
-Thanks for reading and accepting our <https://bcneng.org/coc|Code Of Conduct>. Please *take your time* reading our <https://bcneng.org/netiquette|Netiquette> as well.
-
-We as members, contributors, and admins pledge to make participation in our community a harassment-free experience for everyone, 
-regardless of age, body size, visible or invisible disability, ethnicity, sex characteristics, gender identity 
-and expression, level of experience, education, socio-economic status, nationality, personal appearance, race, religion, 
-or sexual identity and orientation.
-
-We invite you to take a look at our channels, to enjoy and *have fun*. And why not? Say hello to everyone in #general.
-
-Remember that BcnEng has a lot of members, so try to be specific and choose the appropriate channels for your messages. Finally, take a look at the topics of the channels before posting, because some of them have specific rules about content and format.
-
-By the way, I'm *Candebot*, your BcnEng's assistant and I'm here to _<help>_ you.
-`
 )
 
 const (
@@ -49,11 +27,12 @@ const (
 )
 
 const (
-	channelGeneral                               = "C2Y6L58TX"
 	channelHiringJobBoard                        = "C30CUFT2B"
 	channelHiringJobBoardWrongFormatNotification = "G983W7L9F"
 	channelCandebotTesting                       = "CK32YCX5M"
 )
+
+const candebotUser = "UJNQU8N5Q"
 
 var staff = []string{
 	"U2Y6QQHST", //<@gonzaloserrano>
@@ -73,10 +52,11 @@ var jobOfferRegex = regexp.MustCompile(`(?is)^:computer:\s([^-]{1,50})\s@\s([^-]
 
 // WakeUp wakes up Candebot.
 func WakeUp(ctx context.Context, conf Config) error {
-	adminClient := slack.New(conf.UserToken)
-	bot := slacker.NewClient(conf.BotUserToken, slacker.WithDebug(conf.Debug), slacker.WithEventHandler(eventHandler(adminClient)))
+	bot := slacker.NewClient(conf.BotUserToken, slacker.WithDebug(conf.Debug))
 	registerCommands(conf, bot)
-	go registerSlashCommands(conf)
+
+	adminClient := slack.New(conf.UserToken)
+	go registerServer(conf, bot.Client(), adminClient)
 
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -89,68 +69,7 @@ func WakeUp(ctx context.Context, conf Config) error {
 	return bot.Listen(ctx)
 }
 
-func eventHandler(adminClient *slack.Client) slacker.EventHandler {
-	return func(ctx context.Context, s *slacker.Slacker, msg slack.RTMEvent) error {
-		switch event := msg.Data.(type) {
-		case *slack.MessageEvent:
-			if len(event.User) == 0 || len(event.BotID) > 0 {
-				break
-			}
-
-			if event.SubType != "" || event.ThreadTimestamp != "" {
-				// We only want messages posted by humans. We also skip join/leave channel messages, etc by doing this.
-				// Thread messages are also skipped.
-				break
-			}
-
-			switch event.Channel {
-			case channelGeneral:
-				if event.Type == "team_join" {
-					// Welcome user
-					_ = send(s.Client(), event.User, msgWelcome, false)
-				}
-			case channelHiringJobBoard:
-				// This regex check ensures that the message contains all the required fields. Even though posted with
-				// a workflow, people can still introduce wrong values.
-				if !isValidJobOffer(event.Text) {
-					link, err := s.Client().GetPermalink(&slack.PermalinkParameters{
-						Channel: event.Channel,
-						Ts:      event.Timestamp,
-					})
-					if err != nil {
-						log.Printf("error fetching permalink for channel %s and ts %s\n", channelHiringJobBoardWrongFormatNotification, event.Timestamp)
-					}
-
-					_ = send(
-						s.Client(),
-						channelHiringJobBoardWrongFormatNotification,
-						fmt.Sprintf("new Job post with invalid format: %s", link),
-						true,
-					)
-				}
-
-				if !isStaff(event.User) {
-					// If the message was not posted by any member of the Staff, delete it. Messages posted by workflows are not affected.
-					_, _, err := adminClient.DeleteMessage(event.Channel, event.Timestamp)
-					if err != nil {
-						log.Printf("error deleting message: Error: %s\n", err.Error())
-					}
-
-					log.Printf("message has been removed: %s: %s\n", event.Msg.User, event.Msg.Text)
-					_ = sendEphemeral(s.Client(), event.Channel, event.Msg.User, "Regular posting on this channel is not allowed. Submit an offer by using the `New Job Post` workflow (:zap: button)")
-				}
-			case channelCandebotTesting:
-				// Playground here
-			}
-
-			// behaviors that apply to all channels
-			go checkLanguage(s, event)
-		}
-		return slacker.DefaultEventHandler(ctx, s, msg)
-	}
-}
-
-func registerSlashCommands(conf Config) {
+func registerServer(conf Config, botClient, adminClient *slack.Client) {
 	http.HandleFunc("/slash", func(w http.ResponseWriter, r *http.Request) {
 		s, err := slack.SlashCommandParse(r)
 		if err != nil {
@@ -172,6 +91,9 @@ func registerSlashCommands(conf Config) {
 			return
 		}
 	})
+
+	// New Events API. This should eventually replace any usage of RTM (including slacker library).
+	http.HandleFunc("/events", eventsAPIHandler(botClient, adminClient))
 
 	log.Println("[INFO] Slash server listening on port", conf.Port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", conf.Port), nil))
@@ -377,8 +299,8 @@ func isStaff(userID string) bool {
 	return ok
 }
 
-func checkLanguage(bot *slacker.Slacker, event *slack.MessageEvent) {
+func checkLanguage(botClient *slack.Client, event *slackevents.MessageEvent) {
 	if reply := inclusion.Filter(event.Text); reply != "" {
-		_ = sendEphemeral(bot.Client(), event.Channel, event.User, reply)
+		_ = sendEphemeral(botClient, event.Channel, event.User, reply)
 	}
 }
