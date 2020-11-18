@@ -10,5 +10,3 @@ require (
 	github.com/stretchr/testify v1.3.0
 	golang.org/x/text v0.3.3
 )
-
-replace github.com/shomali11/slacker => github.com/smoya/slacker v0.0.0-20200728103316-563cbd9d3c10

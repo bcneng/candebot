@@ -48,7 +48,6 @@ func WakeUp(_ context.Context, conf Config) error {
 		CLI:          false,
 	}
 
-
 	return serve(conf, cliContext)
 }
 

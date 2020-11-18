@@ -124,9 +124,7 @@ func botCommand(botCtx cmd.BotContext, slackCtx cmd.SlackContext) {
 	}()
 
 	_, kongCLI, err := cmd.NewCLI(args, kong.Writers(w, w))
-
 	if err != nil {
-		_ = slackx.SendEphemeral(botCtx.Client, slackCtx.ThreadTimestamp, slackCtx.Channel, slackCtx.User, err.Error())
 		return
 	}
 
