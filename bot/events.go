@@ -42,20 +42,10 @@ func eventsAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 			innerEvent := eventsAPIEvent.InnerEvent
 			switch event := innerEvent.Data.(type) {
 			case *slackevents.MessageEvent:
-				// TODO consider removing this
-				if len(event.User) == 0 || len(event.BotID) > 0 {
-					break
+				if event.SubType == "" || event.SubType == "message_replied" {
+					// behaviors that apply to all messages posted by users both in channels or threads
+					go checkLanguage(botContext.Client, event)
 				}
-
-				// TODO consider removing this
-				if event.SubType != "" || event.ThreadTimeStamp != "" {
-					// We only want messages posted by humans. We also skip join/leave channel messages, etc by doing this.
-					// Thread messages are also skipped.
-					break
-				}
-
-				// behaviors that apply to all channels
-				go checkLanguage(botContext.Client, event)
 
 				if event.ChannelType == "im" {
 					log.Println("Direct message:", event.Text)
@@ -72,32 +62,34 @@ func eventsAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 
 				switch event.Channel {
 				case channelHiringJobBoard:
-					// This regex check ensures that the message contains all the required fields. Even though posted with
-					// a workflow, people can still introduce wrong values.
-					if !isValidJobOffer(event.Text) {
-						link, err := botContext.Client.GetPermalink(&slack.PermalinkParameters{
-							Channel: event.Channel,
-							Ts:      event.TimeStamp,
-						})
-						if err != nil {
-							log.Printf("error fetching permalink for channel %s and ts %s\n", channelHiringJobBoardWrongFormatNotification, event.TimeStamp)
-						}
-
-						_ = slackx.Send(botContext.Client, "", channelHiringJobBoardWrongFormatNotification, fmt.Sprintf("new Job post with invalid format: %s", link), true)
+					if botContext.IsStaff(event.User) {
+						// If the message was written by the Staff, nothing to check here!
+						return
 					}
 
-					if !botContext.IsStaff(event.User) {
-						// If the message was not posted by any member of the Staff, delete it. Messages posted by workflows are not affected.
-						_, _, err := botContext.AdminClient.DeleteMessage(event.Channel, event.TimeStamp)
-						if err != nil {
-							log.Printf("error deleting message: Error: %s\n", err.Error())
+					if event.SubType == "" {
+						// Message (not in threads) published by a user should be removed
+						log.Println("Someone wrote a random message in #hiring-job-board and will be removed.", event.Channel, event.Text, event.TimeStamp)
+						_, _, _ = botContext.AdminClient.DeleteMessage(event.Channel, event.TimeStamp)
+						return
+					}
+
+					if event.SubType == "bot_message" && !isValidJobOffer(event.Text) {
+						// At this point, messages are written by the workflow bot.
+						log.Println("Invalid job spec format. message will be removed.", event.Channel, event.Text, event.TimeStamp)
+						_, _, _ = botContext.AdminClient.DeleteMessage(event.Channel, event.TimeStamp)
+
+						d := strings.Split(event.Text, "More info DM ")
+						if len(d) != 2 {
+							log.Printf("Impossible to get the sender from workflow message: %s\n", event.Text)
+							return
 						}
 
-						log.Printf("message has been removed: %s: %s\n", event.Message.User, event.Message.Text)
-						_ = slackx.SendEphemeral(botContext.Client, event.ThreadTimeStamp, event.Channel, event.Message.User, "Regular posting on this channel is not allowed. Submit an offer by using the `New Job Post` workflow (:zap: button)")
+						sender := strings.Replace(strings.Replace(d[1], "<@", "", 1), ">", "", 1)
+						_ = slackx.SendEphemeral(botContext.Client, event.ThreadTimeStamp, event.Channel, sender, fmt.Sprintf("The Job post you've submitted seems invalid. Please review your message:\n%s", event.Text))
 					}
 				case channelCandebotTesting:
-					// Playground here
+					// playground
 				}
 			case *slackevents.AppMentionEvent:
 				log.Println("Mention message:", event.Text)
