@@ -86,7 +86,7 @@ func eventsAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 						}
 
 						sender := strings.Replace(strings.Replace(d[1], "<@", "", 1), ">", "", 1)
-						_ = slackx.SendEphemeral(botContext.Client, event.ThreadTimeStamp, event.Channel, sender, fmt.Sprintf("The Job post you submitted does not passed the validation. Please ensure fields contain the right values before posting:\n%s", event.Text))
+						_ = slackx.SendEphemeral(botContext.Client, event.ThreadTimeStamp, event.Channel, sender, fmt.Sprintf("The Job post you've submitted seems invalid. Please review your message:\n%s", event.Text))
 					}
 				case channelCandebotTesting:
 					// playground
