@@ -14,47 +14,47 @@ func TestIsValidJobOffer(t *testing.T) {
 	}{
 		{
 			name:  "Offer following the format is valid",
-			text:  ":computer: Full Stack Engineer @ BcnEng - :moneybag: 70 - 90k  - :round_pushpin: Barcelona - :link: www.bcneng.com/netiquette - :raised_hands: More info DM @smoya",
+			text:  ":computer: Senior Go Engineer @ BcnEng - :moneybag: 55k - 70k - :round_pushpin: Barcelona - :link: `<https://bcneng.org/jobs/senior-go-developer-123|ttps://bcneng.org/jobs/senior-go-developer-123>` - :raised_hands: More info DM <@U2WPLA0KA>",
 			valid: true,
 		},
 		{
 			name:  "Offer without min range is valid",
-			text:  ":computer: Full Stack Engineer @ BcnEng - :moneybag:  - 90k  - :round_pushpin: Barcelona - :link: https://www.bcneng.com/netiquette - :raised_hands: More info DM @smoya",
+			text:  ":computer: Senior Go Engineer @ BcnEng - :moneybag: - 70k - :round_pushpin: Barcelona - :link: `<https://bcneng.org/jobs/senior-go-developer-123|ttps://bcneng.org/jobs/senior-go-developer-123>` - :raised_hands: More info DM <@U2WPLA0KA>",
 			valid: true,
 		},
 		{
 			name:  "Offer with a too long min range is invalid",
-			text:  ":computer: Full Stack Engineer @ BcnEng - :moneybag: 70 but depending on blabla - 90k  - :round_pushpin: Barcelona - :link: https://www.bcneng.com/netiquette - :raised_hands: More info DM @smoya",
+			text:  ":computer: Senior Go Engineer @ BcnEng - :moneybag: 55k but depending on blabla - 70k - :round_pushpin: Barcelona - :link: `<https://bcneng.org/jobs/senior-go-developer-123|ttps://bcneng.org/jobs/senior-go-developer-123>` - :raised_hands: More info DM <@U2WPLA0KA>",
 			valid: false,
 		},
 		{
 			name:  "Offer with a too long max range is invalid",
-			text:  ":computer: Full Stack Engineer @ BcnEng - :moneybag: 70 - 90k but depending on blabla  - :round_pushpin: Barcelona - :link: https://www.bcneng.com/netiquette - :raised_hands: More info DM @smoya",
+			text:  ":computer: Senior Go Engineer @ BcnEng - :moneybag: - 70k but depending on blabla - :round_pushpin: Barcelona - :link: `<https://bcneng.org/jobs/senior-go-developer-123|ttps://bcneng.org/jobs/senior-go-developer-123>` - :raised_hands: More info DM <@U2WPLA0KA>",
 			valid: false,
 		},
 		{
 			name:  "Offer without max range is invalid",
-			text:  ":computer: Full Stack Engineer @ BcnEng - :moneybag:  -  - :round_pushpin: Barcelona - :link: https://www.bcneng.com/netiquette - :raised_hands: More info DM @smoya",
+			text:  ":computer: Senior Go Engineer @ BcnEng - :moneybag: 55k -  - :round_pushpin: Barcelona - :link: `<https://bcneng.org/jobs/senior-go-developer-123|ttps://bcneng.org/jobs/senior-go-developer-123>` - :raised_hands: More info DM <@U2WPLA0KA>",
 			valid: false,
 		},
 		{
 			name:  "Offer with an invalid link",
-			text:  ":computer: Full Stack Engineer @ BcnEng - :moneybag: 70 - 90k  - :round_pushpin: Barcelona - :link: wrong-link - :raised_hands: More info DM @smoya",
+			text:  ":computer: Senior Go Engineer @ BcnEng - :moneybag: 55k - 70k - :round_pushpin: Barcelona - :link: `<wrong-link>` - :raised_hands: More info DM <@U2WPLA0KA>",
 			valid: false,
 		},
 		{
 			name:  "Offer with a missing link is invalid",
-			text:  ":computer: Full Stack Engineer @ BcnEng - :moneybag: 70 - 90k  - :round_pushpin: Barcelona - :link:  - :raised_hands: More info DM @smoya",
+			text:  ":computer: Senior Go Engineer @ BcnEng - :moneybag: 55k - 70k - :round_pushpin: Barcelona - :link: `` - :raised_hands: More info DM <@U2WPLA0KA>",
 			valid: false,
 		},
 		{
 			name:  "Offer with missing role is invalid",
-			text:  ":computer:  @ BcnEng - :moneybag: 70 - 90k  - :round_pushpin: Barcelona - :link: www.bcneng.com/netiquette - :raised_hands: More info DM @smoya",
+			text:  ":computer:  @ BcnEng - :moneybag: 55k - 70k - :round_pushpin: Barcelona - :link: `<https://bcneng.org/jobs/senior-go-developer-123|ttps://bcneng.org/jobs/senior-go-developer-123>` - :raised_hands: More info DM <@U2WPLA0KA>",
 			valid: false,
 		},
 		{
 			name:  "Offer with missing company is invalid",
-			text:  ":computer: Full Stack Engineer @  - :moneybag: 70 - 90k  - :round_pushpin: Barcelona - :link: www.bcneng.com/netiquette - :raised_hands: More info DM @smoya",
+			text:  ":computer: Senior Go Engineer @  - :moneybag: 55k - 70k - :round_pushpin: Barcelona - :link: `<https://bcneng.org/jobs/senior-go-developer-123|ttps://bcneng.org/jobs/senior-go-developer-123>` - :raised_hands: More info DM <@U2WPLA0KA>",
 			valid: false,
 		},
 	}
