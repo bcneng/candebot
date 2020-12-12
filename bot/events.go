@@ -42,6 +42,11 @@ func eventsAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 			innerEvent := eventsAPIEvent.InnerEvent
 			switch event := innerEvent.Data.(type) {
 			case *slackevents.MessageEvent:
+				if event.BotID == candebotBotID {
+					// Skip own (bot) command replies
+					return
+				}
+
 				if event.SubType == "" || event.SubType == "message_replied" {
 					// behaviors that apply to all messages posted by users both in channels or threads
 					go checkLanguage(botContext.Client, event)
