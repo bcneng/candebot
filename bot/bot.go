@@ -23,7 +23,10 @@ const (
 	channelCandebotTesting                       = "CK32YCX5M"
 )
 
-const candebotUser = "UJNQU8N5Q"
+const (
+	candebotUser  = "UJNQU8N5Q"
+	candebotBotID = "BJNQBKGJF"
+)
 
 var staff = []string{
 	"U2Y6QQHST", //<@gonzaloserrano>
