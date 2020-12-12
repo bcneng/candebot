@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strings"
 
 	"github.com/bcneng/candebot/slackx"
@@ -15,8 +14,6 @@ import (
 	"github.com/bcneng/candebot/cmd"
 	"github.com/slack-go/slack"
 )
-
-var urlRegex = regexp.MustCompile(`(?mi)^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$`)
 
 func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +43,8 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 			switch message.CallbackID {
 			case "job_submission":
 				validationErrors := make(map[string]string)
-				if !urlRegex.MatchString(message.Submission["job_link"]) {
+
+				if _, err := url.ParseRequestURI(message.Submission["job_link"]); err != nil {
 					validationErrors["job_link"] = "The link to the job spec is invalid"
 				}
 
