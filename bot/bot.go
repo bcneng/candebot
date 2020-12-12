@@ -46,7 +46,6 @@ func WakeUp(_ context.Context, conf Config) error {
 		SigningSecret: conf.SigningSecret,
 		StaffMembers:  staff,
 		Version:       conf.Version,
-		CLI:           false,
 	}
 
 	return serve(conf, cliContext)
