@@ -20,6 +20,11 @@ func eventsAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		buf := new(bytes.Buffer)
 		_, _ = buf.ReadFrom(r.Body)
+		if err := botContext.VerifyRequest(r, buf.Bytes()); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			log.Printf("Fail to verify SigningSecret: %v", err)
+		}
+
 		body := buf.String()
 		eventsAPIEvent, err := slackevents.ParseEvent(json.RawMessage(body), slackevents.OptionNoVerifyToken())
 		if err != nil {
@@ -38,6 +43,7 @@ func eventsAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 			w.Header().Set("Content-Type", "text")
 			_, _ = w.Write([]byte(r.Challenge))
 		}
+
 		if eventsAPIEvent.Type == slackevents.CallbackEvent {
 			innerEvent := eventsAPIEvent.InnerEvent
 			switch event := innerEvent.Data.(type) {
@@ -67,31 +73,16 @@ func eventsAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 
 				switch event.Channel {
 				case channelHiringJobBoard:
+					// Staff memebers are allowed to post messages
 					if botContext.IsStaff(event.User) {
-						// If the message was written by the Staff, nothing to check here!
 						return
 					}
 
-					if event.SubType == "" {
-						// Message (not in threads) published by a user should be removed
+					// Users are allowed to only post messages in threads
+					if event.ThreadTimeStamp == "" {
 						log.Println("Someone wrote a random message in #hiring-job-board and will be removed.", event.Channel, event.Text, event.TimeStamp)
 						_, _, _ = botContext.AdminClient.DeleteMessage(event.Channel, event.TimeStamp)
 						return
-					}
-
-					if event.SubType == "bot_message" && !isValidJobOffer(event.Text) {
-						// At this point, messages are written by the workflow bot.
-						log.Println("Invalid job spec format. message will be removed.", event.Channel, event.Text, event.TimeStamp)
-						_, _, _ = botContext.AdminClient.DeleteMessage(event.Channel, event.TimeStamp)
-
-						d := strings.Split(event.Text, "More info DM ")
-						if len(d) != 2 {
-							log.Printf("Impossible to get the sender from workflow message: %s\n", event.Text)
-							return
-						}
-
-						sender := strings.Replace(strings.Replace(d[1], "<@", "", 1), ">", "", 1)
-						_ = slackx.SendEphemeral(botContext.Client, event.ThreadTimeStamp, event.Channel, sender, fmt.Sprintf("The Job post you've submitted seems invalid. Please review your message:\n%s", event.Text))
 					}
 				case channelCandebotTesting:
 					// playground
@@ -130,17 +121,6 @@ func botCommand(botCtx cmd.BotContext, slackCtx cmd.SlackContext) {
 		_ = slackx.SendEphemeral(botCtx.Client, slackCtx.ThreadTimestamp, slackCtx.Channel, slackCtx.User, err.Error())
 		return
 	}
-}
-
-func isValidJobOffer(text string) bool {
-	lines := strings.Split(text, "\n")
-	for _, l := range lines {
-		if !jobOfferRegex.MatchString(l) {
-			return false
-		}
-	}
-
-	return true
 }
 
 func checkLanguage(botClient *slack.Client, event *slackevents.MessageEvent) {

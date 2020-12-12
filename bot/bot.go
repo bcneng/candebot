@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"regexp"
 
 	"github.com/bcneng/candebot/cmd"
 	"github.com/slack-go/slack"
@@ -36,19 +35,18 @@ var staff = []string{
 	"U7PQZMZ4L", //<@koe>
 }
 
-var jobOfferRegex = regexp.MustCompile(`(?i)^:computer:\s([^-]{1,50})\s@\s([^-]{1,50})\s-\s:moneybag:\s([^-]{1,10})?\s?-\s([^-]{1,20})\s-\s:round_pushpin:\s(.+)\s-\s:link:\s\x60<(((?:http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+(?:[\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(?::[0-9]{1,5})?(?:\/.*)?)\|?)>\x60\s-\s:raised_hands:\sMore\sinfo\sDM\s<([^-]+)>$`)
-
 // WakeUp wakes up Candebot.
 func WakeUp(_ context.Context, conf Config) error {
 	client := slack.New(conf.BotUserToken)
 	adminClient := slack.New(conf.UserToken)
 
 	cliContext := cmd.BotContext{
-		Client:       client,
-		AdminClient:  adminClient,
-		StaffMembers: staff,
-		Version:      conf.Version,
-		CLI:          false,
+		Client:        client,
+		AdminClient:   adminClient,
+		SigningSecret: conf.SigningSecret,
+		StaffMembers:  staff,
+		Version:       conf.Version,
+		CLI:           false,
 	}
 
 	return serve(conf, cliContext)
@@ -86,6 +84,7 @@ func serve(conf Config, cliContext cmd.BotContext) error {
 	})
 
 	http.HandleFunc("/events", eventsAPIHandler(cliContext))
+	http.HandleFunc("/interact", interactAPIHandler(cliContext))
 
 	log.Println("[INFO] Slash server listening on port", conf.Port)
 

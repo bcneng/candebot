@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"log"
+	"net/http"
 
 	"github.com/alecthomas/kong"
 	"github.com/slack-go/slack"
@@ -16,10 +17,11 @@ type SlackContext struct {
 }
 
 type BotContext struct {
-	Client       *slack.Client
-	AdminClient  *slack.Client
-	StaffMembers []string
-	Version      string
+	Client        *slack.Client
+	AdminClient   *slack.Client
+	SigningSecret string
+	StaffMembers  []string
+	Version       string
 
 	CLI bool // true if runs from CLI
 
@@ -38,6 +40,20 @@ func (c *BotContext) IsStaff(userID string) bool {
 	_, ok := c.staffLookupMap[userID]
 
 	return ok
+}
+
+func (c *BotContext) VerifyRequest(r *http.Request, body []byte) error {
+	// Verify signing secret
+	sv, err := slack.NewSecretsVerifier(r.Header, c.SigningSecret)
+	if err != nil {
+		return err
+	}
+	_, _ = sv.Write(body)
+	if err := sv.Ensure(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 type CLI struct {
