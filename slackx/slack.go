@@ -14,7 +14,7 @@ func SendEphemeral(c *slack.Client, threadTS, channelID, userID, msg string, opt
 		return nil
 	}
 
-	_, err := c.PostEphemeral(channelID, userID, append(opts, slack.MsgOptionText(msg, false), slack.MsgOptionAsUser(true), slack.MsgOptionTS(threadTS))...)
+	_, err := c.PostEphemeral(channelID, userID, append(opts, slack.MsgOptionText(msg, false), slack.MsgOptionTS(threadTS))...)
 	if err != nil {
 		log.Printf("error sending ephemeral msg in channel %q: %s\n", channelID, err.Error())
 	}
@@ -26,7 +26,7 @@ func Send(c *slack.Client, threadTS, channelID, msg string, scape bool, opts ...
 	if channelID == "" {
 		return nil
 	}
-	_, _, err := c.PostMessage(channelID, append(opts, slack.MsgOptionText(msg, scape), slack.MsgOptionAsUser(true), slack.MsgOptionTS(threadTS))...)
+	_, _, err := c.PostMessage(channelID, append(opts, slack.MsgOptionText(msg, scape), slack.MsgOptionTS(threadTS))...)
 	if err != nil {
 		log.Println("error sending msg in channel ", channelID)
 	}
