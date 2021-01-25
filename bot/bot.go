@@ -41,11 +41,13 @@ func WakeUp(_ context.Context, conf Config) error {
 	adminClient := slack.New(conf.UserToken)
 
 	cliContext := cmd.BotContext{
-		Client:        client,
-		AdminClient:   adminClient,
-		SigningSecret: conf.SigningSecret,
-		StaffMembers:  staff,
-		Version:       conf.Version,
+		Client:              client,
+		AdminClient:         adminClient,
+		SigningSecret:       conf.SigningSecret,
+		StaffMembers:        staff,
+		TwitterCredentials:  conf.Twitter,
+		TwitterContestToken: conf.TwitterContestToken,
+		Version:             conf.Version,
 	}
 
 	return serve(conf, cliContext)

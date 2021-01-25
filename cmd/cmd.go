@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/alecthomas/kong"
+	"github.com/bcneng/twitter-contest/twitter"
 	"github.com/slack-go/slack"
 )
 
@@ -17,11 +18,13 @@ type SlackContext struct {
 }
 
 type BotContext struct {
-	Client        *slack.Client
-	AdminClient   *slack.Client
-	SigningSecret string
-	StaffMembers  []string
-	Version       string
+	Client              *slack.Client
+	AdminClient         *slack.Client
+	SigningSecret       string
+	StaffMembers        []string
+	Version             string
+	TwitterCredentials  twitter.Credentials
+	TwitterContestToken string
 
 	CLI bool // true if runs from CLI
 
@@ -63,6 +66,7 @@ type CLI struct {
 	Version       Version       `cmd help:"Info about the staff behind BcnEng"`
 	Candebirthday CandeBirthday `cmd help:"Days until @sdecandelario birthday!"`
 	Echo          Echo          `cmd help:"Sends a message as Candebot" placeholder:"echo #general Hi folks!"`
+	Contest       Contest       `cmd help:"Runs a contest on Twitter"`
 	Help          Help          `cmd`
 }
 
