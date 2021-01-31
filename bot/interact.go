@@ -135,6 +135,10 @@ func generateSubmitJobFormDialog() slack.Dialog {
 			Value: "Barcelona/Remote",
 		},
 		{
+			Label: "Remote (temporary because of COVID)",
+			Value: "Remote (COVID)",
+		},
+		{
 			Label: "Remote",
 			Value: "Remote",
 		},
