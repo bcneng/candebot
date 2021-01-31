@@ -48,7 +48,7 @@ var inclusiveFilters = []InclusiveFilter{
 	{Filter: "retraso mental", Reply: "*Retrasado* y *Retraso mental* son términos despectivos eliminados del vocabulario psiquiátrico y, según la OMS, la forma correcta para referiste a ese grupo de enfermedades y transtornos es *Trastorno del desarrollo intelectual* "},
 	
 	// Our own list
-	{Filter: "gentleman", Reply: "Instead of *gentleman*, perhaps you mean *folks*?... *[Please consider editing your message so it's more inclusive]*"},
+	{Filter: "gentlemen", Reply: "Instead of *gentlemen*, perhaps you mean *folks*?... *[Please consider editing your message so it's more inclusive]*"},
 	{Filter: "ladies", Reply: "Instead of *ladies*, perhaps you mean *folks*?... *[Please consider editing your message so it's more inclusive]*"},
 	{Filter: "los chicos de", Reply: "En vez de *los chicos de*, quizá quisiste decir *el equipo de*, *los integrantes de*?... *[Considera editar tu mensaje para que sea más inclusivo]*"},
 	{Filter: "chicos", Reply: "En vez de *chicos*, quizá quisiste decir *chiques*, *colegas*, *grupo*, *personas*?... *[Considera editar tu mensaje para que sea más inclusivo]*"},
