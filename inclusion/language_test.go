@@ -20,6 +20,7 @@ func TestFilter(t *testing.T) {
 		{name: "bcneng sucks is rude", input: "bcneng sucks", filtered: true},
 		{name: "bcneng is awesome is nice", input: "bcneng is awesome", filtered: false},
 		{name: "'buena localización' is right even though contains the word 'loca'", input: "buena localización", filtered: false},
+		{name: "'ladies' is not usually used in the right context", input: "hi ladies!", filtered: true},
 	}
 
 	extraFilters := []InclusiveFilter{
