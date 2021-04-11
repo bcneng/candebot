@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/alecthomas/kong"
@@ -16,11 +17,13 @@ import (
 	"github.com/slack-go/slack/slackevents"
 )
 
-func eventsAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
+var inviteUsersMessageRegex = regexp.MustCompile(`(?m)^<@(.*)> requested to invite one person to this workspace\.$`)
+
+func eventsAPIHandler(botCtx cmd.BotContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		buf := new(bytes.Buffer)
 		_, _ = buf.ReadFrom(r.Body)
-		if err := botContext.VerifyRequest(r, buf.Bytes()); err != nil {
+		if err := botCtx.VerifyRequest(r, buf.Bytes()); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			log.Printf("Fail to verify SigningSecret: %v", err)
 		}
@@ -55,12 +58,12 @@ func eventsAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 
 				if event.SubType == "" || event.SubType == "message_replied" {
 					// behaviors that apply to all messages posted by users both in channels or threads
-					go checkLanguage(botContext.Client, event)
+					go checkLanguage(botCtx.Client, event)
 				}
 
 				if event.ChannelType == "im" {
 					log.Println("Direct message:", event.Text)
-					botCommand(botContext, cmd.SlackContext{
+					botCommand(botCtx, cmd.SlackContext{
 						User:            event.User,
 						Channel:         event.Channel,
 						Text:            event.Text,
@@ -72,16 +75,23 @@ func eventsAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 				}
 
 				switch event.Channel {
+				case channelStaff:
+					if event.User == "USLACKBOT" {
+						m := inviteUsersMessageRegex.FindStringSubmatch(event.Text)
+						if len(m) == 2 {
+							_ = slackx.Send(botCtx.Client, "", m[1], "You recently invited someone to join BcnEng's Slack. Unfortunately, direct invites are not allowed by now due to legal restrictions.\nPlease share the following link to your contact so they can register to this workspace: https://slack.bcneng.org.", false)
+						}
+					}
 				case channelHiringJobBoard:
-					// Staff memebers are allowed to post messages
-					if botContext.IsStaff(event.User) {
+					// Staff members are allowed to post messages
+					if botCtx.IsStaff(event.User) {
 						return
 					}
 
 					// Users are allowed to only post messages in threads
 					if event.ThreadTimeStamp == "" {
 						log.Println("Someone wrote a random message in #hiring-job-board and will be removed.", event.Channel, event.Text, event.TimeStamp)
-						_, _, _ = botContext.AdminClient.DeleteMessage(event.Channel, event.TimeStamp)
+						_, _, _ = botCtx.AdminClient.DeleteMessage(event.Channel, event.TimeStamp)
 						return
 					}
 				case channelCandebotTesting:
@@ -89,7 +99,7 @@ func eventsAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 				}
 			case *slackevents.AppMentionEvent:
 				log.Println("Mention message:", event.Text)
-				botCommand(botContext, cmd.SlackContext{
+				botCommand(botCtx, cmd.SlackContext{
 					User:            event.User,
 					Channel:         event.Channel,
 					Text:            event.Text,

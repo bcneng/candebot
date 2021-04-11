@@ -17,9 +17,9 @@ const (
 )
 
 const (
-	channelHiringJobBoard                        = "C30CUFT2B"
-	channelHiringJobBoardWrongFormatNotification = "G983W7L9F"
-	channelCandebotTesting                       = "CK32YCX5M"
+	channelHiringJobBoard  = "C30CUFT2B"
+	channelStaff           = "G983W7L9F"
+	channelCandebotTesting = "CK32YCX5M"
 )
 
 const (
