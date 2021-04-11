@@ -39,8 +39,25 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 		}
 
 		switch message.Type {
+		case slack.InteractionTypeMessageAction:
+			switch message.CallbackID {
+			case "report_message":
+				dialog := generateReportMessageDialog()
+				dialog.State = slackx.LinkToMessage(message.Channel.ID, message.MessageTs) // persist the message link across submission
+				if err := botContext.Client.OpenDialog(message.TriggerID, dialog); err != nil {
+					log.Println(err.Error())
+				}
+			}
 		case slack.InteractionTypeDialogSubmission:
 			switch message.CallbackID {
+			case "report_message":
+				msg := fmt.Sprintf("<@%s> sent a message report:\n- *Reason*: %s\n- *Feeling Scale*: %s of 5\n%s",
+					message.User.Name,
+					message.Submission["reason"],
+					message.Submission["scale"],
+					message.State,
+				)
+				_ = slackx.Send(botContext.Client, "", channelStaff, msg, false)
 			case "job_submission":
 				validationErrors := make(map[string]string)
 
@@ -159,6 +176,34 @@ func generateSubmitJobFormDialog() slack.Dialog {
 		CallbackID:  "job_submission",
 		Title:       "New Job Post",
 		SubmitLabel: "Submit",
+		Elements:    elements,
+	}
+}
+
+func generateReportMessageDialog() slack.Dialog {
+	reasonInput := slack.NewTextInput("reason", "Reason", "")
+	reasonInput.Placeholder = "Violates BcnEng's COC by using a violent language"
+	reasonInput.Hint = "Explain the reason of this report."
+	reasonInput.MinLength = 5
+	reasonInput.Optional = false
+
+	feelingScale := slack.NewStaticSelectDialogInput("scale", "How hurtful their words felt to you?", []slack.DialogSelectOption{
+		{Label: "1", Value: "1"},
+		{Label: "2", Value: "2"},
+		{Label: "3", Value: "3"},
+		{Label: "4", Value: "4"},
+		{Label: "5", Value: "5"},
+	})
+	feelingScale.Hint = "5 point scale ranging starting from 1 (minimum) to 5 (extremely), where a greater score corresponds to a more hurtful feeling"
+
+	elements := []slack.DialogElement{
+		reasonInput,
+		feelingScale,
+	}
+	return slack.Dialog{
+		CallbackID:  "report_message",
+		Title:       "Report message",
+		SubmitLabel: "Report",
 		Elements:    elements,
 	}
 }

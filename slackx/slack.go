@@ -3,6 +3,7 @@ package slackx
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/slack-go/slack"
 )
@@ -69,4 +70,8 @@ func FindChannelIDByName(client *slack.Client, channel string) (string, error) {
 	}
 
 	return "", fmt.Errorf("channel %s not found", channel)
+}
+
+func LinkToMessage(channelID, msgTimestamp string) string {
+	return fmt.Sprintf("https://bcneng.slack.com/archives/%s/p%s", channelID, strings.Replace(msgTimestamp, ".", "", 1))
 }
