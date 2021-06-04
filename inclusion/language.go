@@ -57,8 +57,8 @@ var inclusiveFilters = []InclusiveFilter{
 	{Filter: "locuron", Reply: "La palabra *locurón* o *locura* es considerada por algunas personas como irrespetuosa hacia las personas que sufren alguna enfermedad mental.\nQuizá quisiste decir *indignante*, *impensable*, *absurdo*, *incomprensible*? Has considerado usar un adjetivo diferente como *ridículo*?"},
 	{Filter: "loc(a|o)", Reply: "La palabra *loco/loca* es considerada por algunas personas como irrespetuosa hacia las personas que sufren alguna enfermedad mental.\nQuizá quisiste decir *indignante*, *impensable*, *absurdo*, *incomprensible*? Has considerado usar un adjetivo diferente como *ridículo*?"},
 	{Filter: "cakewalk", Reply: "Instead of *cakewalk*, perhaps you mean *easy*?... *[Please consider editing your message so it's more inclusive]*"},
-	{Filter: "grandfathered in", Reply: "Instead of *grandfathered in*, perhaps you mean *exempting*?... *[Please consider editing your message so it's more inclusive]*"},
-	{Filter: "grandfathering", Reply: "Instead of *grandfathering*, perhaps you mean *exempting*?... *[Please consider editing your message so it's more inclusive]*"},
+	{Filter: "grandfathered in", Reply: "Instead of *grandfathered in*, perhaps you mean *exempting*? You can read more information in https://www.selfdefined.app/definitions/grandfathering/ ... *[Please consider editing your message so it's more inclusive]*"},
+	{Filter: "grandfathering", Reply: "Instead of *grandfathering*, perhaps you mean *exempting*? You can read more information in https://www.selfdefined.app/definitions/grandfathering/ ... *[Please consider editing your message so it's more inclusive]*"},
 }
 
 func Filter(input string, extraFilters ...InclusiveFilter) string {
