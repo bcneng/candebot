@@ -22,14 +22,14 @@ var conductLinks = "\nIn case of doubts please check our <https://bcneng.org/coc
 var inclusiveFilters = []InclusiveFilter{
 	// When someone says, Candebot replies (privately).
 	// English: Based on https://github.com/randsleadershipslack/documents-and-resources/blob/master/RandsInclusiveLanguage.tsv
-	{Filter: "you guys", Reply: "Instead of *guys*, perhaps you mean *pals*?... *[Please consider editing your message so it's more inclusive]*"},
-	{Filter: "these guys", Reply: "Instead of *guys*, perhaps you mean *gang*?... *[Please consider editing your message so it's more inclusive]*"},
-	{Filter: "my guys", Reply: "Instead of *guys*, perhaps you mean *crew*?... *[Please consider editing your message so it's more inclusive]*"},
-	{Filter: "those guys", Reply: "Instead of *guys*, perhaps you mean *people*?... *[Please consider editing your message so it's more inclusive]*"},
-	{Filter: "hey guys", Reply: "Instead of *guys*, perhaps you mean *y'all*?... *[Please consider editing your message so it's more inclusive]*"},
-	{Filter: "hi guys", Reply: "Instead of *guys*, perhaps you mean *everyone*?... *[Please consider editing your message so it's more inclusive]*"},
-	{Filter: "the guys", Reply: "Instead of *guys*, perhaps you mean *folks*?... *[Please consider editing your message so it's more inclusive]*"},
-	{Filter: "guys", Reply: "Instead of *guys*, have you considered a more gender-neutral pronoun like *folks*? *[Please consider editing your message so it's more inclusive]*"},
+	{Filter: "you guys", Reply: "Instead of *guys*, perhaps you mean *pals*? You can read more information about it at https://www.dictionary.com/e/you-guys/... *[Please consider editing your message so it's more inclusive]*"},
+	{Filter: "these guys", Reply: "Instead of *guys*, perhaps you mean *gang*? You can read more information about it at https://www.dictionary.com/e/you-guys/... *[Please consider editing your message so it's more inclusive]*"},
+	{Filter: "my guys", Reply: "Instead of *guys*, perhaps you mean *crew*? You can read more information about it at https://www.dictionary.com/e/you-guys/... *[Please consider editing your message so it's more inclusive]*"},
+	{Filter: "those guys", Reply: "Instead of *guys*, perhaps you mean *people*? You can read more information about it at https://www.dictionary.com/e/you-guys/... *[Please consider editing your message so it's more inclusive]*"},
+	{Filter: "hey guys", Reply: "Instead of *guys*, perhaps you mean *y'all*? You can read more information about it at https://www.dictionary.com/e/you-guys/... *[Please consider editing your message so it's more inclusive]*"},
+	{Filter: "hi guys", Reply: "Instead of *guys*, perhaps you mean *everyone*? You can read more information about it at https://www.dictionary.com/e/you-guys/... *[Please consider editing your message so it's more inclusive]*"},
+	{Filter: "the guys", Reply: "Instead of *guys*, perhaps you mean *folks*? You can read more information about it at https://www.dictionary.com/e/you-guys/... *[Please consider editing your message so it's more inclusive]*"},
+	{Filter: "guys", Reply: "Instead of *guys*, have you considered a more gender-neutral pronoun like *folks*? You can read more information about it at https://www.dictionary.com/e/you-guys/ *[Please consider editing your message so it's more inclusive]*"},
 	{Filter: "CHWD", Reply: `Cisgender Hetero White Dude. But please consider using the full term "cisgender, heterosexual white man” or similar. That would both make it more approachable for those unfamiliar with this obscure initialism, and prevent reducing people down to initialisms.`},
 	{Filter: "URP", Reply: `Underrepresented person(s). But please consider using the full term "members of traditionally underrepresented groups" or similar; people don't like to be made into acronyms, _especially_ when they are already marginalized. See: en.wikipedia.org/wiki/Underrepresented_group`},
 	{Filter: "URPs", Reply: `Underrepresented person(s). But please consider using the full term "members of traditionally underrepresented groups" or similar; people don't like to be made into acronyms, _especially_ when they are already marginalized. See: en.wikipedia.org/wiki/Underrepresented_group`},
@@ -50,8 +50,8 @@ var inclusiveFilters = []InclusiveFilter{
 	// Our own list
 	{Filter: "gentlem(a|e)n", Reply: "Instead of *gentlem(a|e)n*, perhaps you mean *folks*?... *[Please consider editing your message so it's more inclusive]*"},
 	{Filter: "lad(y|ies)", Reply: "Instead of *lad(y|ies)*, perhaps you mean *folks*?... *[Please consider editing your message so it's more inclusive]*"},
-	{Filter: "los chicos de", Reply: "En vez de *los chicos de*, quizá quisiste decir *el equipo de*, *los integrantes de*?... *[Considera editar tu mensaje para que sea más inclusivo]*"},
-	{Filter: "chicos", Reply: "En vez de *chicos*, quizá quisiste decir *chiques*, *colegas*, *grupo*, *personas*?... *[Considera editar tu mensaje para que sea más inclusivo]*"},
+	{Filter: "los chicos de", Reply: "En vez de *los chicos de*, quizá quisiste decir *el equipo de*, *los integrantes de*? Para mas informacion(en ingles), puedes consultar https://www.dictionary.com/e/you-guys/... *[Considera editar tu mensaje para que sea más inclusivo]*"},
+	{Filter: "chicos", Reply: "En vez de *chicos*, quizá quisiste decir *chiques*, *colegas*, *grupo*, *personas*? Para mas informacion(en ingles), puedes consultar https://www.dictionary.com/e/you-guys/... *[Considera editar tu mensaje para que sea más inclusivo]*"},
 	{Filter: "lgtb", Reply: "Desde hace un tiempo, el colectivo *LGTB+* recomienda añadir el carácter `+` a la palabra *LGTB*, pues existen orientaciones e identidades que, a pesar de no ser tan predominantes, representan a muchas personas. *[Considera editar tu mensaje para que sea más inclusivo]*"},
 	{Filter: "locura", Reply: "La palabra *locura* es considerada por algunas personas como irrespetuosa hacia las personas que sufren alguna enfermedad mental.\nQuizá quisiste decir *indignante*, *impensable*, *absurdo*, *incomprensible*? Has considerado usar un adjetivo diferente como *ridículo*?"},
 	{Filter: "locuron", Reply: "La palabra *locurón* o *locura* es considerada por algunas personas como irrespetuosa hacia las personas que sufren alguna enfermedad mental.\nQuizá quisiste decir *indignante*, *impensable*, *absurdo*, *incomprensible*? Has considerado usar un adjetivo diferente como *ridículo*?"},
