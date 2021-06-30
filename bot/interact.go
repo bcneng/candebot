@@ -212,7 +212,7 @@ func generateReportMessageDialog() slack.Dialog {
 	}
 }
 
-func buildPublisherInput() slack.NewStaticSelectDialogInput {
+func buildPublisherInput() *DialogInputSelect {
 	publisherOptions := []slack.DialogSelectOption{
 		{
 			Label: "End Company",
