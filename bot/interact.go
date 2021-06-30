@@ -164,7 +164,7 @@ func generateSubmitJobFormDialog() slack.Dialog {
 	locationInput := slack.NewStaticSelectDialogInput("location", "Location - Select", options)
 	locationInput.Optional = false
 
-	publisherInput := buidlPublisherInput()
+	publisherInput := buildPublisherInput()
 
 	// Open a dialog
 	elements := []slack.DialogElement{
@@ -212,7 +212,7 @@ func generateReportMessageDialog() slack.Dialog {
 	}
 }
 
-func buidlPublisherInput() slack.NewStaticSelectDialogInput {
+func buildPublisherInput() slack.NewStaticSelectDialogInput {
 	publisherOptions := []slack.DialogSelectOption{
 		{
 			Label: "End Company",
