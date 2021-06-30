@@ -163,6 +163,8 @@ func generateSubmitJobFormDialog() slack.Dialog {
 	locationInput := slack.NewStaticSelectDialogInput("location", "Location - Select", options)
 	locationInput.Optional = false
 
+	buidlPublisherSelectMenu()
+
 	// Open a dialog
 	elements := []slack.DialogElement{
 		roleInput,
@@ -206,4 +208,20 @@ func generateReportMessageDialog() slack.Dialog {
 		SubmitLabel: "Report",
 		Elements:    elements,
 	}
+}
+
+fun buidlPublisherSelectMenu() {
+	// Component-Select menu
+	publisherOptions := []slack.DialogSelectOption{
+		{
+			Label: "End Company",
+			Value: "End Company",
+		},
+		{
+			Label: "Recruiting Agency",
+			Value: "Recruiting Agency",
+		}
+	}
+	publisherInput := slack.NewStaticSelectDialogInput("publisher", "Published by", publisherOptions)
+	publisherInput.Optional = false	
 }
