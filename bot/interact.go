@@ -218,8 +218,8 @@ fun buidlPublisherSelectMenu() {
 			Value: "End Company",
 		},
 		{
-			Label: "Recruiting Agency",
-			Value: "Recruiting Agency",
+			Label: "Recruitment Agency",
+			Value: "Recruitment Agency",
 		}
 	}
 	publisherInput := slack.NewStaticSelectDialogInput("publisher", "Published by", publisherOptions)
