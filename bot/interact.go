@@ -85,12 +85,13 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 					return
 				}
 
-				msg := fmt.Sprintf(":computer: %s @ %s - :moneybag: %s - %s - :round_pushpin: %s - :link: <%s|Link> - :raised_hands: More info DM <@%s>",
+				msg := fmt.Sprintf(":computer: %s @ %s - :moneybag: %s - %s - :round_pushpin: %s - :lower_left_fountain_pen: %s - :link: <%s|Link> - :raised_hands: More info DM <@%s>",
 					message.Submission["role"],
 					message.Submission["company"],
 					message.Submission["min_salary"],
 					message.Submission["max_salary"],
 					message.Submission["location"],
+					message.Submission["publisher"],
 					message.Submission["job_link"],
 					message.User.Name,
 				)
@@ -163,6 +164,8 @@ func generateSubmitJobFormDialog() slack.Dialog {
 	locationInput := slack.NewStaticSelectDialogInput("location", "Location - Select", options)
 	locationInput.Optional = false
 
+	publisherInput := buildPublisherInput()
+
 	// Open a dialog
 	elements := []slack.DialogElement{
 		roleInput,
@@ -171,6 +174,7 @@ func generateSubmitJobFormDialog() slack.Dialog {
 		salaryMaxInput,
 		locationInput,
 		linkInput,
+		publisherInput,
 	}
 	return slack.Dialog{
 		CallbackID:  "job_submission",
@@ -206,4 +210,21 @@ func generateReportMessageDialog() slack.Dialog {
 		SubmitLabel: "Report",
 		Elements:    elements,
 	}
+}
+
+func buildPublisherInput() *slack.DialogInputSelect {
+	publisherOptions := []slack.DialogSelectOption{
+		{
+			Label: "Employer",
+			Value: "Employer",
+		},
+		{
+			Label: "Agency",
+			Value: "Agency",
+		},
+	}
+	publisherInput := slack.NewStaticSelectDialogInput("publisher", "Published by", publisherOptions)
+	publisherInput.Optional = false	
+
+	return publisherInput
 }
