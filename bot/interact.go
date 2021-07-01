@@ -215,12 +215,12 @@ func generateReportMessageDialog() slack.Dialog {
 func buildPublisherInput() *slack.DialogInputSelect {
 	publisherOptions := []slack.DialogSelectOption{
 		{
-			Label: "End Company",
-			Value: "End Company",
+			Label: "Employer",
+			Value: "Employer",
 		},
 		{
-			Label: "Recruitment Agency",
-			Value: "Recruitment Agency",
+			Label: "Agency",
+			Value: "Agency",
 		},
 	}
 	publisherInput := slack.NewStaticSelectDialogInput("publisher", "Published by", publisherOptions)
