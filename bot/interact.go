@@ -53,7 +53,7 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 			case "report_message":
 				var msg string
 				if message.Submission["anonymous"] == "anonymous" {
-					msg = fmt.Sprintf("A anonymous user sent a message report:\n- *Reason*: %s\n- *Feeling Scale*: %s of 5\n%s",
+					msg = fmt.Sprintf("An anonymous user sent a message report:\n- *Reason*: %s\n- *Feeling Scale*: %s of 5\n%s",
 						message.Submission["reason"],
 						message.Submission["scale"],
 						message.State,
