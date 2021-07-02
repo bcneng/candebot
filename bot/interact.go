@@ -51,14 +51,8 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 		case slack.InteractionTypeDialogSubmission:
 			switch message.CallbackID {
 			case "report_message":
-				var user string
-				if message.Submission["anonymous"] == "anonymous" {
-					user = "An anonymous user"
-				} else {
-					user = fmt.Sprintf("<@%s>", message.User.Name)
-				}
-				msg := fmt.Sprintf("%s sent a message report:\n- *Reason*: %s\n- *Feeling Scale*: %s of 5\n%s",
-					user,
+				msg := fmt.Sprintf("<@%s> sent a message report:\n- *Reason*: %s\n- *Feeling Scale*: %s of 5\n%s",
+					message.User.Name,
 					message.Submission["reason"],
 					message.Submission["scale"],
 					message.State,
@@ -205,14 +199,10 @@ func generateReportMessageDialog() slack.Dialog {
 		{Label: "5", Value: "5"},
 	})
 	feelingScale.Hint = "5 point scale ranging starting from 1 (minimum) to 5 (extremely), where a greater score corresponds to a more hurtful feeling"
-	
-	text := slack.NewTextBlockObject("plain_text", "Make this report anonymous", false, false)
-	isAnonymous := slack.NewCheckboxGroupsBlockElement("anonymous", slack.NewOptionBlockObject("anonymous", text))
 
 	elements := []slack.DialogElement{
 		reasonInput,
 		feelingScale,
-		isAnonymous,
 	}
 	return slack.Dialog{
 		CallbackID:  "report_message",
