@@ -51,18 +51,21 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 		case slack.InteractionTypeDialogSubmission:
 			switch message.CallbackID {
 			case "report_message":
-				var user string
+				var msg string
 				if message.Submission["anonymous"] == "anonymous" {
-					user = "anonymous"
+					msg = fmt.Sprintf("A anonymous user sent a message report:\n- *Reason*: %s\n- *Feeling Scale*: %s of 5\n%s",
+						message.Submission["reason"],
+						message.Submission["scale"],
+						message.State,
+					)
 				} else {
-					user = message.User.Name
+					msg := fmt.Sprintf("<@%s> sent a message report:\n- *Reason*: %s\n- *Feeling Scale*: %s of 5\n%s",
+						message.User.Name,
+						message.Submission["reason"],
+						message.Submission["scale"],
+						message.State,
+					)
 				}
-				msg := fmt.Sprintf("<@%s> sent a message report:\n- *Reason*: %s\n- *Feeling Scale*: %s of 5\n%s",
-					user,
-					message.Submission["reason"],
-					message.Submission["scale"],
-					message.State,
-				)
 				_ = slackx.Send(botContext.Client, "", channelStaff, msg, false)
 			case "job_submission":
 				validationErrors := make(map[string]string)
