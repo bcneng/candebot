@@ -222,6 +222,10 @@ func buildPublisherInput() *slack.DialogInputSelect {
 			Label: "Agency",
 			Value: "Agency",
 		},
+		{
+			Label: "Referral",
+			Value: "Referral",
+		},
 	}
 	publisherInput := slack.NewStaticSelectDialogInput("publisher", "Published by", publisherOptions)
 	publisherInput.Optional = false	
