@@ -59,7 +59,7 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 						message.State,
 					)
 				} else {
-					msg := fmt.Sprintf("<@%s> sent a message report:\n- *Reason*: %s\n- *Feeling Scale*: %s of 5\n%s",
+					msg = fmt.Sprintf("<@%s> sent a message report:\n- *Reason*: %s\n- *Feeling Scale*: %s of 5\n%s",
 						message.User.Name,
 						message.Submission["reason"],
 						message.Submission["scale"],
