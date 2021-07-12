@@ -72,7 +72,7 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 				}
 
 				var minSalary int
-				if minSalaryStr := strings.TrimSpace(message.Submission["max_salary"]); minSalaryStr != "" {
+				if minSalaryStr := strings.TrimSpace(message.Submission["min_salary"]); minSalaryStr != "" {
 					minSalary, err = strconv.Atoi(minSalaryStr)
 					if err != nil || maxSalary == 0 {
 						validationErrors["min_salary"] = "The Salary Min field, if specified, should be a non-zero numeric value."
