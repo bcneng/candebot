@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/bcneng/candebot/slackx"
@@ -65,8 +66,21 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 					validationErrors["job_link"] = "The link to the job spec is invalid"
 				}
 
-				if strings.Contains(strings.ToLower(message.Submission["max_salary"]), "stock") {
-					validationErrors["max_salary"] = "The Salary Max field cannot contain extras like mentions to Stock Options."
+				maxSalary, err := strconv.Atoi(strings.TrimSpace(message.Submission["max_salary"]))
+				if err != nil || maxSalary == 0 {
+					validationErrors["max_salary"] = "The Salary Max field should be a non-zero numeric value."
+				}
+
+				var minSalary int
+				if minSalaryStr := strings.TrimSpace(message.Submission["min_salary"]); minSalaryStr != "" {
+					minSalary, err = strconv.Atoi(minSalaryStr)
+					if err != nil || maxSalary == 0 {
+						validationErrors["min_salary"] = "The Salary Min field, if specified, should be a non-zero numeric value."
+					}
+
+					if minSalary > maxSalary {
+						validationErrors["min_salary"] = "The Salary Min field should contain a lower value than the specified in Salary Max field."
+					}
 				}
 
 				if len(validationErrors) > 0 {
@@ -85,11 +99,16 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 					return
 				}
 
-				msg := fmt.Sprintf(":computer: %s @ %s - :moneybag: %s - %s - :round_pushpin: %s - :lower_left_fountain_pen: %s - :link: <%s|Link> - :raised_hands: More info DM <@%s>",
+				minSalaryStr := fmt.Sprintf("%dK", minSalary)
+				if minSalary == 0 {
+					minSalaryStr = ""
+				}
+
+				msg := fmt.Sprintf(":computer: %s @ %s - :moneybag: %s - %dK - :round_pushpin: %s - :lower_left_fountain_pen: %s - :link: <%s|Link> - :raised_hands: More info DM <@%s>",
 					message.Submission["role"],
 					message.Submission["company"],
-					message.Submission["min_salary"],
-					message.Submission["max_salary"],
+					minSalaryStr,
+					maxSalary,
 					message.Submission["location"],
 					message.Submission["publisher"],
 					message.Submission["job_link"],
@@ -125,16 +144,17 @@ func generateSubmitJobFormDialog() slack.Dialog {
 
 	salaryMinInput := slack.NewTextInput("min_salary", "Salary min", "")
 	salaryMinInput.Optional = true
-	salaryMinInput.Placeholder = "60K"
-	salaryMinInput.Hint = "Use thousands. Links or special characters are not allowed"
-	salaryMinInput.MaxLength = 10
+	salaryMinInput.Placeholder = "60"
+	salaryMinInput.Hint = "Use thousand abbreviation representation. Example: write 60 for 60,000 Eur. Only numbers allowed"
+	salaryMinInput.Subtype = slack.InputSubtypeNumber
+	salaryMinInput.MaxLength = 3
 	salaryMinInput.MinLength = 2
 
 	salaryMaxInput := slack.NewTextInput("max_salary", "Salary max", "")
-	salaryMaxInput.Placeholder = "90K"
-	salaryMaxInput.Hint = "Use thousands. Links or special characters are not allowed"
+	salaryMaxInput.Placeholder = "90"
+	salaryMaxInput.Hint = "Use thousand abbreviation representation. Example: write 60 for 60,000 Eur. Only numbers allowed"
 	salaryMaxInput.Subtype = slack.InputSubtypeNumber
-	salaryMaxInput.MaxLength = 10
+	salaryMaxInput.MaxLength = 3
 	salaryMaxInput.MinLength = 2
 
 	linkInput := slack.NewTextInput("job_link", "Link to the job spec", "")
@@ -228,7 +248,7 @@ func buildPublisherInput() *slack.DialogInputSelect {
 		},
 	}
 	publisherInput := slack.NewStaticSelectDialogInput("publisher", "Published by", publisherOptions)
-	publisherInput.Optional = false	
+	publisherInput.Optional = false
 
 	return publisherInput
 }
