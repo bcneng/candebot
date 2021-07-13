@@ -39,6 +39,8 @@ github.com/aws/aws-lambda-go v1.22.0 h1:X7BKqIdfoJcbsEIi+Lrt5YjX1HnZexIbNWOQgkYK
 github.com/aws/aws-lambda-go v1.22.0/go.mod h1:jJmlefzPfGnckuHdXX7/80O3BvUUi12XOkbv4w9SGLU=
 github.com/bcneng/twitter-contest v0.0.0-20210124102502-a57d5b591955 h1:wnhvrqdmRN4rVHpJfEoC4D59HTCGObhtaqXDmmJFzjQ=
 github.com/bcneng/twitter-contest v0.0.0-20210124102502-a57d5b591955/go.mod h1:aj3KvUR4H9ZeNh/wkubEK6WPCA9KEtb/g0Q7znOqaWE=
+github.com/bcneng/twitter-contest v0.0.0-20210125112923-eb139f65d81c h1:5z6NcH61W9u56c9jPwhMVzrRuwEsOSmYuOF2Pbl/WdI=
+github.com/bcneng/twitter-contest v0.0.0-20210125112923-eb139f65d81c/go.mod h1:aj3KvUR4H9ZeNh/wkubEK6WPCA9KEtb/g0Q7znOqaWE=
 github.com/cenkalti/backoff v2.1.1+incompatible h1:tKJnvO2kl0zmb/jA5UKAt4VoEVw1qxKWjE/Bpp46npY=
 github.com/cenkalti/backoff v2.1.1+incompatible/go.mod h1:90ReRw6GdpyfrHakVjL/QHaoyV4aDUVVkXQJJJ3NXXM=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
