@@ -49,10 +49,11 @@ func FindChannelIDByName(client *slack.Client, channel string) (string, error) {
 	var channels []slack.Channel
 	for {
 		var err error
-		channels, cursor, err = client.GetConversations(&slack.GetConversationsParameters{ExcludeArchived: true})
+		channels, cursor, err = client.GetConversations(&slack.GetConversationsParameters{Cursor: cursor, ExcludeArchived: true})
 		if err != nil {
 			return "", err
 		}
+
 		if cursor == "" {
 			break
 		}
