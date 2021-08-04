@@ -45,23 +45,21 @@ func FindChannelIDByName(client *slack.Client, channel string) (string, error) {
 		return id, nil
 	}
 
-	chans, err := client.GetChannels(true, slack.GetChannelsOptionExcludeMembers())
-	if err != nil {
-		return "", err
-	}
+	var cursor string
+	var channels []slack.Channel
+	for {
+		var err error
+		channels, cursor, err = client.GetConversations(&slack.GetConversationsParameters{Cursor: cursor, ExcludeArchived: true})
+		if err != nil {
+			return "", err
+		}
 
-	for _, c := range chans {
-		if c.Name == channel {
-			return c.ID, nil
+		if cursor == "" {
+			break
 		}
 	}
 
-	privateChans, err := client.GetGroups(true)
-	if err != nil {
-		return "", err
-	}
-
-	for _, c := range privateChans {
+	for _, c := range channels {
 		if c.Name == channel {
 			channelNameToIDCache[channel] = c.ID // It is fine to not lock.
 
