@@ -8,5 +8,5 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/slack-go/slack v0.9.4
 	github.com/stretchr/testify v1.7.0
-	golang.org/x/text v0.3.6
+	golang.org/x/text v0.3.7
 )
