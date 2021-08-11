@@ -75,13 +75,6 @@ func eventsAPIHandler(botCtx cmd.BotContext) http.HandlerFunc {
 				}
 
 				switch event.Channel {
-				case channelStaff:
-					if event.User == "USLACKBOT" {
-						m := inviteUsersMessageRegex.FindStringSubmatch(event.Text)
-						if len(m) == 2 {
-							_ = slackx.Send(botCtx.Client, "", m[1], "You recently invited someone to join BcnEng's Slack. Unfortunately, direct invites are not allowed by now due to legal restrictions.\nPlease share the following link to your contact so they can register to this workspace: https://slack.bcneng.org.", false)
-						}
-					}
 				case channelHiringJobBoard:
 					// Staff members are allowed to post messages
 					if botCtx.IsStaff(event.User) {
