@@ -104,11 +104,12 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 					minSalaryStr = ""
 				}
 
-				msg := fmt.Sprintf(":computer: %s @ %s - :moneybag: %s - %dK - :round_pushpin: %s - :lower_left_fountain_pen: %s - :link: <%s|Link> - :raised_hands: More info DM <@%s>",
+				msg := fmt.Sprintf(":computer: %s @ %s - :moneybag: %s - %dK %s - :round_pushpin: %s - :lower_left_fountain_pen: %s - :link: <%s|Link> - :raised_hands: More info DM <@%s>",
 					message.Submission["role"],
 					message.Submission["company"],
 					minSalaryStr,
 					maxSalary,
+					message.Submission["currency"],
 					message.Submission["location"],
 					message.Submission["publisher"],
 					message.Submission["job_link"],
@@ -142,17 +143,22 @@ func generateSubmitJobFormDialog() slack.Dialog {
 	companyInput.MaxLength = 20
 	companyInput.MinLength = 2
 
+	salaryCurrencyOptions := []slack.DialogSelectOption{{"EUR", "EUR"}, {"USD", "USD"}, {"GBP", "GBP"}, {"CHF", "CHF"}}
+	salaryCurrencyInput := slack.NewStaticSelectDialogInput("currency", "Currency", salaryCurrencyOptions)
+	salaryCurrencyInput.Optional = false
+	salaryCurrencyInput.Hint = "Choose the salary currency from the dropdown"
+
 	salaryMinInput := slack.NewTextInput("min_salary", "Salary min", "")
 	salaryMinInput.Optional = true
 	salaryMinInput.Placeholder = "60"
-	salaryMinInput.Hint = "Use thousand abbreviation representation. Example: write 60 for 60,000 Eur. Only numbers allowed"
+	salaryMinInput.Hint = "Use thousand abbreviation representation. Example: write 60 for 60,000 EUR. Only numbers allowed"
 	salaryMinInput.Subtype = slack.InputSubtypeNumber
 	salaryMinInput.MaxLength = 3
 	salaryMinInput.MinLength = 2
 
 	salaryMaxInput := slack.NewTextInput("max_salary", "Salary max", "")
 	salaryMaxInput.Placeholder = "90"
-	salaryMaxInput.Hint = "Use thousand abbreviation representation. Example: write 60 for 60,000 Eur. Only numbers allowed"
+	salaryMaxInput.Hint = "Use thousand abbreviation representation. Example: write 90 for 90,000 EUR. Only numbers allowed"
 	salaryMaxInput.Subtype = slack.InputSubtypeNumber
 	salaryMaxInput.MaxLength = 3
 	salaryMaxInput.MinLength = 2
@@ -192,6 +198,7 @@ func generateSubmitJobFormDialog() slack.Dialog {
 		companyInput,
 		salaryMinInput,
 		salaryMaxInput,
+		salaryCurrencyInput,
 		locationInput,
 		linkInput,
 		publisherInput,
