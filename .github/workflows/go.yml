@@ -26,3 +26,20 @@ jobs:
 
     - name: Test
       run: make build test
+
+  check-lint:
+    name: Lint checks
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v2
+      with:
+        go-version: ^1.14
+      id: go
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+
+    - name: Check linting
+      run: make lint
