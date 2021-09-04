@@ -1,6 +1,6 @@
 module github.com/bcneng/candebot
 
-go 1.14
+go 1.17
 
 require (
 	github.com/alecthomas/kong v0.2.17
