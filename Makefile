@@ -9,5 +9,5 @@ build: clean
 	go build -v .
 	@echo candebot built and ready to serve and protect.
 
-test: fast-build
+test:
 	go test -v ./...
