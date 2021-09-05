@@ -46,7 +46,7 @@ var inclusiveFilters = []InclusiveFilter{
 	{Filter: "diversidad funcional", Reply: "COCEMFE considera que el término *diversidad funcional* es un eufemismo, cargado de condescendencia que genera confusión, inseguridad jurídica y rebaja la protección que todavía es necesaria. El término *discapacidad* es el que aglutina derechos reconocidos legalmente y que cuenta con el mayor respaldo social. Considera usarlo.\nMás info en Más info en https://www.cocemfe.es/wp-content/uploads/2019/02/20181010_COCEMFE_Lenguaje_inclusivo.pdf"},
 	{Filter: "retrasad(a|o)", Reply: "*Retrasado* y *Retraso mental* son términos despectivos eliminados del vocabulario psiquiátrico y, según la OMS, la forma correcta para referiste a ese grupo de enfermedades y transtornos es *Trastorno del desarrollo intelectual* "},
 	{Filter: "retraso mental", Reply: "*Retrasado* y *Retraso mental* son términos despectivos eliminados del vocabulario psiquiátrico y, según la OMS, la forma correcta para referiste a ese grupo de enfermedades y transtornos es *Trastorno del desarrollo intelectual* "},
-	
+
 	// Our own list
 	{Filter: "gentlem(a|e)n", Reply: "Instead of *gentlem(a|e)n*, perhaps you mean *folks*?... *[Please consider editing your message so it's more inclusive]*"},
 	{Filter: "lad(y|ies)", Reply: "Instead of *lad(y|ies)*, perhaps you mean *folks*?... *[Please consider editing your message so it's more inclusive]*"},

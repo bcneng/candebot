@@ -9,8 +9,8 @@ import (
 )
 
 type Echo struct {
-	Channel string `arg required`
-	Message string `arg required`
+	Channel string `arg:"" required:"false"`
+	Message string `arg:"" required:"false"`
 }
 
 func (e *Echo) Run(ctx BotContext, slackCtx SlackContext) error {

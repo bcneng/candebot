@@ -52,22 +52,18 @@ func (c *BotContext) VerifyRequest(r *http.Request, body []byte) error {
 		return err
 	}
 	_, _ = sv.Write(body)
-	if err := sv.Ensure(); err != nil {
-		return err
-	}
-
-	return nil
+	return sv.Ensure()
 }
 
 type CLI struct {
-	Coc           Coc           `cmd help:"Link to the Code Of Conduct of BcnEng"`
-	Netiquette    Netiquette    `cmd help:"Link to the Netiquette of BcnEng"`
-	Staff         Staff         `cmd help:"Info about the staff behind BcnEng"`
-	Version       Version       `cmd help:"Info about the staff behind BcnEng"`
-	Candebirthday CandeBirthday `cmd help:"Days until @sdecandelario birthday!"`
-	Echo          Echo          `cmd help:"Sends a message as Candebot" placeholder:"echo #general Hi folks!"`
-	Contest       Contest       `cmd help:"Runs a contest on Twitter"`
-	Help          Help          `cmd`
+	Coc           Coc           `cmd:"" help:"Link to the Code Of Conduct of BcnEng"`
+	Netiquette    Netiquette    `cmd:"" help:"Link to the Netiquette of BcnEng"`
+	Staff         Staff         `cmd:"" help:"Info about the staff behind BcnEng"`
+	Version       Version       `cmd:"" help:"Info about the staff behind BcnEng"`
+	Candebirthday CandeBirthday `cmd:"" help:"Days until @sdecandelario birthday!"`
+	Echo          Echo          `cmd:"" help:"Sends a message as Candebot" placeholder:"echo #general Hi folks!"`
+	Contest       Contest       `cmd:"" help:"Runs a contest on Twitter"`
+	Help          Help          `cmd:""`
 }
 
 func NewCLI(args []string, options ...kong.Option) (*CLI, *kong.Context, error) {
