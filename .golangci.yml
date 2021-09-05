@@ -1,5 +1,3 @@
-# Copyright (c) Tetrate, Inc 2021 All Rights Reserved.
-
 linters:
   enable:
     - deadcode
