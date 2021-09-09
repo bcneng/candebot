@@ -14,9 +14,9 @@ import (
 const TwitterContestURL = "https://bcneng-twitter-contest.netlify.app/.netlify/functions/contest"
 
 type Contest struct {
-	TweetID         string `arg required`
-	Pick            string `arg required`
-	AccountToFollow string `arg optional`
+	TweetID         string `arg:"" required:"false"`
+	Pick            string `arg:"" required:"false"`
+	AccountToFollow string `arg:"" optional:"false"`
 }
 
 func (c *Contest) Run(ctx BotContext, slackCtx SlackContext) error {
