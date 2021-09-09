@@ -5,6 +5,9 @@
 *.so
 *.dylib
 
+# The actual binaries
+candebot
+
 # Test binary, build with `go test -c`
 *.test
 
