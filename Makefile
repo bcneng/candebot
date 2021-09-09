@@ -2,7 +2,7 @@ lint:
 	golangci-lint run
 
 clean:
-    # '-f' to ignore when 'candebot' is not found
+	@# '-f' to ignore when 'candebot' is not found
 	rm -f candebot 
 
 build: clean
