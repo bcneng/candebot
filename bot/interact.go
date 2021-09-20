@@ -81,6 +81,10 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 					if minSalary > maxSalary {
 						validationErrors["min_salary"] = "The Salary Min field should contain a lower value than the specified in Salary Max field."
 					}
+
+					if minSalary * 2 > maxSalary {
+						validationErrors["max_salary"] = "The Salary Max field should be at most twice the value specified in Salary Min field."
+					}
 				}
 
 				if len(validationErrors) > 0 {
