@@ -148,7 +148,7 @@ func generateSubmitJobFormDialog() slack.Dialog {
 	salaryCurrencyInput.Optional = false
 	salaryCurrencyInput.Hint = "Choose the salary currency from the dropdown"
 
-	salaryMinInput := slack.NewTextInput("min_salary", "Salary min", "")
+	salaryMinInput := slack.NewTextInput("min_salary", "Salary min (per year)", "")
 	salaryMinInput.Optional = true
 	salaryMinInput.Placeholder = "60"
 	salaryMinInput.Hint = "Use thousand abbreviation representation. Example: write 60 for 60,000 EUR. Only numbers allowed"
@@ -156,7 +156,7 @@ func generateSubmitJobFormDialog() slack.Dialog {
 	salaryMinInput.MaxLength = 3
 	salaryMinInput.MinLength = 2
 
-	salaryMaxInput := slack.NewTextInput("max_salary", "Salary max", "")
+	salaryMaxInput := slack.NewTextInput("max_salary", "Salary max (per year)", "")
 	salaryMaxInput.Placeholder = "90"
 	salaryMaxInput.Hint = "Use thousand abbreviation representation. Example: write 90 for 90,000 EUR. Only numbers allowed"
 	salaryMaxInput.Subtype = slack.InputSubtypeNumber
