@@ -67,15 +67,15 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 				}
 
 				maxSalary, err := strconv.Atoi(strings.TrimSpace(message.Submission["max_salary"]))
-				if err != nil || maxSalary == 0 {
-					validationErrors["max_salary"] = "The Salary Max field should be a non-zero numeric value."
+				if err != nil || maxSalary == 0 || maxSalary <= 9 {
+					validationErrors["max_salary"] = "The Salary Max field should be a minimum 2 digits numeric value."
 				}
 
 				var minSalary int
 				if minSalaryStr := strings.TrimSpace(message.Submission["min_salary"]); minSalaryStr != "" {
 					minSalary, err = strconv.Atoi(minSalaryStr)
-					if err != nil || maxSalary == 0 {
-						validationErrors["min_salary"] = "The Salary Min field, if specified, should be a non-zero numeric value."
+					if err != nil || minSalary == 0 || minSalary <= 9 {
+						validationErrors["min_salary"] = "The Salary Min field, if specified, should be a minimum 2 digits numeric value."
 					}
 
 					if minSalary > maxSalary {
@@ -148,7 +148,7 @@ func generateSubmitJobFormDialog() slack.Dialog {
 	salaryCurrencyInput.Optional = false
 	salaryCurrencyInput.Hint = "Choose the salary currency from the dropdown"
 
-	salaryMinInput := slack.NewTextInput("min_salary", "Salary min", "")
+	salaryMinInput := slack.NewTextInput("min_salary", "Salary min (per year)", "")
 	salaryMinInput.Optional = true
 	salaryMinInput.Placeholder = "60"
 	salaryMinInput.Hint = "Use thousand abbreviation representation. Example: write 60 for 60,000 EUR. Only numbers allowed"
@@ -156,7 +156,7 @@ func generateSubmitJobFormDialog() slack.Dialog {
 	salaryMinInput.MaxLength = 3
 	salaryMinInput.MinLength = 2
 
-	salaryMaxInput := slack.NewTextInput("max_salary", "Salary max", "")
+	salaryMaxInput := slack.NewTextInput("max_salary", "Salary max (per year)", "")
 	salaryMaxInput.Placeholder = "90"
 	salaryMaxInput.Hint = "Use thousand abbreviation representation. Example: write 90 for 90,000 EUR. Only numbers allowed"
 	salaryMaxInput.Subtype = slack.InputSubtypeNumber
