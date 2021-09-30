@@ -82,7 +82,7 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 						validationErrors["min_salary"] = "The Salary Min field should contain a lower value than the specified in Salary Max field."
 					}
 
-					if (minSalary * 2) > maxSalary {
+					if (minSalary * 5) > (maxSalary * 2) {
 						validationErrors["max_salary"] = "The gap between MinSalary and MaxSalary is rather large. Maybe you should post two different job offers with different responsibilities and required qualifications. Salary is a relevant field, we recommend you try to keep it meaningful to increase the chances of taking the position seriously by potential candidates."
 					}
 				}
