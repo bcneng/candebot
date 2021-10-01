@@ -65,7 +65,7 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 				messageMaxSalary := message.Submission["max_salary"]
 				messageMinSalary := message.Submission["min_salary"]
 
-				var maxSalary, minSalary, validationErrors = ValidateSubmission(messageJobLink, messageMaxSalary, messageMinSalary)
+				maxSalary, minSalary, validationErrors := validateSubmission(messageJobLink, messageMaxSalary, messageMinSalary)
 
 				if len(validationErrors) > 0 {
 					var errs []slack.DialogInputValidationError
@@ -112,18 +112,18 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 	}
 }
 
-// Runs validations over the submitted salary range and job offer link. Produces a list of errors if any.
+// validateSubmission runs validations over the submitted salary range and job offer link. Produces a list of errors if any.
 //
 // Arguments are the strings as read from the submissions (no previous transform/parsing/filter)
 // Returns:
 //  - the parsed max salary as int
 //  - the parsed min salary as int, or -1 if the field was empty (it's an optional field)
 //  - a map of field name to error message
-func ValidateSubmission(messageJobLink string, messageMaxSalary string, messageMinSalary string) (int, int, map[string]string) {
+func validateSubmission(messageJobLink, messageMaxSalary, messageMinSalary string) (int, int, map[string]string) {
 
 	validationErrors := make(map[string]string)
 	if _, err := url.ParseRequestURI(messageJobLink); err != nil {
-		validationErrors["job_link"] = "The link to the job spec is invalid"
+		validationErrors["job_link"] = "The link to the job spec is invalid."
 	}
 
 	maxSalary, err := strconv.Atoi(strings.TrimSpace(messageMaxSalary))
@@ -133,7 +133,7 @@ func ValidateSubmission(messageJobLink string, messageMaxSalary string, messageM
 		validationErrors["max_salary"] = "The Salary Max field should be positive numeric value."
 	}
 
-	var minSalary int = -1
+	minSalary := -1
 	if minSalaryStr := strings.TrimSpace(messageMinSalary); minSalaryStr != "" {
 		minSalary, err = strconv.Atoi(minSalaryStr)
 		if err != nil || maxSalary == 0 {
