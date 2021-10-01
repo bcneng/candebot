@@ -60,7 +60,15 @@ func TestJobSubmission(t *testing.T) {
 
 	t.Run("max salary must not be greater than 2.5x the min salary", func(t *testing.T) {
 		_, _, validaterrors := validateSubmission("hamburger", "13", "5")
-		require.Equal(t, "The gap between MinSalary and MaxSalary is rather large. Maybe you should post two different job offers with different responsibilities and required qualifications. Salary is a relevant field, we recommend you try to keep it meaningful to increase the chances of taking the position seriously by potential candidates.", validaterrors["max_salary"])
+		require.Equal(t, "The range MinSalary-MaxSalary is too large. Salary is a relevant field, keep it meaningful to increase offer impact.", validaterrors["max_salary"])
+	})
+
+	t.Run("error messages should be shorter than 150 chars", func(t *testing.T) {
+		_, _, validaterrors := validateSubmission("hamburger", "13", "5")
+		if len([]rune(validaterrors["max_salary"])) > 150 {
+			t.Errorf("error message is too long: %s", validaterrors["max_salary"])
+		}
+
 	})
 
 }
