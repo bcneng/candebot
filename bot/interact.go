@@ -83,7 +83,7 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 					}
 
 					if 2.5*float32(minSalary) < float32(maxSalary) {
-						validationErrors["max_salary"] = "The gap between MinSalary and MaxSalary is rather large. Maybe you should post two different job offers with different responsibilities and required qualifications. Salary is a relevant field, we recommend you try to keep it meaningful to increase the chances of taking the position seriously by potential candidates."
+						validationErrors["max_salary"] = "The gap between MinSalary and MaxSalary is rather large. Maybe you should post two different job offers with different responsibilities and required qualifications. Salary is a relevant field; we recommend you keep it meaningful to increase the chances of taking the position seriously by potential candidates."
 					}
 				}
 
