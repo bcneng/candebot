@@ -1,6 +1,9 @@
 lint:
 	golangci-lint run
 
+format:
+	gofmt -w .
+
 clean:
 	@# '-f' to ignore when 'candebot' is not found
 	rm -f candebot 
