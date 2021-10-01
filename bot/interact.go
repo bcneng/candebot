@@ -60,32 +60,12 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 				)
 				_ = slackx.Send(botContext.Client, "", channelStaff, msg, false)
 			case "job_submission":
-				validationErrors := make(map[string]string)
 
-				if _, err := url.ParseRequestURI(message.Submission["job_link"]); err != nil {
-					validationErrors["job_link"] = "The link to the job spec is invalid"
-				}
+				messageJobLink := message.Submission["job_link"]
+				messageMaxSalary := message.Submission["max_salary"]
+				messageMinSalary := message.Submission["min_salary"]
 
-				maxSalary, err := strconv.Atoi(strings.TrimSpace(message.Submission["max_salary"]))
-				if err != nil || maxSalary == 0 || maxSalary <= 9 {
-					validationErrors["max_salary"] = "The Salary Max field should be a minimum 2 digits numeric value."
-				}
-
-				var minSalary int
-				if minSalaryStr := strings.TrimSpace(message.Submission["min_salary"]); minSalaryStr != "" {
-					minSalary, err = strconv.Atoi(minSalaryStr)
-					if err != nil || minSalary == 0 || minSalary <= 9 {
-						validationErrors["min_salary"] = "The Salary Min field, if specified, should be a minimum 2 digits numeric value."
-					}
-
-					if minSalary > maxSalary {
-						validationErrors["min_salary"] = "The Salary Min field should contain a lower value than the specified in Salary Max field."
-					}
-
-					if 2.5*float32(minSalary) < float32(maxSalary) {
-						validationErrors["max_salary"] = "The gap between MinSalary and MaxSalary is rather large. Maybe you should post two different job offers with different responsibilities and required qualifications. Salary is a relevant field; we recommend you keep it meaningful to increase the chances of taking the position seriously by potential candidates."
-					}
-				}
+				var maxSalary, minSalary, validationErrors = ValidateSubmission(messageJobLink, messageMaxSalary, messageMinSalary)
 
 				if len(validationErrors) > 0 {
 					var errs []slack.DialogInputValidationError
@@ -104,7 +84,7 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 				}
 
 				minSalaryStr := fmt.Sprintf("%dK", minSalary)
-				if minSalary == 0 {
+				if minSalary == -1 {
 					minSalaryStr = ""
 				}
 
@@ -130,6 +110,49 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 			}
 		}
 	}
+}
+
+// Runs validations over the submitted salary range and job offer link. Produces a list of errors if any.
+//
+// Arguments are the strings as read from the submissions (no previous transform/parsing/filter)
+// Returns:
+//  - the parsed max salary as int
+//  - the parsed min salary as int, or -1 if the field was empty (it's an optional field)
+//  - a map of field name to error message
+func ValidateSubmission(messageJobLink string, messageMaxSalary string, messageMinSalary string) (int, int, map[string]string) {
+
+	validationErrors := make(map[string]string)
+	if _, err := url.ParseRequestURI(messageJobLink); err != nil {
+		validationErrors["job_link"] = "The link to the job spec is invalid"
+	}
+
+	maxSalary, err := strconv.Atoi(strings.TrimSpace(messageMaxSalary))
+	if err != nil || maxSalary == 0 {
+		validationErrors["max_salary"] = "The Salary Max field should be a non-zero numeric value."
+	} else if maxSalary < 0 {
+		validationErrors["max_salary"] = "The Salary Max field should be positive numeric value."
+	}
+
+	var minSalary int = -1
+	if minSalaryStr := strings.TrimSpace(messageMinSalary); minSalaryStr != "" {
+		minSalary, err = strconv.Atoi(minSalaryStr)
+		if err != nil || maxSalary == 0 {
+			validationErrors["min_salary"] = "The Salary Min field, if specified, should be a non-zero numeric value."
+		}
+
+		if minSalary < 0 {
+			validationErrors["min_salary"] = "The Salary Min field should be positive numeric value."
+		}
+
+		if minSalary > maxSalary {
+			validationErrors["min_salary"] = "The Salary Min field should contain a lower value than the specified in Salary Max field."
+		}
+
+		if 2.5*float32(minSalary) < float32(maxSalary) {
+			validationErrors["max_salary"] = "The gap between MinSalary and MaxSalary is rather large. Maybe you should post two different job offers with different responsibilities and required qualifications. Salary is a relevant field, we recommend you try to keep it meaningful to increase the chances of taking the position seriously by potential candidates."
+		}
+	}
+	return maxSalary, minSalary, validationErrors
 }
 
 func generateSubmitJobFormDialog() slack.Dialog {
