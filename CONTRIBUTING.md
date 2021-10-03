@@ -17,9 +17,9 @@
 
 ### VSCode
 
-1. To format on save, isntall the [Go extension for VSCode](https://code.visualstudio.com/docs/languages/go) and go to settings:
+1. To format on save, install the [Go extension for VSCode](https://code.visualstudio.com/docs/languages/go) and go to settings:
     1. in `Go: Format Flags` add `-w -s`
     1. in `Go: Format Tools` select `gofmt`
 
-2. To insert a newlineon save, go to settings:
+2. To insert a new line at the end of file on save, go to settings:
     1. in `Files: Insert Fina lNewline` mark the checkbox
