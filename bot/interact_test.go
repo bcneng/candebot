@@ -33,27 +33,27 @@ func TestJobSubmission(t *testing.T) {
 		require.Equal(t, -1, minSalary)
 	})
 
-	// FIXME: The following tests may be rewritten as a table-driven test 
+	// FIXME: The following tests may be rewritten as a table-driven test
 	// https://github.com/bcneng/candebot/pull/72#pullrequestreview-773870224
 	t.Run("must reject non-URI links", func(t *testing.T) {
 		_, _, validaterrors := validateSubmission("hamburger", "12", "10")
 		requireHasError(t, validaterrors["job_link"])
-	})	
+	})
 
 	t.Run("must include a max salary", func(t *testing.T) {
 		_, _, validaterrors := validateSubmission("hamburger", "", "10")
 		requireHasError(t, validaterrors["max_salary"])
-	})	
+	})
 
 	t.Run("max salary must be a positive number", func(t *testing.T) {
 		_, _, validaterrors := validateSubmission("hamburger", "-1", "10")
 		requireHasError(t, validaterrors["max_salary"])
-	})	
+	})
 
 	t.Run("max salary must be a number", func(t *testing.T) {
 		_, _, validaterrors := validateSubmission("hamburger", "-asdf", "10")
 		requireHasError(t, validaterrors["max_salary"])
-	})	
+	})
 
 	t.Run("min salary must be a number", func(t *testing.T) {
 		_, _, validaterrors := validateSubmission("hamburger", "12", "asdf")
