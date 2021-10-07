@@ -9,7 +9,7 @@ import (
 func requireHasError(t *testing.T, errorMessage string) {
 	require.NotEmpty(t, errorMessage)
 
-	if len([]rune(errorMessage)) > 150 {
+	if len(errorMessage) > 150 {
 		t.Errorf("error message is too long: %s", errorMessage)
 	}
 
