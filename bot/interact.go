@@ -149,7 +149,7 @@ func validateSubmission(messageJobLink, messageMaxSalary, messageMinSalary strin
 		}
 
 		if 2.5*float32(minSalary) < float32(maxSalary) {
-			validationErrors["max_salary"] = "The range MinSalary-MaxSalary is too large. Salary is a relevant field, keep it meaningful to increase offer impact."
+			validationErrors["max_salary"] = "The min-max salary range is too wide. Salary is a relevant field; keep it meaningful to increase offer impact."
 		}
 	}
 	return maxSalary, minSalary, validationErrors
