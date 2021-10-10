@@ -56,7 +56,7 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 					message.User.Name,
 					message.Submission["reason"],
 					message.Submission["scale"],
-					sanitizeState(message.State),
+					sanitizeReportState(message.State),
 				)
 				_ = slackx.Send(botContext.Client, "", channelStaff, msg, false)
 			case "job_submission":
@@ -287,6 +287,6 @@ func buildPublisherInput() *slack.DialogInputSelect {
 	return publisherInput
 }
 
-func sanitizeState(url string) string {
-	return strings.ReplaceAll(url, "\\/", "/")
+func sanitizeReportState(state string) string {
+	return strings.ReplaceAll(state, "\\/", "/")
 }

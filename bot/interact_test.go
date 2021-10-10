@@ -64,3 +64,12 @@ func TestJobSubmission(t *testing.T) {
 	})
 
 }
+
+func TestMessageSanitizing(t *testing.T) {
+	t.Run("urls cannot contain double scaped backlashes", func(t *testing.T) {
+		url := "https:\\/\\/bcneng.slack.com\\/archives"
+		expected := "https://bcneng.slack.com/archives"
+		actual := sanitizeReportState(url)
+		require.Equal(t, actual, expected)
+	})
+}
