@@ -70,6 +70,6 @@ func TestMessageSanitizing(t *testing.T) {
 		url := "https:\\/\\/bcneng.slack.com\\/archives"
 		expected := "https://bcneng.slack.com/archives"
 		actual := sanitizeReportState(url)
-		require.Equal(t, actual, expected)
+		require.Equal(t, expected, actual)
 	})
 }
