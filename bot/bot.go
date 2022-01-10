@@ -32,7 +32,6 @@ var staff = []string{
 	"U2WPLA0KA", //<@smoya>
 	"U3256HZH9", //<@mavi>
 	"U36H6F3CN", //<@sdecandelario>
-	"U7PQZMZ4L", //<@koe>
 }
 
 // WakeUp wakes up Candebot.
