@@ -3,7 +3,7 @@ module github.com/bcneng/candebot
 go 1.17
 
 require (
-	github.com/alecthomas/kong v0.4.1
+	github.com/alecthomas/kong v0.5.0
 	github.com/bcneng/twitter-contest v0.0.0-20210125112923-eb139f65d81c
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/slack-go/slack v0.9.4
