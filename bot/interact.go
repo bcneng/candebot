@@ -166,7 +166,7 @@ func generateSubmitJobFormDialog() slack.Dialog {
 
 	companyInput := slack.NewTextInput("company", "Company", "")
 	companyInput.Placeholder = "BcnEng"
-	companyInput.Hint = "It MUST be the final company name, no agencies/intermediaries allowed. Links or special characters are not allowed"
+	companyInput.Hint = "It MUST be the final company name, no name of agencies/intermediaries allowed. Links or special characters are not allowed"
 	companyInput.MaxLength = 20
 	companyInput.MinLength = 2
 
