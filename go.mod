@@ -6,7 +6,7 @@ require (
 	github.com/alecthomas/kong v0.5.0
 	github.com/bcneng/twitter-contest v0.0.0-20210125112923-eb139f65d81c
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/slack-go/slack v0.9.4
+	github.com/slack-go/slack v0.10.2
 	github.com/stretchr/testify v1.7.1
 	golang.org/x/text v0.3.6
 )
@@ -18,7 +18,7 @@ require (
 	github.com/dghubble/sling v1.3.0 // indirect
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/google/go-querystring v1.0.0 // indirect
-	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.7.0 // indirect
