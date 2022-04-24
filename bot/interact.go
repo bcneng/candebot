@@ -36,6 +36,7 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 		var message slack.InteractionCallback
 		if err := json.Unmarshal([]byte(str), &message); err != nil {
 			log.Printf("Fail to unmarshal json: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
@@ -48,7 +49,54 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 				if err := botContext.Client.OpenDialog(message.TriggerID, dialog); err != nil {
 					log.Println(err.Error())
 				}
+			case "delete_job_post":
+				modal := generateDeleteJobPostModal()
+				modal.PrivateMetadata = fmt.Sprintf("%s|%s|%s", message.Channel.ID, message.Message.Text, message.MessageTs) // persist the message channel, text, and ts across submission
+
+				if resp, err := botContext.Client.OpenView(message.TriggerID, modal); err != nil {
+					log.Println(err.Error())
+					log.Println(strings.Join(resp.ResponseMetadata.Messages, "\n"))
+					log.Println(strings.Join(resp.ResponseMetadata.Warnings, "\n"))
+				}
 			}
+		case slack.InteractionTypeViewSubmission:
+			switch message.View.CallbackID {
+			case "delete_job_post":
+				// We early set the Content-Type header for any response. This is important.
+				w.Header().Set("Content-Type", "application/json")
+
+				messageData := strings.Split(strings.Trim(message.View.PrivateMetadata, `"`), "|") // For some reason, slack adds an extra double quote
+				channelID := messageData[0]
+				messageText := messageData[1]
+				messageTS := messageData[2]
+
+				if channelID != channelHiringJobBoard {
+					_ = json.NewEncoder(w).Encode(
+						slack.NewErrorsViewSubmissionResponse(map[string]string{"input_block": "The message is not a valid #hiring-job-board job post"}),
+					)
+
+					return
+				}
+
+				if !strings.Contains(messageText, fmt.Sprintf(":raised_hands: More info DM <@%s>", message.User.ID)) {
+					_ = json.NewEncoder(w).Encode(
+						slack.NewErrorsViewSubmissionResponse(map[string]string{"input_block": "You are not the author of this job post"}),
+					)
+
+					return
+				}
+
+				if _, _, err := botContext.Client.DeleteMessage(channelID, messageTS); err != nil {
+					log.Println(err.Error())
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+
+				_ = json.NewEncoder(w).Encode(slack.NewClearViewSubmissionResponse())
+
+				log.Println("Job post message deleted successfully", message.View.PrivateMetadata)
+			}
+
 		case slack.InteractionTypeDialogSubmission:
 			switch message.CallbackID {
 			case "report_message":
@@ -60,7 +108,6 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 				)
 				_ = slackx.Send(botContext.Client, "", channelStaff, msg, false)
 			case "job_submission":
-
 				messageJobLink := message.Submission["job_link"]
 				messageMaxSalary := message.Submission["max_salary"]
 				messageMinSalary := message.Submission["min_salary"]
@@ -235,6 +282,23 @@ func generateSubmitJobFormDialog() slack.Dialog {
 		Title:       "New Job Post",
 		SubmitLabel: "Submit",
 		Elements:    elements,
+	}
+}
+
+func generateDeleteJobPostModal() slack.ModalViewRequest {
+	checkBoxOptionText := slack.NewTextBlockObject("plain_text", "I am sure I want to delete the selected job post", false, false)
+	checkBoxDescriptionText := slack.NewTextBlockObject("plain_text", "By selecting this, you confirm to be the author of the selected job post, and to understand that the content of it is going to be deleted permanently", false, false)
+	checkbox := slack.NewCheckboxGroupsBlockElement("some_action", slack.NewOptionBlockObject("confirmed", checkBoxOptionText, checkBoxDescriptionText))
+	block := slack.NewInputBlock("input_block", slack.NewTextBlockObject(slack.PlainTextType, " ", false, false), checkbox)
+
+	return slack.ModalViewRequest{
+		Type:  slack.VTModal,
+		Title: slack.NewTextBlockObject(slack.PlainTextType, "Confirm deletion", false, false),
+		Blocks: slack.Blocks{BlockSet: []slack.Block{
+			block,
+		}},
+		Submit:     slack.NewTextBlockObject(slack.PlainTextType, "Confirm", false, false),
+		CallbackID: "delete_job_post",
 	}
 }
 
