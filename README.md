@@ -15,7 +15,14 @@ go get -u github.com/bcneng/candebot
 ## Usage
 
 ```
-CANDEBOT_BOT_USER_TOKEN=xxx candebot
+
+CANDEBOT_BOT_USER_TOKEN=<slack-bot-user-token> \
+CANDEBOT_SIGNING_SECRET=<slack-app-signing-secret> \
+CANDEBOT_TWITTER_APIKEY=<twitter-api-key> \
+CANDEBOT_TWITTER_APIKEYSECRET=<twitter-api-key-secret> \
+CANDEBOT_TWITTER_CONTEST_TOKEN=<twitter-api-token> \
+CANDEBOT_USER_TOKEN=<slack-user-token> \ 
+candebot
 ```
 
 You can get your bot user token by creating a Slack app via https://api.slack.com/apps.
