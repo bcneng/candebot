@@ -35,8 +35,10 @@ func TestFilter(t *testing.T) {
 			output := Filter(test.input, extraFilters...)
 			if test.filtered {
 				require.NotEmpty(t, output, output)
+				require.NotEmpty(t, output.Filter)
+				require.NotEmpty(t, output.Reply)
 			} else {
-				require.Empty(t, output, output)
+				require.Nil(t, output, output)
 			}
 		})
 	}

@@ -7,12 +7,13 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/alecthomas/kong"
 	"github.com/bcneng/candebot/cmd"
 	"github.com/bcneng/candebot/inclusion"
 	"github.com/bcneng/candebot/slackx"
-	"github.com/slack-go/slack"
+	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"github.com/slack-go/slack/slackevents"
 )
 
@@ -55,7 +56,7 @@ func eventsAPIHandler(botCtx cmd.BotContext) http.HandlerFunc {
 
 				if event.SubType == "" || event.SubType == "message_replied" {
 					// behaviors that apply to all messages posted by users both in channels or threads
-					go checkLanguage(botCtx.Client, event)
+					go checkLanguage(botCtx, event)
 				}
 
 				if event.ChannelType == "im" {
@@ -123,8 +124,24 @@ func botCommand(botCtx cmd.BotContext, slackCtx cmd.SlackContext) {
 	}
 }
 
-func checkLanguage(botClient *slack.Client, event *slackevents.MessageEvent) {
-	if reply := inclusion.Filter(event.Text); reply != "" {
-		_ = slackx.SendEphemeral(botClient, event.ThreadTimeStamp, event.Channel, event.User, reply)
+func checkLanguage(botCtx cmd.BotContext, event *slackevents.MessageEvent) {
+	filter := inclusion.Filter(event.Text)
+	if filter == nil {
+		return
 	}
+
+	// Send reply as Slack ephemeral message
+	_ = slackx.SendEphemeral(botCtx.Client, event.ThreadTimeStamp, event.Channel, event.User, filter.Reply)
+
+	// Sending metrics
+	botCtx.Harvester.RecordMetric(telemetry.Count{
+		Name: "candebot.inclusion.message_filtered",
+		Attributes: map[string]interface{}{
+			"channel":          event.Channel,
+			"filter":           filter.Filter,
+			"candebot_version": botCtx.Version,
+		},
+		Value:     1,
+		Timestamp: time.Now(),
+	})
 }

@@ -61,7 +61,12 @@ var inclusiveFilters = []InclusiveFilter{
 	{Filter: "grandfathering", Reply: "Instead of *grandfathering*, perhaps you mean *exempting*? You can read more information in https://www.selfdefined.app/definitions/grandfathering/ ... *[Please consider editing your message so it's more inclusive]*"},
 }
 
-func Filter(input string, extraFilters ...InclusiveFilter) string {
+type FilteredText struct {
+	StopWord string
+	Reply    string
+}
+
+func Filter(input string, extraFilters ...InclusiveFilter) *InclusiveFilter {
 	// Removing accents and others before matching
 	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
 	text, _, _ := transform.String(t, strings.ToLower(input))
@@ -78,9 +83,10 @@ func Filter(input string, extraFilters ...InclusiveFilter) string {
 		}
 
 		if word.regex.MatchString(text) {
-			return word.Reply + conductLinks
+			word.Reply += conductLinks
+			return &word
 		}
 	}
 
-	return ""
+	return nil
 }

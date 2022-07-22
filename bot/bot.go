@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/bcneng/candebot/cmd"
+	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"github.com/slack-go/slack"
 )
 
@@ -49,6 +50,16 @@ func WakeUp(_ context.Context, conf Config) error {
 		TwitterCredentials:  conf.Twitter,
 		TwitterContestToken: conf.TwitterContestToken,
 		Version:             conf.Version,
+	}
+
+	if conf.NewRelicLicenseKey != "" {
+		h, err := telemetry.NewHarvester(telemetry.ConfigAPIKey(conf.NewRelicLicenseKey))
+		if err != nil {
+			return err
+		}
+		cliContext.Harvester = h
+	} else {
+		log.Println("[WARN] No metrics will be sent to NR as there is no License Key configured")
 	}
 
 	return serve(conf, cliContext)

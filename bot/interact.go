@@ -9,10 +9,11 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-
-	"github.com/bcneng/candebot/slackx"
+	"time"
 
 	"github.com/bcneng/candebot/cmd"
+	"github.com/bcneng/candebot/slackx"
+	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"github.com/slack-go/slack"
 )
 
@@ -95,6 +96,16 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 				_ = json.NewEncoder(w).Encode(slack.NewClearViewSubmissionResponse())
 
 				log.Println("Job post message deleted successfully", message.View.PrivateMetadata)
+
+				// Sending metrics
+				botContext.Harvester.RecordMetric(telemetry.Count{
+					Name: "candebot.job.deleted",
+					Attributes: map[string]interface{}{
+						"candebot_version": botContext.Version,
+					},
+					Value:     1,
+					Timestamp: time.Now(),
+				})
 			}
 
 		case slack.InteractionTypeDialogSubmission:
@@ -107,6 +118,17 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 					sanitizeReportState(message.State),
 				)
 				_ = slackx.Send(botContext.Client, "", channelStaff, msg, false)
+
+				// Sending metrics
+				botContext.Harvester.RecordMetric(telemetry.Count{
+					Name: "candebot.report_message.received",
+					Attributes: map[string]interface{}{
+						"scale":            message.Submission["scale"],
+						"candebot_version": botContext.Version,
+					},
+					Value:     1,
+					Timestamp: time.Now(),
+				})
 			case "job_submission":
 				messageJobLink := message.Submission["job_link"]
 				messageMaxSalary := message.Submission["max_salary"]
@@ -147,6 +169,25 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 					message.User.Name,
 				)
 				_ = slackx.Send(botContext.Client, "", channelHiringJobBoard, msg, false, slack.MsgOptionDisableLinkUnfurl())
+
+				// Sending metrics
+				botContext.Harvester.RecordMetric(telemetry.Count{
+					Name: "candebot.job.published",
+					Attributes: map[string]interface{}{
+						"role":             strings.ToLower(message.Submission["role"]),
+						"company":          strings.ToLower(message.Submission["company"]),
+						"minSalary":        minSalary,
+						"maxSalary":        maxSalary,
+						"currency":         message.Submission["currency"],
+						"location":         message.Submission["location"],
+						"publisher":        message.Submission["publisher"],
+						"job_link":         message.Submission["job_link"],
+						"user":             message.User.Name,
+						"candebot_version": botContext.Version,
+					},
+					Value:     1,
+					Timestamp: time.Now(),
+				})
 			}
 		case slack.InteractionTypeShortcut:
 			switch message.CallbackID {

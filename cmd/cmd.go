@@ -6,6 +6,7 @@ import (
 
 	"github.com/alecthomas/kong"
 	"github.com/bcneng/twitter-contest/twitter"
+	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"github.com/slack-go/slack"
 )
 
@@ -25,6 +26,7 @@ type BotContext struct {
 	Version             string
 	TwitterCredentials  twitter.Credentials
 	TwitterContestToken string
+	Harvester           *telemetry.Harvester
 
 	CLI bool // true if runs from CLI
 

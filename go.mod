@@ -6,6 +6,7 @@ require (
 	github.com/alecthomas/kong v0.6.1
 	github.com/bcneng/twitter-contest v0.0.0-20210125112923-eb139f65d81c
 	github.com/kelseyhightower/envconfig v1.4.0
+	github.com/newrelic/newrelic-telemetry-sdk-go v0.8.1
 	github.com/slack-go/slack v0.10.2
 	github.com/stretchr/testify v1.8.0
 	golang.org/x/text v0.3.6
