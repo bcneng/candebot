@@ -9,7 +9,7 @@ type Config struct {
 	UserToken           string              `required:"true" split_words:"true"`
 	Twitter             twitter.Credentials `required:"true"`
 	TwitterContestToken string              `required:"true" split_words:"true"`
-	NewRelicLicenseKey  string              `split_words:"true"` // NEW_RELIC_LICENSE_KEY
+	NewRelicLicenseKey  string              `split_words:"true"`
 	Debug               bool
 	Version             string
 }
