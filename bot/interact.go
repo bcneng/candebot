@@ -15,6 +15,8 @@ import (
 	"github.com/bcneng/candebot/slackx"
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"github.com/slack-go/slack"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
@@ -99,7 +101,7 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 
 				// Sending metrics
 				botContext.Harvester.RecordMetric(telemetry.Count{
-					Name: "candebot.job.deleted",
+					Name: "candebot.job_post.deleted",
 					Attributes: map[string]interface{}{
 						"candebot_version": botContext.Version,
 					},
@@ -172,10 +174,10 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 
 				// Sending metrics
 				botContext.Harvester.RecordMetric(telemetry.Count{
-					Name: "candebot.job.published",
+					Name: "candebot.job_post.published",
 					Attributes: map[string]interface{}{
-						"role":             strings.ToLower(message.Submission["role"]),
-						"company":          strings.ToLower(message.Submission["company"]),
+						"role":             cases.Title(language.English).String(strings.ToLower(message.Submission["role"])),
+						"company":          cases.Title(language.English).String(strings.ToLower(message.Submission["company"])),
 						"minSalary":        minSalary,
 						"maxSalary":        maxSalary,
 						"currency":         message.Submission["currency"],
