@@ -8,7 +8,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/newrelic/newrelic-telemetry-sdk-go v0.8.1
 	github.com/slack-go/slack v0.10.2
-	github.com/stretchr/testify v1.8.0
+	github.com/stretchr/testify v1.8.1
 	golang.org/x/text v0.4.0
 )
 
