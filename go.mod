@@ -3,7 +3,7 @@ module github.com/bcneng/candebot
 go 1.17
 
 require (
-	github.com/alecthomas/kong v0.7.0
+	github.com/alecthomas/kong v0.7.1
 	github.com/bcneng/twitter-contest v0.0.0-20210125112923-eb139f65d81c
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/newrelic/newrelic-telemetry-sdk-go v0.8.1
