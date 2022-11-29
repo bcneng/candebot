@@ -56,25 +56,22 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 			case "delete_job_post":
 				modal := generateDeleteJobPostModal()
 				modal.PrivateMetadata = fmt.Sprintf("%s|%s|%s", message.Channel.ID, message.Message.Text, message.MessageTs) // persist the message channel, text, and ts across submission
-
 				if resp, err := botContext.Client.OpenView(message.TriggerID, modal); err != nil {
-					log.Println(err)
-					log.Println(strings.Join(resp.ResponseMetadata.Messages, "\n"))
-					log.Println(strings.Join(resp.ResponseMetadata.Warnings, "\n"))
+					logModalError(err, resp)
 				}
 			case "delete_thread":
 				if !botContext.IsStaff(message.User.ID) {
-					log.Println("this action is only allowed to Staff members")
+					if resp, err := botContext.Client.OpenView(message.TriggerID, userNotAllowedModal()); err != nil {
+						logModalError(err, resp)
+					}
+					log.Printf("The user @%s (%s) is trying to execute the message action `delete_thread` and it doesn't have permissions", message.User.Name, message.User.ID)
 					break
 				}
 
 				modal := generateDeleteThreadModal()
 				modal.PrivateMetadata = fmt.Sprintf("%s|%s", message.Channel.ID, message.MessageTs) // persist the message channel and ts across submission
-
 				if resp, err := botContext.Client.OpenView(message.TriggerID, modal); err != nil {
-					log.Println(err)
-					log.Println(strings.Join(resp.ResponseMetadata.Messages, "\n"))
-					log.Println(strings.Join(resp.ResponseMetadata.Warnings, "\n"))
+					logModalError(err, resp)
 				}
 
 			}
@@ -161,11 +158,11 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 				}
 
 				go func() {
-					ok := deleteThreadMessages(botContext, threadMessages, channelID, messageTS)
+					deleted, ok := deleteThreadMessages(botContext, threadMessages, channelID)
 					if !ok {
 						log.Println("Thread deletion finished with errors (see logs)", message.View.PrivateMetadata)
 					} else {
-						log.Println("Thread deletion finished successfully", message.View.PrivateMetadata)
+						log.Printf("Thread deletion finished successfully, %d messages where removed, including parent message: %s", deleted, message.View.PrivateMetadata)
 					}
 
 					//Sending metrics
@@ -174,6 +171,7 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 						Attributes: map[string]interface{}{
 							"candebot_version": botContext.Version,
 							"errored":          !ok,
+							"deleted":          deleted,
 						},
 						Value:     1,
 						Timestamp: time.Now(),
@@ -275,14 +273,16 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 	}
 }
 
-func deleteThreadMessages(botContext cmd.BotContext, threadMessages []slack.Message, channelID, parentMessageTS string) bool {
-	var errored bool
-	for _, threadMessage := range threadMessages {
-		if threadMessage.Timestamp == parentMessageTS {
-			// Do not delete the parent message
-			continue
-		}
+func logModalError(err error, resp *slack.ViewResponse) {
+	log.Println(err)
+	log.Println(strings.Join(resp.ResponseMetadata.Messages, "\n"))
+	log.Println(strings.Join(resp.ResponseMetadata.Warnings, "\n"))
+}
 
+func deleteThreadMessages(botContext cmd.BotContext, threadMessages []slack.Message, channelID string) (int, bool) {
+	var errored bool
+	var deleted int
+	for _, threadMessage := range threadMessages {
 		deleteMessageErr := retry.Do(
 			func() error {
 				_, _, err := botContext.AdminClient.DeleteMessage(channelID, threadMessage.Timestamp)
@@ -298,6 +298,7 @@ func deleteThreadMessages(botContext cmd.BotContext, threadMessages []slack.Mess
 					return retry.Unrecoverable(err) // Only retry if rate limited
 				}
 
+				deleted++
 				return nil
 			},
 			retry.Attempts(0), // unlimited unless the error is not rate limit reached
@@ -312,7 +313,7 @@ func deleteThreadMessages(botContext cmd.BotContext, threadMessages []slack.Mess
 		}
 
 	}
-	return !errored
+	return deleted, !errored
 }
 
 // validateSubmission runs validations over the submitted salary range and job offer link. Produces a list of errors if any.
@@ -474,6 +475,20 @@ func generateDeleteThreadModal() slack.ModalViewRequest {
 		}},
 		Submit:     slack.NewTextBlockObject(slack.PlainTextType, "Confirm", false, false),
 		CallbackID: "delete_thread",
+	}
+}
+
+func userNotAllowedModal() slack.ModalViewRequest {
+	return slack.ModalViewRequest{
+		Type:  slack.VTModal,
+		Title: slack.NewTextBlockObject(slack.PlainTextType, "Not allowed", false, false),
+		Blocks: slack.Blocks{BlockSet: []slack.Block{
+			slack.NewSectionBlock(
+				slack.NewTextBlockObject("plain_text", "You are not allowed to perform this action.", false, false),
+				nil,
+				nil,
+			),
+		}},
 	}
 }
 
