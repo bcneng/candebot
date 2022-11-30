@@ -1,0 +1,19 @@
+[bot]
+id = "BJNQBKGJF"
+userId = "UJNQU8N5Q"
+name = "Candebot"
+
+[staff]
+members = [
+    "UHHJ97JBF", # <@cristina_verdi>
+    "U2Y6QQHST", # <@gonzaloserrano>
+    "U3256HZH9", # <@mavi>
+    "U2XDM2L0G", # <@ronnylt>
+    "U36H6F3CN", # <@sdecandelario>
+    "U2WPLA0KA", # <@smoya>
+]
+
+[channels]
+reports = "G983W7L9F" # staff
+playground = "CK32YCX5M" # candebot_testing
+jobs = "C30CUFT2B" # hiring-job-board

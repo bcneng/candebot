@@ -4,16 +4,17 @@ go 1.17
 
 require (
 	github.com/alecthomas/kong v0.7.1
+	github.com/avast/retry-go/v4 v4.3.1
 	github.com/bcneng/twitter-contest v0.0.0-20210125112923-eb139f65d81c
-	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/newrelic/newrelic-telemetry-sdk-go v0.8.1
+	github.com/pelletier/go-toml/v2 v2.0.6
+	github.com/sethvargo/go-envconfig v0.8.2
 	github.com/slack-go/slack v0.10.2
 	github.com/stretchr/testify v1.8.1
 	golang.org/x/text v0.4.0
 )
 
 require (
-	github.com/avast/retry-go/v4 v4.3.1 // indirect
 	github.com/cenkalti/backoff v2.1.1+incompatible // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dghubble/go-twitter v0.0.0-20201011215211-4b180d0cc78d // indirect
@@ -23,7 +24,7 @@ require (
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.7.0 // indirect
-	golang.org/x/net v0.0.0-20200822124328-c89045814202 // indirect
+	golang.org/x/net v0.0.0-20220722155237-a158d28d115b // indirect
 	golang.org/x/oauth2 v0.0.0-20210113205817-d3ed898aa8a3 // indirect
 	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
 	google.golang.org/appengine v1.6.6 // indirect

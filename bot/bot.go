@@ -39,15 +39,15 @@ var staff = []string{
 
 // WakeUp wakes up Candebot.
 func WakeUp(_ context.Context, conf Config) error {
-	client := slack.New(conf.BotUserToken)
-	adminClient := slack.New(conf.UserToken)
+	client := slack.New(conf.Bot.UserToken)
+	adminClient := slack.New(conf.Bot.AdminToken)
 
 	cliContext := cmd.BotContext{
 		Client:              client,
 		AdminClient:         adminClient,
-		SigningSecret:       conf.SigningSecret,
+		SigningSecret:       conf.Bot.Server.SigningSecret,
 		StaffMembers:        staff,
-		TwitterCredentials:  conf.Twitter,
+		TwitterCredentials:  conf.Twitter.Credentials,
 		TwitterContestToken: conf.TwitterContestToken,
 		Version:             conf.Version,
 	}
@@ -99,9 +99,9 @@ func serve(conf Config, cliContext cmd.BotContext) error {
 	http.HandleFunc("/events", eventsAPIHandler(cliContext))
 	http.HandleFunc("/interact", interactAPIHandler(cliContext))
 
-	log.Println("[INFO] Slash server listening on port", conf.Port)
+	log.Println("[INFO] Slash server listening on port", conf.Bot.Server.Port)
 
-	return http.ListenAndServe(fmt.Sprintf(":%d", conf.Port), nil)
+	return http.ListenAndServe(fmt.Sprintf(":%d", conf.Bot.Server.Port), nil)
 }
 
 func writeSlashResponse(w http.ResponseWriter, msg *slack.Msg) {

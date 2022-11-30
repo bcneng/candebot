@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/bcneng/candebot/bot"
-	"github.com/kelseyhightower/envconfig"
 )
 
 // Version is the candebot version. Usually the git commit hash. Passed during building.
@@ -17,14 +16,16 @@ var Version = "unknown"
 
 func main() {
 	var conf bot.Config
-	err := envconfig.Process("candebot", &conf)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
 	conf.Version = Version
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	// TODO Prefix and filepath from argument
+	err := bot.LoadConfigFromFileAndEnvVars(ctx, "CANDEBOT_", ".candebot.toml", &conf)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	ensureInterruptionsGracefullyShutdown(cancel)
 	if err := bot.WakeUp(ctx, conf); err != nil && err != context.Canceled {
