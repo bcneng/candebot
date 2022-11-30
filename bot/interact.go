@@ -3,7 +3,7 @@ package bot
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/avast/retry-go/v4"
 	"github.com/bcneng/candebot/cmd"
 	"github.com/bcneng/candebot/slackx"
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
@@ -21,7 +22,7 @@ import (
 
 func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		body, err := ioutil.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Printf("Fail to read request body: %v\n", err)
@@ -50,17 +51,29 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 				dialog := generateReportMessageDialog()
 				dialog.State = slackx.LinkToMessage(message.Channel.ID, message.MessageTs) // persist the message link across submission
 				if err := botContext.Client.OpenDialog(message.TriggerID, dialog); err != nil {
-					log.Println(err.Error())
+					log.Println(err)
 				}
 			case "delete_job_post":
 				modal := generateDeleteJobPostModal()
 				modal.PrivateMetadata = fmt.Sprintf("%s|%s|%s", message.Channel.ID, message.Message.Text, message.MessageTs) // persist the message channel, text, and ts across submission
-
 				if resp, err := botContext.Client.OpenView(message.TriggerID, modal); err != nil {
-					log.Println(err.Error())
-					log.Println(strings.Join(resp.ResponseMetadata.Messages, "\n"))
-					log.Println(strings.Join(resp.ResponseMetadata.Warnings, "\n"))
+					logModalError(err, resp)
 				}
+			case "delete_thread":
+				if !botContext.IsStaff(message.User.ID) {
+					if resp, err := botContext.Client.OpenView(message.TriggerID, userNotAllowedModal()); err != nil {
+						logModalError(err, resp)
+					}
+					log.Printf("The user @%s (%s) is trying to execute the message action `delete_thread` and it doesn't have permissions", message.User.Name, message.User.ID)
+					break
+				}
+
+				modal := generateDeleteThreadModal()
+				modal.PrivateMetadata = fmt.Sprintf("%s|%s", message.Channel.ID, message.MessageTs) // persist the message channel and ts across submission
+				if resp, err := botContext.Client.OpenView(message.TriggerID, modal); err != nil {
+					logModalError(err, resp)
+				}
+
 			}
 		case slack.InteractionTypeViewSubmission:
 			switch message.View.CallbackID {
@@ -89,8 +102,8 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 					return
 				}
 
-				if _, _, err := botContext.Client.DeleteMessage(channelID, messageTS); err != nil {
-					log.Println(err.Error())
+				if _, _, err := botContext.AdminClient.DeleteMessage(channelID, messageTS); err != nil {
+					log.Println(err)
 					w.WriteHeader(http.StatusInternalServerError)
 					return
 				}
@@ -108,6 +121,64 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 					Value:     1,
 					Timestamp: time.Now(),
 				})
+			case "delete_thread":
+				// We early set the Content-Type header for any response. This is important.
+				w.Header().Set("Content-Type", "application/json")
+
+				if !botContext.IsStaff(message.User.ID) {
+					_ = json.NewEncoder(w).Encode(
+						slack.NewErrorsViewSubmissionResponse(map[string]string{"input_block": "You are not allowed to delete threads. Please contact any Staff member."}),
+					)
+					return
+				}
+
+				messageData := strings.Split(strings.Trim(message.View.PrivateMetadata, `"`), "|") // For some reason, slack adds an extra double quote
+				channelID := messageData[0]
+				messageTS := messageData[1]
+
+				repliesParams := &slack.GetConversationRepliesParameters{
+					ChannelID: channelID,
+					Timestamp: messageTS,
+				}
+
+				var threadMessages []slack.Message
+				var cursor = ""
+				var more = true
+
+				for more {
+					repliesParams.Cursor = cursor
+					var replies []slack.Message
+					replies, more, cursor, err = botContext.Client.GetConversationReplies(repliesParams)
+					if err != nil {
+						_ = json.NewEncoder(w).Encode(slack.NewErrorsViewSubmissionResponse(map[string]string{"input_block": err.Error()}))
+						return
+					}
+
+					threadMessages = append(threadMessages, replies...)
+				}
+
+				go func() {
+					deleted, ok := deleteThreadMessages(botContext, threadMessages, channelID)
+					if !ok {
+						log.Println("Thread deletion finished with errors (see logs)", message.View.PrivateMetadata)
+					} else {
+						log.Printf("Thread deletion finished successfully, %d messages where removed, including parent message: %s", deleted, message.View.PrivateMetadata)
+					}
+
+					//Sending metrics
+					botContext.Harvester.RecordMetric(telemetry.Count{
+						Name: "candebot.thread.deleted",
+						Attributes: map[string]interface{}{
+							"candebot_version": botContext.Version,
+							"errored":          !ok,
+							"deleted":          deleted,
+						},
+						Value:     1,
+						Timestamp: time.Now(),
+					})
+				}()
+
+				_ = json.NewEncoder(w).Encode(slack.NewClearViewSubmissionResponse())
 			}
 
 		case slack.InteractionTypeDialogSubmission:
@@ -195,20 +266,63 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 			switch message.CallbackID {
 			case "submit_job":
 				if err := botContext.Client.OpenDialog(message.TriggerID, generateSubmitJobFormDialog()); err != nil {
-					log.Println(err.Error())
+					log.Println(err)
 				}
 			}
 		}
 	}
 }
 
+func logModalError(err error, resp *slack.ViewResponse) {
+	log.Println(err)
+	log.Println(strings.Join(resp.ResponseMetadata.Messages, "\n"))
+	log.Println(strings.Join(resp.ResponseMetadata.Warnings, "\n"))
+}
+
+func deleteThreadMessages(botContext cmd.BotContext, threadMessages []slack.Message, channelID string) (int, bool) {
+	var errored bool
+	var deleted int
+	for _, threadMessage := range threadMessages {
+		deleteMessageErr := retry.Do(
+			func() error {
+				_, _, err := botContext.AdminClient.DeleteMessage(channelID, threadMessage.Timestamp)
+				if err != nil {
+					switch actualErr := err.(type) {
+					case *slack.RateLimitedError:
+						log.Printf("Rate limit reached (Slack Web API Rate Limit: Tier 3. 50+ per minute). Waiting %s for making next request...", actualErr.RetryAfter)
+						time.Sleep(actualErr.RetryAfter)
+
+						return err
+					}
+
+					return retry.Unrecoverable(err) // Only retry if rate limited
+				}
+
+				deleted++
+				return nil
+			},
+			retry.Attempts(0), // unlimited unless the error is not rate limit reached
+			retry.OnRetry(func(n uint, err error) {
+				log.Printf("Retrying thread message %s deletion because of err: %s", threadMessage.Timestamp, err)
+			}),
+		)
+
+		if deleteMessageErr != nil {
+			errored = true
+			log.Printf("Thread message %s deletion errored: %s", threadMessage.Timestamp, deleteMessageErr)
+		}
+
+	}
+	return deleted, !errored
+}
+
 // validateSubmission runs validations over the submitted salary range and job offer link. Produces a list of errors if any.
 //
 // Arguments are the strings as read from the submissions (no previous transform/parsing/filter)
 // Returns:
-//  - the parsed max salary as int
-//  - the parsed min salary as int, or -1 if the field was empty (it's an optional field)
-//  - a map of field name to error message
+//   - the parsed max salary as int
+//   - the parsed min salary as int, or -1 if the field was empty (it's an optional field)
+//   - a map of field name to error message
 func validateSubmission(messageJobLink, messageMaxSalary, messageMinSalary string) (int, int, map[string]string) {
 
 	validationErrors := make(map[string]string)
@@ -342,6 +456,39 @@ func generateDeleteJobPostModal() slack.ModalViewRequest {
 		}},
 		Submit:     slack.NewTextBlockObject(slack.PlainTextType, "Confirm", false, false),
 		CallbackID: "delete_job_post",
+	}
+}
+
+func generateDeleteThreadModal() slack.ModalViewRequest {
+	checkBoxOptionText := slack.NewTextBlockObject("plain_text", "I am sure I want to delete the thread", false, false)
+	checkBoxDescriptionText := slack.NewTextBlockObject("plain_text", "By selecting this, you confirm you understand that whole thread is going to be deleted permanently", false, false)
+	checkbox := slack.NewCheckboxGroupsBlockElement("some_action", slack.NewOptionBlockObject("confirmed", checkBoxOptionText, checkBoxDescriptionText))
+	block := slack.NewInputBlock("input_block", slack.NewTextBlockObject(slack.PlainTextType, " ", false, false), checkbox)
+	noticeBlock := slack.NewSectionBlock(slack.NewTextBlockObject(slack.MarkdownType, "Note that this could take some time due to <https://api.slack.com/docs/rate-limits|Slack Web API Rate Limit limitations: Tier 3. (50+ per minute)>. The execution will take place in a background process.", false, false), nil, nil)
+
+	return slack.ModalViewRequest{
+		Type:  slack.VTModal,
+		Title: slack.NewTextBlockObject(slack.PlainTextType, "Confirm deletion", false, false),
+		Blocks: slack.Blocks{BlockSet: []slack.Block{
+			block,
+			noticeBlock,
+		}},
+		Submit:     slack.NewTextBlockObject(slack.PlainTextType, "Confirm", false, false),
+		CallbackID: "delete_thread",
+	}
+}
+
+func userNotAllowedModal() slack.ModalViewRequest {
+	return slack.ModalViewRequest{
+		Type:  slack.VTModal,
+		Title: slack.NewTextBlockObject(slack.PlainTextType, "Not allowed", false, false),
+		Blocks: slack.Blocks{BlockSet: []slack.Block{
+			slack.NewSectionBlock(
+				slack.NewTextBlockObject("plain_text", "You are not allowed to perform this action.", false, false),
+				nil,
+				nil,
+			),
+		}},
 	}
 }
 

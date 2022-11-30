@@ -13,6 +13,7 @@ require (
 )
 
 require (
+	github.com/avast/retry-go/v4 v4.3.1 // indirect
 	github.com/cenkalti/backoff v2.1.1+incompatible // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dghubble/go-twitter v0.0.0-20201011215211-4b180d0cc78d // indirect
