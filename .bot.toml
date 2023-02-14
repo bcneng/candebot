@@ -13,7 +13,15 @@ members = [
     "U2WPLA0KA", # <@smoya>
 ]
 
+[links]
+coc = "https://bcneng.org/coc"
+netiquette = "https://bcneng.org/netiquette"
+
 [channels]
 reports = "G983W7L9F" # staff
 playground = "CK32YCX5M" # candebot_testing
 jobs = "C30CUFT2B" # hiring-job-board
+staff = "G983W7L9F" #staff
+
+[twitter]
+contestURL = "https://bcneng-twitter-contest.netlify.app/.netlify/functions/contest"

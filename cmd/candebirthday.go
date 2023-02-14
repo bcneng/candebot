@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/bcneng/candebot/bot"
 	"time"
 
 	"github.com/alecthomas/kong"
@@ -12,7 +13,7 @@ const sdecandelarioBirthday = "17/09/2019"
 
 type CandeBirthday struct{}
 
-func (c *CandeBirthday) Run(cliCtx *kong.Context, ctx BotContext, slackCtx SlackContext) error {
+func (c *CandeBirthday) Run(cliCtx *kong.Context, ctx bot.Context, slackCtx bot.SlackContext) error {
 	dob, _ := time.Parse("2/1/2006", sdecandelarioBirthday) // nolint: errcheck
 	d := calculateTimeUntilBirthday(dob)
 

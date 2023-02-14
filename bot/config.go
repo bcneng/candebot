@@ -53,8 +53,10 @@ type Config struct {
 	Bot                 ConfigBot      `env:",prefix=BOT_"`
 	Staff               ConfigStaff    `env:",prefix=STAFF_"`
 	Channels            ConfigChannels `env:",prefix=CHANNELS_"`
+	Links               ConfigLinks    `env:",prefix=LINKS_"`
 	Twitter             ConfigTwitter  `env:",prefix=TWITTER_"`
 	TwitterContestToken string         `env:"TWITTER_CONTEST_TOKEN"`
+	TwitterContestURL   string         `env:"TWITTER_CONTEST_URL"`
 	NewRelicLicenseKey  string         `env:"NEW_RELIC_LICENSE_KEY"`
 	Debug               bool           `env:"DEBUG"`
 	Version             string         `env:"VERSION"`
@@ -77,6 +79,12 @@ type ConfigChannels struct {
 	Reports    string `env:"REPORTS"`
 	Playground string `env:"PLAYGROUND"`
 	Jobs       string `env:"JOBS"`
+	Staff      string `env:"STAFF"`
+}
+
+type ConfigLinks struct {
+	COC        string `env:"COC"`
+	Netiquette string `env:"NETIQUETTE"`
 }
 
 type ConfigBotServer struct {

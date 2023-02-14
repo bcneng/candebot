@@ -2,60 +2,10 @@ package cmd
 
 import (
 	"log"
-	"net/http"
+	"strings"
 
 	"github.com/alecthomas/kong"
-	"github.com/bcneng/twitter-contest/twitter"
-	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
-	"github.com/slack-go/slack"
 )
-
-type SlackContext struct {
-	User            string
-	Channel         string
-	Text            string
-	Timestamp       string
-	ThreadTimestamp string
-}
-
-type BotContext struct {
-	Client              *slack.Client
-	AdminClient         *slack.Client
-	SigningSecret       string
-	StaffMembers        []string
-	Version             string
-	TwitterCredentials  twitter.Credentials
-	TwitterContestToken string
-	Harvester           *telemetry.Harvester
-
-	CLI bool // true if runs from CLI
-
-	staffLookupMap map[string]struct{}
-}
-
-func (c *BotContext) IsStaff(userID string) bool {
-	if c.staffLookupMap == nil {
-		c.staffLookupMap = make(map[string]struct{}, len(c.StaffMembers)) // It is fine to not lock.
-		for _, u := range c.StaffMembers {
-			c.staffLookupMap[u] = struct{}{}
-		}
-
-	}
-
-	_, ok := c.staffLookupMap[userID]
-
-	return ok
-}
-
-func (c *BotContext) VerifyRequest(r *http.Request, body []byte) error {
-	// Verify signing secret
-	sv, err := slack.NewSecretsVerifier(r.Header, c.SigningSecret)
-	if err != nil {
-		return err
-	}
-	_, _ = sv.Write(body)
-	return sv.Ensure()
-}
 
 type CLI struct {
 	Coc           Coc           `cmd:"" help:"Link to the Code Of Conduct of BcnEng"`
@@ -63,14 +13,14 @@ type CLI struct {
 	Staff         Staff         `cmd:"" help:"Info about the staff behind BcnEng"`
 	Version       Version       `cmd:"" help:"Info about the staff behind BcnEng"`
 	Candebirthday CandeBirthday `cmd:"" help:"Days until @sdecandelario birthday!"`
-	Echo          Echo          `cmd:"" help:"Sends a message as Candebot" placeholder:"echo #general Hi folks!"`
+	Echo          Echo          `cmd:"" help:"Sends a message from the bot user" placeholder:"echo #general Hi folks!"`
 	Contest       Contest       `cmd:"" help:"Runs a contest on Twitter"`
 	Help          Help          `cmd:""`
 }
 
-func NewCLI(args []string, options ...kong.Option) (*CLI, *kong.Context, error) {
+func NewCLI(name string, args []string, options ...kong.Option) (*CLI, *kong.Context, error) {
 	defaultOpts := []kong.Option{
-		kong.Name("candebot"),
+		kong.Name(strings.ToLower(name)),
 		kong.ConfigureHelp(kong.HelpOptions{
 			NoAppSummary: true,
 			Summary:      false,

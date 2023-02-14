@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"github.com/bcneng/candebot/bot"
 	"strings"
 
 	"github.com/bcneng/candebot/slackx"
@@ -13,7 +14,7 @@ type Echo struct {
 	Message string `arg:"" required:"false"`
 }
 
-func (e *Echo) Run(ctx BotContext, slackCtx SlackContext) error {
+func (e *Echo) Run(ctx bot.Context, slackCtx bot.SlackContext) error {
 	if !ctx.IsStaff(slackCtx.User) && !ctx.CLI {
 		return errors.New("this action is only allowed to Staff members")
 	}

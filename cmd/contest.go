@@ -5,13 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/bcneng/candebot/bot"
 	"io/ioutil"
 	"net/http"
 
 	"github.com/bcneng/candebot/slackx"
 )
-
-const TwitterContestURL = "https://bcneng-twitter-contest.netlify.app/.netlify/functions/contest"
 
 type Contest struct {
 	TweetID         string `arg:"" required:"false"`
@@ -19,17 +18,17 @@ type Contest struct {
 	AccountToFollow string `arg:"" optional:"false"`
 }
 
-func (c *Contest) Run(ctx BotContext, slackCtx SlackContext) error {
+func (c *Contest) Run(ctx bot.Context, slackCtx bot.SlackContext) error {
 	if !ctx.IsStaff(slackCtx.User) && !ctx.CLI {
 		return errors.New("this action is only allowed to Staff members")
 	}
 
-	r, _ := http.NewRequest(http.MethodGet, TwitterContestURL, nil)
-	r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", ctx.TwitterContestToken))
+	r, _ := http.NewRequest(http.MethodGet, ctx.Config.TwitterContestURL, nil)
+	r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", ctx.Config.TwitterContestToken))
 
 	q := r.URL.Query()
-	q.Add("api_key", ctx.TwitterCredentials.APIKey)
-	q.Add("api_key_secret", ctx.TwitterCredentials.APIKeySecret)
+	q.Add("api_key", ctx.Config.Twitter.Credentials.APIKey)
+	q.Add("api_key_secret", ctx.Config.Twitter.Credentials.APIKeySecret)
 	q.Add("tweet_id", c.TweetID)
 	q.Add("pick", c.Pick)
 	q.Add("account_to_follow", c.AccountToFollow)
