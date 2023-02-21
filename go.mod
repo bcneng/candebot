@@ -10,7 +10,7 @@ require (
 	github.com/newrelic/newrelic-telemetry-sdk-go v0.8.1
 	github.com/slack-go/slack v0.10.2
 	github.com/stretchr/testify v1.8.1
-	golang.org/x/text v0.6.0
+	golang.org/x/text v0.7.0
 )
 
 require (
