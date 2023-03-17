@@ -59,6 +59,8 @@ var inclusiveFilters = []InclusiveFilter{
 	{Filter: "cakewalk", Reply: "Instead of *cakewalk*, perhaps you mean *easy*?... *[Please consider editing your message so it's more inclusive]*"},
 	{Filter: "grandfathered in", Reply: "Instead of *grandfathered in*, perhaps you mean *exempting*? You can read more information in https://www.selfdefined.app/definitions/grandfathering/ ... *[Please consider editing your message so it's more inclusive]*"},
 	{Filter: "grandfathering", Reply: "Instead of *grandfathering*, perhaps you mean *exempting*? You can read more information in https://www.selfdefined.app/definitions/grandfathering/ ... *[Please consider editing your message so it's more inclusive]*"},
+	{Filter: "whitelist", Reply: "Instead of *whitelist*, perhaps you mean *allowlist*? You can read more information in https://www.linkedin.com/pulse/allowlist-blocklist-better-terms-everyone-lets-use-them-rob-black/ ... *[Please consider editing your message so it's more inclusive]*"},
+	{Filter: "blacklist", Reply: "Instead of *blacklist*, perhaps you mean *blocklist*? You can read more information in https://www.linkedin.com/pulse/allowlist-blocklist-better-terms-everyone-lets-use-them-rob-black/ ... *[Please consider editing your message so it's more inclusive]*"},
 }
 
 type FilteredText struct {
