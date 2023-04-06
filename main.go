@@ -66,7 +66,7 @@ func ensureInterruptionsGracefullyShutdown(cancel context.CancelFunc) {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 	go func() {
 		<-c
-		log.Println("Shutting down Candebot...")
+		log.Println("Shutting down the app")
 
 		cancel()
 		time.Sleep(time.Second)
