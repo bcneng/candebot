@@ -40,7 +40,7 @@ func LoadConfigFromBytes(data []byte, conf *Config) error {
 // LoadConfigFromFileAndEnvVars reads config and maps that into the given Config in the following order:
 // 1. Loads from Toml file.
 // 2. Loads from env vars.
-// Note: Values from env vars that were set by the TOML file will be overwritten.
+// Note: env var values will overwrite TOML file values.
 func LoadConfigFromFileAndEnvVars(ctx context.Context, envVarsPrefix, filepath string, conf *Config) error {
 	if err := LoadConfigFromFile(filepath, conf); err != nil {
 		return err
