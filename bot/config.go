@@ -37,7 +37,7 @@ func LoadConfigFromBytes(data []byte, conf *Config) error {
 	return toml.Unmarshal(data, conf)
 }
 
-// LoadConfigFromFileAndEnvVars reads config and mapts that into the given Config in the following order:
+// LoadConfigFromFileAndEnvVars reads config and maps that into the given Config in the following order:
 // 1. Loads from Toml file.
 // 2. Loads from env vars.
 // Note: Values from env vars that were set by the TOML file will be overwritten.
