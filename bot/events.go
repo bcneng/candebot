@@ -3,10 +3,11 @@ package bot
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/slack-go/slack/slackevents"
-	"gopkg.in/errgo.v2/fmt/errors"
 	"log"
 	"net/http"
+
+	"github.com/slack-go/slack/slackevents"
+	"gopkg.in/errgo.v2/fmt/errors"
 )
 
 // EventHandler handles a Slack event.

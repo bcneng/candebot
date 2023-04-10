@@ -1,10 +1,11 @@
 package bot
 
 import (
+	"net/http"
+
 	"github.com/asaskevich/EventBus"
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"github.com/slack-go/slack"
-	"net/http"
 )
 
 type Context struct {

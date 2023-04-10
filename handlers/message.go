@@ -3,6 +3,10 @@ package handlers
 import (
 	"bytes"
 	"fmt"
+	"log"
+	"strings"
+	"time"
+
 	"github.com/alecthomas/kong"
 	"github.com/bcneng/candebot/bot"
 	"github.com/bcneng/candebot/cmd"
@@ -10,9 +14,6 @@ import (
 	"github.com/bcneng/candebot/slackx"
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"github.com/slack-go/slack/slackevents"
-	"log"
-	"strings"
-	"time"
 )
 
 func MessageEventHandler(botCtx bot.Context, e slackevents.EventsAPIInnerEvent) error {

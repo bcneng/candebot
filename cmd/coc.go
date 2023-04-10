@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/alecthomas/kong"
 	"github.com/bcneng/candebot/bot"
 	"github.com/bcneng/candebot/slackx"

@@ -3,8 +3,9 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/bcneng/candebot/bot"
 	"strings"
+
+	"github.com/bcneng/candebot/bot"
 
 	"github.com/bcneng/candebot/slackx"
 )

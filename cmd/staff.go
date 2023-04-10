@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/bcneng/candebot/bot"
 	"math/rand"
 	"strings"
+
+	"github.com/bcneng/candebot/bot"
 
 	"github.com/alecthomas/kong"
 	"github.com/bcneng/candebot/slackx"

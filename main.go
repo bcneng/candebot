@@ -3,14 +3,15 @@ package main
 import (
 	"context"
 	"flag"
-	"github.com/asaskevich/EventBus"
-	"github.com/bcneng/candebot/handlers"
-	"github.com/slack-go/slack/slackevents"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/asaskevich/EventBus"
+	"github.com/bcneng/candebot/handlers"
+	"github.com/slack-go/slack/slackevents"
 
 	"github.com/bcneng/candebot/bot"
 )

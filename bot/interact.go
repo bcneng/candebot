@@ -367,7 +367,7 @@ func generateSubmitJobFormDialog() slack.Dialog {
 	companyInput.MaxLength = 20
 	companyInput.MinLength = 2
 
-	salaryCurrencyOptions := []slack.DialogSelectOption{{"EUR", "EUR"}, {"USD", "USD"}, {"GBP", "GBP"}, {"CHF", "CHF"}}
+	salaryCurrencyOptions := []slack.DialogSelectOption{{"EUR", "EUR"}, {"USD", "USD"}, {"GBP", "GBP"}, {"CHF", "CHF"}} // nolint: govet
 	salaryCurrencyInput := slack.NewStaticSelectDialogInput("currency", "Currency", salaryCurrencyOptions)
 	salaryCurrencyInput.Optional = false
 	salaryCurrencyInput.Hint = "Choose the salary currency from the dropdown"

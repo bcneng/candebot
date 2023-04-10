@@ -1,9 +1,10 @@
 package handlers
 
 import (
+	"log"
+
 	"github.com/bcneng/candebot/bot"
 	"github.com/slack-go/slack/slackevents"
-	"log"
 )
 
 func AppMentionEventHandler(botCtx bot.Context, e slackevents.EventsAPIInnerEvent) error {

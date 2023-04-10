@@ -3,12 +3,13 @@ package bot
 import (
 	"context"
 	"fmt"
-	"github.com/bcneng/twitter-contest/twitter"
-	"github.com/pelletier/go-toml/v2"
-	"github.com/sethvargo/go-envconfig"
 	"os"
 	"path"
 	"strings"
+
+	"github.com/bcneng/twitter-contest/twitter"
+	"github.com/pelletier/go-toml/v2"
+	"github.com/sethvargo/go-envconfig"
 )
 
 // LoadConfigFromFile reads a TOML file and unmarshals that config into the given Config struct.

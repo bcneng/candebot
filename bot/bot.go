@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/asaskevich/EventBus"
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/asaskevich/EventBus"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"github.com/slack-go/slack"

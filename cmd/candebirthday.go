@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/bcneng/candebot/bot"
 	"time"
+
+	"github.com/bcneng/candebot/bot"
 
 	"github.com/alecthomas/kong"
 	"github.com/bcneng/candebot/slackx"

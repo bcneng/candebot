@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/bcneng/candebot/bot"
-	"io/ioutil"
+	"io"
 	"net/http"
 
+	"github.com/bcneng/candebot/bot"
 	"github.com/bcneng/candebot/slackx"
 )
 
@@ -42,7 +42,7 @@ func (c *Contest) Run(ctx bot.Context, slackCtx bot.SlackContext) error {
 
 	defer resp.Body.Close()
 
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 	var pretty bytes.Buffer
 	if json.Indent(&pretty, body, "", "\t") != nil {
 		_ = slackx.SendEphemeral(ctx.Client, slackCtx.ThreadTimestamp, slackCtx.Channel, slackCtx.User, "error prettifying json")

@@ -1,13 +1,10 @@
 linters:
   enable:
-    - deadcode
     - errcheck
     - goconst
     - revive
     - ineffassign
-    - structcheck
     - unconvert
-    - varcheck
     - govet
     - goimports
     - prealloc
