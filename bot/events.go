@@ -4,26 +4,32 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/slack-go/slack/slackevents"
+	"gopkg.in/errgo.v2/fmt/errors"
 	"log"
 	"net/http"
 )
 
-// EventHandler handles a Slack event
+// EventHandler handles a Slack event.
 type EventHandler func(Context, slackevents.EventsAPIInnerEvent) error
 
 // CreateEventHandler creates a handler aware of errors (they are logged)
 func CreateEventHandler(t slackevents.EventsAPIType, f EventHandler) EventHandler {
 	return func(c Context, e slackevents.EventsAPIInnerEvent) error {
 		if slackevents.EventsAPIType(e.Type) != t {
-			log.Printf("unexpected event type. Should be %q, but was %q", t, e.Type)
+			err := errors.Newf("unexpected event type. Should be %q, but was %q", t, e.Type)
+			log.Println(err)
+			return err // returning, even though no one will handle it
 		}
 
 		if e.Data == nil {
-			log.Printf("event %q data is nil", t)
+			err := errors.Newf("event %q data is nil", t)
+			log.Println(err)
+			return err // returning, even though no one will handle it
 		}
 
 		if err := f(c, e); err != nil {
 			log.Println(err)
+			return err // returning, even though no one will handle it
 		}
 
 		return nil
