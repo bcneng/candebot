@@ -1,10 +1,10 @@
 module github.com/bcneng/candebot
 
-go 1.18
+go 1.20
 
 require (
 	github.com/alecthomas/kong v0.7.1
-    github.com/asaskevich/EventBus v0.0.0-20200907212545-49d423059eef
+	github.com/asaskevich/EventBus v0.0.0-20200907212545-49d423059eef
 	github.com/avast/retry-go/v4 v4.3.3
 	github.com/bcneng/twitter-contest v0.0.0-20210125112923-eb139f65d81c
 	github.com/newrelic/newrelic-telemetry-sdk-go v0.8.1
