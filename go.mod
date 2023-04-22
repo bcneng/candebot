@@ -13,7 +13,6 @@ require (
 	github.com/slack-go/slack v0.12.1
 	github.com/stretchr/testify v1.8.2
 	golang.org/x/text v0.8.0
-	gopkg.in/errgo.v2 v2.1.0
 )
 
 require (
