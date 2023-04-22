@@ -5,15 +5,17 @@ import (
 	"math/rand"
 	"strings"
 
+	"github.com/bcneng/candebot/bot"
+
 	"github.com/alecthomas/kong"
 	"github.com/bcneng/candebot/slackx"
 )
 
 type Staff struct{}
 
-func (c *Staff) Run(cliCtx *kong.Context, ctx BotContext, slackCtx SlackContext) error {
+func (c *Staff) Run(cliCtx *kong.Context, ctx bot.Context, slackCtx bot.SlackContext) error {
 	// Shuffle the order of members list
-	shuffledMembers := ctx.StaffMembers
+	shuffledMembers := ctx.Config.Staff.Members
 	rand.Shuffle(len(shuffledMembers), func(i, j int) {
 		shuffledMembers[i], shuffledMembers[j] = shuffledMembers[j], shuffledMembers[i]
 	})

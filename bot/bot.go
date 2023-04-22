@@ -6,54 +6,31 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
-	"github.com/bcneng/candebot/cmd"
+	"github.com/asaskevich/EventBus"
+
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"github.com/slack-go/slack"
 )
 
-const (
-	msgCOC        = "Please find our Code Of Conduct here: https://bcneng.org/coc"
-	msgNetiquette = "Please find our Netiquette here: https://bcneng.org/netiquette"
-)
-
-const (
-	channelHiringJobBoard  = "C30CUFT2B"
-	channelStaff           = "G983W7L9F"
-	channelCandebotTesting = "CK32YCX5M"
-)
-
-const (
-	candebotUser  = "UJNQU8N5Q"
-	candebotBotID = "BJNQBKGJF"
-)
-
-var staff = []string{
-	"U2Y6QQHST", //<@gonzaloserrano>
-	"U2WPLA0KA", //<@smoya>
-	"U3256HZH9", //<@mavi>
-	"U36H6F3CN", //<@sdecandelario>
-	"UHHJ97JBF", //<@cristina_verdi>
-	"U2XDM2L0G", //<@ronnylt>
-}
-
-// WakeUp wakes up Candebot.
-func WakeUp(_ context.Context, conf Config) error {
-	client := slack.New(conf.BotUserToken)
-	adminClient := slack.New(conf.UserToken)
-
-	cliContext := cmd.BotContext{
-		Client:              client,
-		AdminClient:         adminClient,
-		SigningSecret:       conf.SigningSecret,
-		StaffMembers:        staff,
-		TwitterCredentials:  conf.Twitter,
-		TwitterContestToken: conf.TwitterContestToken,
-		Version:             conf.Version,
+// WakeUp wakes up the bot.
+func WakeUp(_ context.Context, conf Config, bus EventBus.Bus) error {
+	cliContext := Context{
+		Client:      slack.New(conf.Bot.UserToken),
+		AdminClient: slack.New(conf.Bot.AdminToken),
+		Config:      conf,
+		Version:     conf.Version,
+		Bus:         bus,
 	}
 
 	if conf.NewRelicLicenseKey != "" {
-		h, err := telemetry.NewHarvester(telemetry.ConfigAPIKey(conf.NewRelicLicenseKey))
+		h, err := telemetry.NewHarvester(
+			telemetry.ConfigAPIKey(conf.NewRelicLicenseKey),
+			telemetry.ConfigCommonAttributes(map[string]interface{}{
+				fmt.Sprintf("%s_version", strings.ToLower(conf.Bot.Name)): conf.Version,
+			}),
+		)
 		if err != nil {
 			return err
 		}
@@ -65,7 +42,7 @@ func WakeUp(_ context.Context, conf Config) error {
 	return serve(conf, cliContext)
 }
 
-func serve(conf Config, cliContext cmd.BotContext) error {
+func serve(conf Config, cliContext Context) error {
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
@@ -85,10 +62,10 @@ func serve(conf Config, cliContext cmd.BotContext) error {
 
 		switch s.Command {
 		case "/coc":
-			msg := &slack.Msg{Text: msgCOC}
+			msg := &slack.Msg{Text: fmt.Sprintf("Please find our Code Of Conduct here: %s", conf.Links.COC)}
 			writeSlashResponse(w, msg)
 		case "/netiquette":
-			msg := &slack.Msg{Text: msgNetiquette}
+			msg := &slack.Msg{Text: fmt.Sprintf("Please find our Netiquette here: %s", conf.Links.Netiquette)}
 			writeSlashResponse(w, msg)
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
@@ -99,9 +76,9 @@ func serve(conf Config, cliContext cmd.BotContext) error {
 	http.HandleFunc("/events", eventsAPIHandler(cliContext))
 	http.HandleFunc("/interact", interactAPIHandler(cliContext))
 
-	log.Println("[INFO] Slash server listening on port", conf.Port)
+	log.Println("[INFO] Slash server listening on port", conf.Bot.Server.Port)
 
-	return http.ListenAndServe(fmt.Sprintf(":%d", conf.Port), nil)
+	return http.ListenAndServe(fmt.Sprintf(":%d", conf.Bot.Server.Port), nil)
 }
 
 func writeSlashResponse(w http.ResponseWriter, msg *slack.Msg) {

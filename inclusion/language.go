@@ -20,7 +20,7 @@ type InclusiveFilter struct {
 var conductLinks = "\nIn case of doubts please check our <https://bcneng.org/coc|Code of Conduct> and/or our <https://bcneng.org/netiquette|Netiquette> "
 
 var inclusiveFilters = []InclusiveFilter{
-	// When someone says, Candebot replies (privately).
+	// When someone says, the bot replies (privately).
 	// English: Based on https://github.com/randsleadershipslack/documents-and-resources/blob/master/RandsInclusiveLanguage.tsv
 	{Filter: "you guys", Reply: "Instead of *guys*, perhaps you mean *pals*? You can read more information about it at https://www.dictionary.com/e/you-guys/... *[Please consider editing your message so it's more inclusive]*"},
 	{Filter: "these guys", Reply: "Instead of *guys*, perhaps you mean *gang*? You can read more information about it at https://www.dictionary.com/e/you-guys/... *[Please consider editing your message so it's more inclusive]*"},

@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/avast/retry-go/v4"
-	"github.com/bcneng/candebot/cmd"
 	"github.com/bcneng/candebot/slackx"
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"github.com/slack-go/slack"
@@ -20,7 +19,7 @@ import (
 	"golang.org/x/text/language"
 )
 
-func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
+func interactAPIHandler(botContext Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -86,7 +85,7 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 				messageText := messageData[1]
 				messageTS := messageData[2]
 
-				if channelID != channelHiringJobBoard {
+				if channelID != botContext.Config.Channels.Jobs {
 					_ = json.NewEncoder(w).Encode(
 						slack.NewErrorsViewSubmissionResponse(map[string]string{"input_block": "The message is not a valid #hiring-job-board job post"}),
 					)
@@ -114,10 +113,7 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 
 				// Sending metrics
 				botContext.Harvester.RecordMetric(telemetry.Count{
-					Name: "candebot.job_post.deleted",
-					Attributes: map[string]interface{}{
-						"candebot_version": botContext.Version,
-					},
+					Name:      fmt.Sprintf("%s_%s", strings.ToLower(botContext.Config.Bot.Name), "job_post.deleted"),
 					Value:     1,
 					Timestamp: time.Now(),
 				})
@@ -167,11 +163,10 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 
 					//Sending metrics
 					botContext.Harvester.RecordMetric(telemetry.Count{
-						Name: "candebot.thread.deleted",
+						Name: fmt.Sprintf("%s.%s", strings.ToLower(botContext.Config.Bot.Name), "thread.deleted"),
 						Attributes: map[string]interface{}{
-							"candebot_version": botContext.Version,
-							"errored":          !ok,
-							"deleted":          deleted,
+							"errored": !ok,
+							"deleted": deleted,
 						},
 						Value:     1,
 						Timestamp: time.Now(),
@@ -190,14 +185,13 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 					message.Submission["scale"],
 					sanitizeReportState(message.State),
 				)
-				_ = slackx.Send(botContext.Client, "", channelStaff, msg, false)
+				_ = slackx.Send(botContext.Client, "", botContext.Config.Channels.Staff, msg, false)
 
 				// Sending metrics
 				botContext.Harvester.RecordMetric(telemetry.Count{
-					Name: "candebot.report_message.received",
+					Name: fmt.Sprintf("%s.%s", strings.ToLower(botContext.Config.Bot.Name), "report_message.received"),
 					Attributes: map[string]interface{}{
-						"scale":            message.Submission["scale"],
-						"candebot_version": botContext.Version,
+						"scale": message.Submission["scale"],
 					},
 					Value:     1,
 					Timestamp: time.Now(),
@@ -241,22 +235,21 @@ func interactAPIHandler(botContext cmd.BotContext) http.HandlerFunc {
 					message.Submission["job_link"],
 					message.User.Name,
 				)
-				_ = slackx.Send(botContext.Client, "", channelHiringJobBoard, msg, false, slack.MsgOptionDisableLinkUnfurl())
+				_ = slackx.Send(botContext.Client, "", botContext.Config.Channels.Jobs, msg, false, slack.MsgOptionDisableLinkUnfurl())
 
 				// Sending metrics
 				botContext.Harvester.RecordMetric(telemetry.Count{
-					Name: "candebot.job_post.published",
+					Name: fmt.Sprintf("%s.%s", strings.ToLower(botContext.Config.Bot.Name), "job_post.published"),
 					Attributes: map[string]interface{}{
-						"role":             cases.Title(language.English).String(strings.ToLower(message.Submission["role"])),
-						"company":          cases.Title(language.English).String(strings.ToLower(message.Submission["company"])),
-						"minSalary":        minSalary,
-						"maxSalary":        maxSalary,
-						"currency":         message.Submission["currency"],
-						"location":         message.Submission["location"],
-						"publisher":        message.Submission["publisher"],
-						"job_link":         message.Submission["job_link"],
-						"user":             message.User.Name,
-						"candebot_version": botContext.Version,
+						"role":      cases.Title(language.English).String(strings.ToLower(message.Submission["role"])),
+						"company":   cases.Title(language.English).String(strings.ToLower(message.Submission["company"])),
+						"minSalary": minSalary,
+						"maxSalary": maxSalary,
+						"currency":  message.Submission["currency"],
+						"location":  message.Submission["location"],
+						"publisher": message.Submission["publisher"],
+						"job_link":  message.Submission["job_link"],
+						"user":      message.User.Name,
 					},
 					Value:     1,
 					Timestamp: time.Now(),
@@ -279,7 +272,7 @@ func logModalError(err error, resp *slack.ViewResponse) {
 	log.Println(strings.Join(resp.ResponseMetadata.Warnings, "\n"))
 }
 
-func deleteThreadMessages(botContext cmd.BotContext, threadMessages []slack.Message, channelID string) (int, bool) {
+func deleteThreadMessages(botContext Context, threadMessages []slack.Message, channelID string) (int, bool) {
 	var errored bool
 	var deleted int
 	for _, threadMessage := range threadMessages {
@@ -374,7 +367,7 @@ func generateSubmitJobFormDialog() slack.Dialog {
 	companyInput.MaxLength = 20
 	companyInput.MinLength = 2
 
-	salaryCurrencyOptions := []slack.DialogSelectOption{{"EUR", "EUR"}, {"USD", "USD"}, {"GBP", "GBP"}, {"CHF", "CHF"}}
+	salaryCurrencyOptions := []slack.DialogSelectOption{{"EUR", "EUR"}, {"USD", "USD"}, {"GBP", "GBP"}, {"CHF", "CHF"}} // nolint: govet
 	salaryCurrencyInput := slack.NewStaticSelectDialogInput("currency", "Currency", salaryCurrencyOptions)
 	salaryCurrencyInput.Optional = false
 	salaryCurrencyInput.Hint = "Choose the salary currency from the dropdown"
@@ -446,7 +439,7 @@ func generateDeleteJobPostModal() slack.ModalViewRequest {
 	checkBoxOptionText := slack.NewTextBlockObject("plain_text", "I am sure I want to delete the selected job post", false, false)
 	checkBoxDescriptionText := slack.NewTextBlockObject("plain_text", "By selecting this, you confirm to be the author of the selected job post, and to understand that the content of it is going to be deleted permanently", false, false)
 	checkbox := slack.NewCheckboxGroupsBlockElement("some_action", slack.NewOptionBlockObject("confirmed", checkBoxOptionText, checkBoxDescriptionText))
-	block := slack.NewInputBlock("input_block", slack.NewTextBlockObject(slack.PlainTextType, " ", false, false), checkbox)
+	block := slack.NewInputBlock("input_block", slack.NewTextBlockObject(slack.PlainTextType, " ", false, false), nil, checkbox)
 
 	return slack.ModalViewRequest{
 		Type:  slack.VTModal,
@@ -463,7 +456,7 @@ func generateDeleteThreadModal() slack.ModalViewRequest {
 	checkBoxOptionText := slack.NewTextBlockObject("plain_text", "I am sure I want to delete the thread", false, false)
 	checkBoxDescriptionText := slack.NewTextBlockObject("plain_text", "By selecting this, you confirm you understand that whole thread is going to be deleted permanently", false, false)
 	checkbox := slack.NewCheckboxGroupsBlockElement("some_action", slack.NewOptionBlockObject("confirmed", checkBoxOptionText, checkBoxDescriptionText))
-	block := slack.NewInputBlock("input_block", slack.NewTextBlockObject(slack.PlainTextType, " ", false, false), checkbox)
+	block := slack.NewInputBlock("input_block", slack.NewTextBlockObject(slack.PlainTextType, " ", false, false), nil, checkbox)
 	noticeBlock := slack.NewSectionBlock(slack.NewTextBlockObject(slack.MarkdownType, "Note that this could take some time due to <https://api.slack.com/docs/rate-limits|Slack Web API Rate Limit limitations: Tier 3. (50+ per minute)>. The execution will take place in a background process.", false, false), nil, nil)
 
 	return slack.ModalViewRequest{
