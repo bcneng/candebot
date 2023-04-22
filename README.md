@@ -32,7 +32,7 @@ The following environment variables are needed in order to run the bot:
 - `BOT_BOT_ADMIN_TOKEN` - Slack user token with admin rights. Used to authenticate the bot user when performing admin actions.
 - `BOT_BOT_SERVER_SIGNING_SECRET` - Slack app signing secret. Used to verify the authenticity of the requests.
 
-There are more environment variables that can be set. Please, check [/bot/config.go](.bot/config.go).
+There are more environment variables that can be set. Please, check [/bot/config.go](bot/config.go).
 
 ### Toml File
 By default, `./.bot.toml` is used as the configuration file. If you want to change the path, you can set `-config <filepath>` flag when running the bot.
