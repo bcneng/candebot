@@ -12,7 +12,7 @@ require (
 	github.com/sethvargo/go-envconfig v0.8.2
 	github.com/slack-go/slack v0.12.1
 	github.com/stretchr/testify v1.8.2
-	golang.org/x/text v0.8.0
+	golang.org/x/text v0.9.0
 )
 
 require (
