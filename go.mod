@@ -8,7 +8,7 @@ require (
 	github.com/avast/retry-go/v4 v4.3.3
 	github.com/bcneng/twitter-contest v0.0.0-20210125112923-eb139f65d81c
 	github.com/newrelic/newrelic-telemetry-sdk-go v0.8.1
-	github.com/pelletier/go-toml/v2 v2.0.6
+	github.com/pelletier/go-toml/v2 v2.0.7
 	github.com/sethvargo/go-envconfig v0.8.2
 	github.com/slack-go/slack v0.12.1
 	github.com/stretchr/testify v1.8.2
