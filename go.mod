@@ -11,7 +11,7 @@ require (
 	github.com/pelletier/go-toml/v2 v2.0.8
 	github.com/sethvargo/go-envconfig v0.9.0
 	github.com/slack-go/slack v0.12.1
-	github.com/stretchr/testify v1.8.3
+	github.com/stretchr/testify v1.8.4
 	golang.org/x/text v0.9.0
 )
 
