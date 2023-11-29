@@ -21,6 +21,9 @@ func TestFilter(t *testing.T) {
 		{name: "bcneng is awesome is nice", input: "bcneng is awesome", filtered: false},
 		{name: "'buena localización' is right even though contains the word 'loca'", input: "buena localización", filtered: false},
 		{name: "'ladies' is not usually used in the right context", input: "hi ladies!", filtered: true},
+		{name: "'retrassada' should be 'Trastorn del desenvolupament intel·lectual'", input: "L'entrega ha sigut retrassada", filtered: true},
+		{name: "'noi' should be 'persona'", input: "És un noi simpàtic", filtered: true},
+		{name: "'noible' should be ok", input: "És una persona noible", filtered: false},
 	}
 
 	extraFilters := []InclusiveFilter{
