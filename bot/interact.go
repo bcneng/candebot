@@ -197,11 +197,14 @@ func interactAPIHandler(botContext Context) http.HandlerFunc {
 					Timestamp: time.Now(),
 				})
 			case "job_submission":
-				messageJobLink := message.Submission["job_link"]
-				messageMaxSalary := message.Submission["max_salary"]
-				messageMinSalary := message.Submission["min_salary"]
-
-				maxSalary, minSalary, validationErrors := validateSubmission(messageJobLink, messageMaxSalary, messageMinSalary)
+				link, maxSalary, minSalary, validationErrors := validateSubmission(message.Submission["job_link"], message.Submission["max_salary"], message.Submission["min_salary"])
+				if link != nil && link.Query().Get("utm_source") == "" {
+					// Add utm_source to the job link only if doesn't have one already
+					query := link.Query()
+					query.Add("utm_source", "bcneng")
+					link.RawQuery = query.Encode()
+					message.Submission["job_link"] = link.String()
+				}
 
 				if len(validationErrors) > 0 {
 					var errs []slack.DialogInputValidationError
@@ -295,7 +298,7 @@ func deleteThreadMessages(botContext Context, threadMessages []slack.Message, ch
 				return nil
 			},
 			retry.Attempts(0), // unlimited unless the error is not rate limit reached
-			retry.OnRetry(func(n uint, err error) {
+			retry.OnRetry(func(_ uint, err error) {
 				log.Printf("Retrying thread message %s deletion because of err: %s", threadMessage.Timestamp, err)
 			}),
 		)
@@ -313,13 +316,14 @@ func deleteThreadMessages(botContext Context, threadMessages []slack.Message, ch
 //
 // Arguments are the strings as read from the submissions (no previous transform/parsing/filter)
 // Returns:
+//   - the parsed URL. Nil if invalid
 //   - the parsed max salary as int
 //   - the parsed min salary as int, or -1 if the field was empty (it's an optional field)
 //   - a map of field name to error message
-func validateSubmission(messageJobLink, messageMaxSalary, messageMinSalary string) (int, int, map[string]string) {
-
+func validateSubmission(messageJobLink, messageMaxSalary, messageMinSalary string) (*url.URL, int, int, map[string]string) {
 	validationErrors := make(map[string]string)
-	if _, err := url.ParseRequestURI(messageJobLink); err != nil {
+	link, linkErr := url.ParseRequestURI(messageJobLink)
+	if linkErr != nil {
 		validationErrors["job_link"] = "The link to the job spec is invalid."
 	}
 
@@ -349,7 +353,7 @@ func validateSubmission(messageJobLink, messageMaxSalary, messageMinSalary strin
 			validationErrors["max_salary"] = "The min-max salary range is too wide. Salary is a relevant field; keep it meaningful to increase offer impact."
 		}
 	}
-	return maxSalary, minSalary, validationErrors
+	return link, maxSalary, minSalary, validationErrors
 }
 
 func generateSubmitJobFormDialog() slack.Dialog {
