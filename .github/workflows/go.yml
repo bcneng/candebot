@@ -1,40 +1,30 @@
 name: Go
-
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-
 jobs:
-
   build:
     name: Build
     runs-on: ubuntu-latest
     steps:
-
-    - name: Set up Go 1.x
-      uses: actions/setup-go@v4
-
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v3
-
-    - name: Build
-      run: make build
-
+    - uses: actions/checkout@v4
+    - uses: actions/setup-go@v5
     - name: Test
       run: make build test
-
+    - name: Build
+      run: make build
   check-lint:
     name: Lint checks
     runs-on: ubuntu-latest
     steps:
-
-    - name: Set up Go 1.x
-      uses: actions/setup-go@v4
-
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v3
-
-    - name: golangci-lint
-      uses: golangci/golangci-lint-action@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: false
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: v1.57.2
 
