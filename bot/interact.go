@@ -227,13 +227,14 @@ func interactAPIHandler(botContext Context) http.HandlerFunc {
 					minSalaryStr = ""
 				}
 
-				msg := fmt.Sprintf(":computer: %s @ %s - :moneybag: %s - %dK %s - :round_pushpin: %s - :lower_left_fountain_pen: %s - :link: <%s|Link> - :raised_hands: More info DM <@%s>",
+				msg := fmt.Sprintf(":computer: %s @ %s - :moneybag: %s - %dK %s - :round_pushpin: %s - :scroll: %s - :lower_left_fountain_pen: %s - :link: <%s|Link> - :raised_hands: More info DM <@%s>",
 					message.Submission["role"],
 					message.Submission["company"],
 					minSalaryStr,
 					maxSalary,
 					message.Submission["currency"],
 					message.Submission["location"],
+					message.Submission["contract_type"],
 					message.Submission["publisher"],
 					message.Submission["job_link"],
 					message.User.Name,
@@ -419,6 +420,7 @@ func generateSubmitJobFormDialog() slack.Dialog {
 	locationInput.Optional = false
 
 	publisherInput := buildPublisherInput()
+	contractTypeInput := buildContractTypeInput()
 
 	// Open a dialog
 	elements := []slack.DialogElement{
@@ -428,6 +430,7 @@ func generateSubmitJobFormDialog() slack.Dialog {
 		salaryMaxInput,
 		salaryCurrencyInput,
 		locationInput,
+		contractTypeInput,
 		linkInput,
 		publisherInput,
 	}
@@ -515,6 +518,28 @@ func generateReportMessageDialog() slack.Dialog {
 		SubmitLabel: "Report",
 		Elements:    elements,
 	}
+}
+
+func buildContractTypeInput() *slack.DialogInputSelect {
+	contractTypeOptions := []slack.DialogSelectOption{
+		{
+			Label: "Direct Employment",
+			Value: "Direct Employment",
+		},
+		{
+			Label: "Employee of Record",
+			Value: "Employee of Record",
+		},
+		{
+			Label: "Contractor",
+			Value: "Contractor",
+		},
+	}
+	contractType := slack.NewStaticSelectDialogInput("contract_type", "Contract Type", contractTypeOptions)
+	contractType.Optional = false
+	contractType.Hint = "Only long term positions allowed."
+
+	return contractType
 }
 
 func buildPublisherInput() *slack.DialogInputSelect {
