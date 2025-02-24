@@ -41,6 +41,42 @@ func MessageEventHandler(botCtx bot.Context, e slackevents.EventsAPIInnerEvent) 
 		return nil
 	}
 
+	// Check if the message is posted in a thread
+	if event.ThreadTimeStamp != "" && event.SubType == "" {
+		// Check if the thread is closed
+		isClosed, err := botCtx.DB.IsThreadClosed(event.Channel, event.ThreadTimeStamp)
+		if err != nil {
+			log.Printf("Error checking if thread is closed: %v", err)
+		} else if isClosed {
+			// Thread is closed, remove the message
+			_, _, err := botCtx.AdminClient.DeleteMessage(event.Channel, event.TimeStamp)
+			if err != nil {
+				log.Printf("Error deleting message in closed thread: %v", err)
+			}
+
+			// Get info about who closed the thread
+			closedBy, closedAt, err := botCtx.DB.GetClosedThreadInfo(event.Channel, event.ThreadTimeStamp)
+			if err != nil {
+				log.Printf("Error getting thread closed info: %v", err)
+			}
+
+			// Send ephemeral message to the user
+			var msg string
+			if closedBy != "" {
+				msg = fmt.Sprintf("This thread was closed by <@%s> on %s. No new messages are allowed.", 
+					closedBy, closedAt.Format("January 2, 2006 at 3:04 PM"))
+			} else {
+				msg = "This thread has been closed. No new messages are allowed."
+			}
+
+			if err := slackx.SendEphemeral(botCtx.Client, event.ThreadTimeStamp, event.Channel, event.User, msg); err != nil {
+				log.Printf("Error sending ephemeral message: %v", err)
+			}
+			
+			return nil
+		}
+	}
+
 	switch event.Channel {
 	case botCtx.Config.Channels.Jobs:
 		// Staff members are allowed to post messages

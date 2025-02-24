@@ -24,3 +24,6 @@ staff = "G983W7L9F" #staff
 
 [twitter]
 contestURL = "https://bcneng-twitter-contest.netlify.app/.netlify/functions/contest"
+
+[db]
+path = "./.candebot.db"

@@ -56,6 +56,7 @@ type Config struct {
 	Channels            ConfigChannels `env:",prefix=CHANNELS_"`
 	Links               ConfigLinks    `env:",prefix=LINKS_"`
 	Twitter             ConfigTwitter  `env:",prefix=TWITTER_"`
+	DB                  ConfigDB       `env:",prefix=DB_"`
 	TwitterContestToken string         `env:"TWITTER_CONTEST_TOKEN"`
 	TwitterContestURL   string         `env:"TWITTER_CONTEST_URL"`
 	NewRelicLicenseKey  string         `env:"NEW_RELIC_LICENSE_KEY"`
@@ -97,4 +98,8 @@ type ConfigTwitter struct {
 	twitter.Credentials
 	APIKey       string `env:"API_KEY"`
 	APIKeySecret string `env:"API_KEY_SECRET"`
+}
+
+type ConfigDB struct {
+	Path string `env:"PATH,default=./.candebot.db"`
 }

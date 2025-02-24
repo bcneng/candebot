@@ -72,7 +72,20 @@ func interactAPIHandler(botContext Context) http.HandlerFunc {
 				if resp, err := botContext.Client.OpenView(message.TriggerID, modal); err != nil {
 					logModalError(err, resp)
 				}
+			case "close_thread":
+				if !botContext.IsStaff(message.User.ID) {
+					if resp, err := botContext.Client.OpenView(message.TriggerID, userNotAllowedModal()); err != nil {
+						logModalError(err, resp)
+					}
+					log.Printf("The user @%s (%s) is trying to execute the message action `close_thread` and it doesn't have permissions", message.User.Name, message.User.ID)
+					break
+				}
 
+				modal := generateCloseThreadModal()
+				modal.PrivateMetadata = fmt.Sprintf("%s|%s", message.Channel.ID, message.MessageTs) // persist the message channel and ts across submission
+				if resp, err := botContext.Client.OpenView(message.TriggerID, modal); err != nil {
+					logModalError(err, resp)
+				}
 			}
 		case slack.InteractionTypeViewSubmission:
 			switch message.View.CallbackID {
@@ -114,6 +127,55 @@ func interactAPIHandler(botContext Context) http.HandlerFunc {
 				// Sending metrics
 				botContext.Harvester.RecordMetric(telemetry.Count{
 					Name:      fmt.Sprintf("%s_%s", strings.ToLower(botContext.Config.Bot.Name), "job_post.deleted"),
+					Value:     1,
+					Timestamp: time.Now(),
+				})
+			case "close_thread":
+				// We early set the Content-Type header for any response. This is important.
+				w.Header().Set("Content-Type", "application/json")
+
+				if !botContext.IsStaff(message.User.ID) {
+					_ = json.NewEncoder(w).Encode(
+						slack.NewErrorsViewSubmissionResponse(map[string]string{"input_block": "You are not allowed to close threads. Please contact any Staff member."}),
+					)
+					return
+				}
+
+				messageData := strings.Split(strings.Trim(message.View.PrivateMetadata, `"`), "|") // For some reason, slack adds an extra double quote
+				channelID := messageData[0]
+				messageTS := messageData[1]
+
+				// Close the thread
+				if err := botContext.DB.CloseThread(channelID, messageTS, message.User.ID); err != nil {
+					log.Printf("Error closing thread: %v", err)
+					_ = json.NewEncoder(w).Encode(
+						slack.NewErrorsViewSubmissionResponse(map[string]string{"input_block": fmt.Sprintf("Failed to close thread: %v", err)}),
+					)
+					return
+				}
+
+				// Post a message in the thread indicating it has been closed
+				_, _, err := botContext.Client.PostMessage(
+					channelID,
+					slack.MsgOptionText(fmt.Sprintf("🔒 This thread has been closed by <@%s>. No new messages will be allowed.", message.User.ID), false),
+					slack.MsgOptionTS(messageTS),
+				)
+				
+				if err != nil {
+					log.Printf("Error posting thread closed message: %v", err)
+				}
+
+				_ = json.NewEncoder(w).Encode(slack.NewClearViewSubmissionResponse())
+
+				log.Printf("Thread closed successfully by %s: %s|%s", message.User.ID, channelID, messageTS)
+
+				// Sending metrics
+				botContext.Harvester.RecordMetric(telemetry.Count{
+					Name: fmt.Sprintf("%s.%s", strings.ToLower(botContext.Config.Bot.Name), "thread.closed"),
+					Attributes: map[string]interface{}{
+						"closed_by": message.User.ID,
+						"channel":   channelID,
+					},
 					Value:     1,
 					Timestamp: time.Now(),
 				})
@@ -472,6 +534,25 @@ func generateDeleteThreadModal() slack.ModalViewRequest {
 		}},
 		Submit:     slack.NewTextBlockObject(slack.PlainTextType, "Confirm", false, false),
 		CallbackID: "delete_thread",
+	}
+}
+
+func generateCloseThreadModal() slack.ModalViewRequest {
+	checkBoxOptionText := slack.NewTextBlockObject("plain_text", "I am sure I want to close the thread", false, false)
+	checkBoxDescriptionText := slack.NewTextBlockObject("plain_text", "By selecting this, you confirm you understand that the thread will be closed to new messages", false, false)
+	checkbox := slack.NewCheckboxGroupsBlockElement("some_action", slack.NewOptionBlockObject("confirmed", checkBoxOptionText, checkBoxDescriptionText))
+	block := slack.NewInputBlock("input_block", slack.NewTextBlockObject(slack.PlainTextType, " ", false, false), nil, checkbox)
+	noticeBlock := slack.NewSectionBlock(slack.NewTextBlockObject(slack.MarkdownType, "When a thread is closed, any new messages posted to it will be automatically removed by the bot, and the poster will receive an ephemeral message explaining that the thread is closed.", false, false), nil, nil)
+
+	return slack.ModalViewRequest{
+		Type:  slack.VTModal,
+		Title: slack.NewTextBlockObject(slack.PlainTextType, "Confirm closing thread", false, false),
+		Blocks: slack.Blocks{BlockSet: []slack.Block{
+			block,
+			noticeBlock,
+		}},
+		Submit:     slack.NewTextBlockObject(slack.PlainTextType, "Confirm", false, false),
+		CallbackID: "close_thread",
 	}
 }
 

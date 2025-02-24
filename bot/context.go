@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/asaskevich/EventBus"
+	"github.com/bcneng/candebot/db"
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"github.com/slack-go/slack"
 )
@@ -16,6 +17,7 @@ type Context struct {
 	Version             string
 	TwitterContestToken string
 	Harvester           *telemetry.Harvester
+	DB                  *db.DatabaseManager
 
 	Bus EventBus.Bus
 
