@@ -5,13 +5,13 @@ go 1.20
 require (
 	github.com/alecthomas/kong v0.7.1
 	github.com/asaskevich/EventBus v0.0.0-20200907212545-49d423059eef
-	github.com/avast/retry-go/v4 v4.5.1
+	github.com/avast/retry-go/v4 v4.6.1
 	github.com/bcneng/twitter-contest v0.0.0-20210125112923-eb139f65d81c
 	github.com/newrelic/newrelic-telemetry-sdk-go v0.8.1
 	github.com/pelletier/go-toml/v2 v2.2.1
 	github.com/sethvargo/go-envconfig v0.9.0
 	github.com/slack-go/slack v0.12.1
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	golang.org/x/text v0.14.0
 )
 
