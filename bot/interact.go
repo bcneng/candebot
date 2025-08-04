@@ -72,6 +72,20 @@ func interactAPIHandler(botContext Context) http.HandlerFunc {
 				if resp, err := botContext.Client.OpenView(message.TriggerID, modal); err != nil {
 					logModalError(err, resp)
 				}
+			case "close_thread":
+				if !botContext.IsStaff(message.User.ID) {
+					if resp, err := botContext.Client.OpenView(message.TriggerID, userNotAllowedModal()); err != nil {
+						logModalError(err, resp)
+					}
+					log.Printf("The user @%s (%s) is trying to execute the message action `close_thread` and it doesn't have permissions", message.User.Name, message.User.ID)
+					break
+				}
+
+				modal := generateCloseThreadModal()
+				modal.PrivateMetadata = fmt.Sprintf("%s|%s", message.Channel.ID, message.MessageTs) // persist the message channel and ts across submission
+				if resp, err := botContext.Client.OpenView(message.TriggerID, modal); err != nil {
+					logModalError(err, resp)
+				}
 
 			}
 		case slack.InteractionTypeViewSubmission:
@@ -172,6 +186,39 @@ func interactAPIHandler(botContext Context) http.HandlerFunc {
 						Timestamp: time.Now(),
 					})
 				}()
+
+				_ = json.NewEncoder(w).Encode(slack.NewClearViewSubmissionResponse())
+			case "close_thread":
+				// We early set the Content-Type header for any response. This is important.
+				w.Header().Set("Content-Type", "application/json")
+
+				if !botContext.IsStaff(message.User.ID) {
+					_ = json.NewEncoder(w).Encode(
+						slack.NewErrorsViewSubmissionResponse(map[string]string{"input_block": "You are not allowed to close threads. Please contact any Staff member."}),
+					)
+					return
+				}
+
+				messageData := strings.Split(strings.Trim(message.View.PrivateMetadata, `"`), "|") // For some reason, slack adds an extra double quote
+				channelID := messageData[0]
+				messageTS := messageData[1]
+
+				if err := botContext.DB.CloseThread(channelID, messageTS, message.User.ID); err != nil {
+					log.Printf("Failed to close thread %s in channel %s: %v", messageTS, channelID, err)
+					_ = json.NewEncoder(w).Encode(
+						slack.NewErrorsViewSubmissionResponse(map[string]string{"input_block": "Failed to close thread. Please try again."}),
+					)
+					return
+				}
+
+				log.Printf("Thread closed successfully by @%s (%s): %s in %s", message.User.Name, message.User.ID, messageTS, channelID)
+
+				// Sending metrics
+				botContext.Harvester.RecordMetric(telemetry.Count{
+					Name:      fmt.Sprintf("%s.%s", strings.ToLower(botContext.Config.Bot.Name), "thread.closed"),
+					Value:     1,
+					Timestamp: time.Now(),
+				})
 
 				_ = json.NewEncoder(w).Encode(slack.NewClearViewSubmissionResponse())
 			}
@@ -536,6 +583,25 @@ func buildPublisherInput() *slack.DialogInputSelect {
 	publisherInput.Optional = false
 
 	return publisherInput
+}
+
+func generateCloseThreadModal() slack.ModalViewRequest {
+	checkBoxOptionText := slack.NewTextBlockObject("plain_text", "I am sure I want to close the thread", false, false)
+	checkBoxDescriptionText := slack.NewTextBlockObject("plain_text", "By selecting this, you confirm you understand that new messages posted in this thread will be automatically removed", false, false)
+	checkbox := slack.NewCheckboxGroupsBlockElement("some_action", slack.NewOptionBlockObject("confirmed", checkBoxOptionText, checkBoxDescriptionText))
+	block := slack.NewInputBlock("input_block", slack.NewTextBlockObject(slack.PlainTextType, " ", false, false), nil, checkbox)
+	noticeBlock := slack.NewSectionBlock(slack.NewTextBlockObject(slack.MarkdownType, "When a thread is closed, any new messages posted by non-staff members will be automatically removed and the user will receive an ephemeral notification.", false, false), nil, nil)
+
+	return slack.ModalViewRequest{
+		Type:  slack.VTModal,
+		Title: slack.NewTextBlockObject(slack.PlainTextType, "Close thread", false, false),
+		Blocks: slack.Blocks{BlockSet: []slack.Block{
+			block,
+			noticeBlock,
+		}},
+		Submit:     slack.NewTextBlockObject(slack.PlainTextType, "Close", false, false),
+		CallbackID: "close_thread",
+	}
 }
 
 func sanitizeReportState(state string) string {

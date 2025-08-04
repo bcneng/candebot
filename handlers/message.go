@@ -23,6 +23,21 @@ func MessageEventHandler(botCtx bot.Context, e slackevents.EventsAPIInnerEvent) 
 		return nil
 	}
 
+	// Check if this message is in a closed thread
+	if event.ThreadTimeStamp != "" && !botCtx.IsStaff(event.User) && event.User != "" {
+		isClosed, err := botCtx.DB.IsThreadClosed(event.Channel, event.ThreadTimeStamp)
+		if err != nil {
+			log.Printf("Error checking if thread is closed: %v", err)
+		} else if isClosed {
+			// Delete the message and send ephemeral notification
+			_, _, _ = botCtx.AdminClient.DeleteMessage(event.Channel, event.TimeStamp)
+			_ = slackx.SendEphemeral(botCtx.Client, event.ThreadTimeStamp, event.Channel, event.User, 
+				"This thread has been closed by an administrator. Your message has been removed.")
+			log.Printf("Removed message from closed thread %s in channel %s by user %s", event.ThreadTimeStamp, event.Channel, event.User)
+			return nil
+		}
+	}
+
 	if event.SubType == "" || event.SubType == "message_replied" {
 		// behaviors that apply to all messages posted by users both in channels or threads
 		go checkLanguage(botCtx, event)

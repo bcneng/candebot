@@ -16,3 +16,6 @@ candebot
 
 # .env files
 *.env
+
+# Database files
+*.db

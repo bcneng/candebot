@@ -59,6 +59,7 @@ type Config struct {
 	TwitterContestToken string         `env:"TWITTER_CONTEST_TOKEN"`
 	TwitterContestURL   string         `env:"TWITTER_CONTEST_URL"`
 	NewRelicLicenseKey  string         `env:"NEW_RELIC_LICENSE_KEY"`
+	DatabasePath        string         `env:"DATABASE_PATH,default=./candebot.db"`
 	Debug               bool           `env:"DEBUG"`
 	Version             string         `env:"VERSION"`
 }

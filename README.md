@@ -17,7 +17,16 @@ Our lovely opinionated Slack bot. Find it in [BcnEng Slack workspace](https://sl
 - Submission and validation of job posts. Posted in the `#hiring-job-board` channel via a form.
 - Message actions. For example:
   - Deleting a message and the whole thread. Only available to admins.
+  - Closing a thread to prevent new messages. Only available to admins.
   - Report messages to the admins.
+
+### Thread Closure
+Admins can close threads that are getting out of control. When a thread is closed:
+- New messages posted by non-staff members in the thread are automatically deleted
+- Users who try to post in a closed thread receive an ephemeral notification explaining the thread is closed
+- The thread state is persisted in a SQLite database
+- Only staff members (admins) can close threads using the "Close Thread" message action
+- Anonymous messages (messages without a user ID) are also filtered to prevent workarounds
 
 ## Configuration
 Candebot can be configured via Toml file + environment variables.
@@ -31,6 +40,7 @@ The following environment variables are needed in order to run the bot:
 - `BOT_BOT_USER_TOKEN` - Slack bot user token. Used to authenticate the bot user.
 - `BOT_BOT_ADMIN_TOKEN` - Slack user token with admin rights. Used to authenticate the bot user when performing admin actions.
 - `BOT_BOT_SERVER_SIGNING_SECRET` - Slack app signing secret. Used to verify the authenticity of the requests.
+- `BOT_DATABASE_PATH` - Path to the SQLite database file for storing thread closure state. Default: `./candebot.db`
 
 There are more environment variables that can be set. Please, check [/bot/config.go](bot/config.go).
 
@@ -64,4 +74,5 @@ The files required will always be:
 
 - Compiled binary of the bot.
 - `.bot.toml` file with the configuration.
+- SQLite database file (created automatically on first run).
 

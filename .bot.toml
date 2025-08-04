@@ -24,3 +24,8 @@ staff = "G983W7L9F" #staff
 
 [twitter]
 contestURL = "https://bcneng-twitter-contest.netlify.app/.netlify/functions/contest"
+
+# Database configuration
+# The database file path for storing thread closure state
+# Can be overridden with BOT_DATABASE_PATH environment variable
+# Default: ./candebot.db

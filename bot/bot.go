@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/asaskevich/EventBus"
+	"github.com/bcneng/candebot/storage"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"github.com/slack-go/slack"
@@ -16,12 +17,19 @@ import (
 
 // WakeUp wakes up the bot.
 func WakeUp(_ context.Context, conf Config, bus EventBus.Bus) error {
+	// Initialize database
+	db, err := storage.NewDB(conf.DatabasePath)
+	if err != nil {
+		return fmt.Errorf("failed to initialize database: %w", err)
+	}
+
 	cliContext := Context{
 		Client:      slack.New(conf.Bot.UserToken),
 		AdminClient: slack.New(conf.Bot.AdminToken),
 		Config:      conf,
 		Version:     conf.Version,
 		Bus:         bus,
+		DB:          db,
 	}
 
 	if conf.NewRelicLicenseKey != "" {
