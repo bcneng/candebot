@@ -198,6 +198,13 @@ func interactAPIHandler(botContext Context) http.HandlerFunc {
 				})
 			case "job_submission":
 				link, maxSalary, minSalary, validationErrors := validateSubmission(message.Submission["job_link"], message.Submission["max_salary"], message.Submission["min_salary"])
+				
+				// Validate public sector fields if applicable
+				publicSectorErrors := validatePublicSectorFields(message.Submission["publisher"], message.Submission["official_process_link"], message.Submission["study_syllabus"])
+				for field, err := range publicSectorErrors {
+					validationErrors[field] = err
+				}
+
 				if link != nil && link.Query().Get("utm_source") == "" {
 					// Add utm_source to the job link only if doesn't have one already
 					query := link.Query()
@@ -227,32 +234,62 @@ func interactAPIHandler(botContext Context) http.HandlerFunc {
 					minSalaryStr = ""
 				}
 
-				msg := fmt.Sprintf(":computer: %s @ %s - :moneybag: %s - %dK %s - :round_pushpin: %s - :lower_left_fountain_pen: %s - :link: <%s|Link> - :raised_hands: More info DM <@%s>",
-					message.Submission["role"],
-					message.Submission["company"],
-					minSalaryStr,
-					maxSalary,
-					message.Submission["currency"],
-					message.Submission["location"],
-					message.Submission["publisher"],
-					message.Submission["job_link"],
-					message.User.Name,
-				)
+				var msg string
+				isPublicSector := message.Submission["publisher"] == "Public Sector"
+				
+				if isPublicSector {
+					// Format for public sector jobs - no referral info
+					msg = fmt.Sprintf(":computer: %s @ %s - :moneybag: %s - %dK %s - :round_pushpin: %s - :lower_left_fountain_pen: %s - :link: <%s|Link>",
+						message.Submission["role"],
+						message.Submission["company"],
+						minSalaryStr,
+						maxSalary,
+						message.Submission["currency"],
+						message.Submission["location"],
+						message.Submission["publisher"],
+						message.Submission["job_link"],
+					)
+					
+					// Add public sector specific information
+					if officialLink := strings.TrimSpace(message.Submission["official_process_link"]); officialLink != "" {
+						msg += fmt.Sprintf(" - :page_facing_up: <%s|Official Process>", officialLink)
+					}
+					if syllabus := strings.TrimSpace(message.Submission["study_syllabus"]); syllabus != "" {
+						msg += fmt.Sprintf(" - :books: %s", syllabus)
+					}
+				} else {
+					// Format for regular jobs - include referral info
+					msg = fmt.Sprintf(":computer: %s @ %s - :moneybag: %s - %dK %s - :round_pushpin: %s - :lower_left_fountain_pen: %s - :link: <%s|Link> - :raised_hands: More info DM <@%s>",
+						message.Submission["role"],
+						message.Submission["company"],
+						minSalaryStr,
+						maxSalary,
+						message.Submission["currency"],
+						message.Submission["location"],
+						message.Submission["publisher"],
+						message.Submission["job_link"],
+						message.User.Name,
+					)
+				}
+				
 				_ = slackx.Send(botContext.Client, "", botContext.Config.Channels.Jobs, msg, false, slack.MsgOptionDisableLinkUnfurl())
 
 				// Sending metrics
 				botContext.Harvester.RecordMetric(telemetry.Count{
 					Name: fmt.Sprintf("%s.%s", strings.ToLower(botContext.Config.Bot.Name), "job_post.published"),
 					Attributes: map[string]interface{}{
-						"role":      cases.Title(language.English).String(strings.ToLower(message.Submission["role"])),
-						"company":   cases.Title(language.English).String(strings.ToLower(message.Submission["company"])),
-						"minSalary": minSalary,
-						"maxSalary": maxSalary,
-						"currency":  message.Submission["currency"],
-						"location":  message.Submission["location"],
-						"publisher": message.Submission["publisher"],
-						"job_link":  message.Submission["job_link"],
-						"user":      message.User.Name,
+						"role":                  cases.Title(language.English).String(strings.ToLower(message.Submission["role"])),
+						"company":               cases.Title(language.English).String(strings.ToLower(message.Submission["company"])),
+						"minSalary":             minSalary,
+						"maxSalary":             maxSalary,
+						"currency":              message.Submission["currency"],
+						"location":              message.Submission["location"],
+						"publisher":             message.Submission["publisher"],
+						"job_link":              message.Submission["job_link"],
+						"user":                  message.User.Name,
+						"isPublicSector":        isPublicSector,
+						"official_process_link": message.Submission["official_process_link"],
+						"study_syllabus":        message.Submission["study_syllabus"],
 					},
 					Value:     1,
 					Timestamp: time.Now(),
@@ -356,6 +393,25 @@ func validateSubmission(messageJobLink, messageMaxSalary, messageMinSalary strin
 	return link, maxSalary, minSalary, validationErrors
 }
 
+// validatePublicSectorFields validates the additional fields required for public sector jobs
+func validatePublicSectorFields(publisher, officialProcessLink, studySyllabus string) map[string]string {
+	validationErrors := make(map[string]string)
+
+	if publisher == "Public Sector" {
+		if strings.TrimSpace(officialProcessLink) == "" {
+			validationErrors["official_process_link"] = "Official Process Link is required for Public Sector jobs."
+		} else if _, err := url.ParseRequestURI(strings.TrimSpace(officialProcessLink)); err != nil {
+			validationErrors["official_process_link"] = "The Official Process Link must be a valid URL."
+		}
+
+		if strings.TrimSpace(studySyllabus) == "" {
+			validationErrors["study_syllabus"] = "Study Syllabus is required for Public Sector jobs."
+		}
+	}
+
+	return validationErrors
+}
+
 func generateSubmitJobFormDialog() slack.Dialog {
 	// Make new dialog components and open a dialog.
 	// Component-Text
@@ -420,6 +476,17 @@ func generateSubmitJobFormDialog() slack.Dialog {
 
 	publisherInput := buildPublisherInput()
 
+	// Fields for Public Sector jobs
+	officialProcessLinkInput := slack.NewTextInput("official_process_link", "Official Process Link (Public Sector only)", "")
+	officialProcessLinkInput.Optional = true
+	officialProcessLinkInput.Hint = "Link to BOE/BOGC/Ayuntamientos or official process documentation"
+	officialProcessLinkInput.Subtype = slack.InputSubtypeEmail
+
+	studySyllabusInput := slack.NewTextInput("study_syllabus", "Study Syllabus (Public Sector only)", "")
+	studySyllabusInput.Optional = true
+	studySyllabusInput.Hint = "Brief description or link to study syllabus"
+	studySyllabusInput.MaxLength = 200
+
 	// Open a dialog
 	elements := []slack.DialogElement{
 		roleInput,
@@ -430,6 +497,8 @@ func generateSubmitJobFormDialog() slack.Dialog {
 		locationInput,
 		linkInput,
 		publisherInput,
+		officialProcessLinkInput,
+		studySyllabusInput,
 	}
 	return slack.Dialog{
 		CallbackID:  "job_submission",
@@ -530,6 +599,10 @@ func buildPublisherInput() *slack.DialogInputSelect {
 		{
 			Label: "Referral",
 			Value: "Referral",
+		},
+		{
+			Label: "Public Sector",
+			Value: "Public Sector",
 		},
 	}
 	publisherInput := slack.NewStaticSelectDialogInput("publisher", "Published by", publisherOptions)

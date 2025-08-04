@@ -80,6 +80,45 @@ func TestJobSubmission(t *testing.T) {
 
 }
 
+func TestPublicSectorJobValidation(t *testing.T) {
+
+	t.Run("public sector jobs require official process link", func(t *testing.T) {
+		validationErrors := validatePublicSectorFields("Public Sector", "", "Some syllabus")
+		requireHasError(t, validationErrors["official_process_link"])
+	})
+
+	t.Run("public sector jobs require study syllabus", func(t *testing.T) {
+		validationErrors := validatePublicSectorFields("Public Sector", "http://example.com", "")
+		requireHasError(t, validationErrors["study_syllabus"])
+	})
+
+	t.Run("public sector jobs require valid official process link", func(t *testing.T) {
+		validationErrors := validatePublicSectorFields("Public Sector", "invalid-url", "Some syllabus")
+		requireHasError(t, validationErrors["official_process_link"])
+	})
+
+	t.Run("public sector jobs with valid fields pass validation", func(t *testing.T) {
+		validationErrors := validatePublicSectorFields("Public Sector", "http://example.com", "Some syllabus")
+		require.Empty(t, validationErrors)
+	})
+
+	t.Run("non-public sector jobs don't require additional fields", func(t *testing.T) {
+		validationErrors := validatePublicSectorFields("Employer", "", "")
+		require.Empty(t, validationErrors)
+	})
+
+	t.Run("agency jobs don't require additional fields", func(t *testing.T) {
+		validationErrors := validatePublicSectorFields("Agency", "", "")
+		require.Empty(t, validationErrors)
+	})
+
+	t.Run("referral jobs don't require additional fields", func(t *testing.T) {
+		validationErrors := validatePublicSectorFields("Referral", "", "")
+		require.Empty(t, validationErrors)
+	})
+
+}
+
 func TestMessageSanitizing(t *testing.T) {
 	t.Run("urls cannot contain double scaped backlashes", func(t *testing.T) {
 		url := "https:\\/\\/bcneng.slack.com\\/archives"
