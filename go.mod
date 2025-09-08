@@ -1,6 +1,6 @@
 module github.com/bcneng/candebot
 
-go 1.20
+go 1.24.0
 
 require (
 	github.com/alecthomas/kong v0.7.1
@@ -12,7 +12,7 @@ require (
 	github.com/sethvargo/go-envconfig v0.9.0
 	github.com/slack-go/slack v0.12.1
 	github.com/stretchr/testify v1.9.0
-	golang.org/x/text v0.14.0
+	golang.org/x/text v0.29.0
 )
 
 require (
