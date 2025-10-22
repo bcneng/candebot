@@ -44,6 +44,7 @@ func eventsAPIHandler(botCtx Context) http.HandlerFunc {
 		if err := botCtx.VerifyRequest(r, buf.Bytes()); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			log.Printf("Fail to verify SigningSecret: %v", err)
+			return
 		}
 
 		eventsAPIEvent, err := slackevents.ParseEvent(buf.Bytes(), slackevents.OptionNoVerifyToken())
