@@ -16,12 +16,19 @@ import (
 
 // WakeUp wakes up the bot.
 func WakeUp(_ context.Context, conf Config, bus EventBus.Bus) error {
+	// Build the staff lookup map at construction time to avoid race conditions
+	staffLookupMap := make(map[string]struct{}, len(conf.Staff.Members))
+	for _, u := range conf.Staff.Members {
+		staffLookupMap[u] = struct{}{}
+	}
+
 	cliContext := Context{
-		Client:      slack.New(conf.Bot.UserToken),
-		AdminClient: slack.New(conf.Bot.AdminToken),
-		Config:      conf,
-		Version:     conf.Version,
-		Bus:         bus,
+		Client:         slack.New(conf.Bot.UserToken),
+		AdminClient:    slack.New(conf.Bot.AdminToken),
+		Config:         conf,
+		Version:        conf.Version,
+		Bus:            bus,
+		staffLookupMap: staffLookupMap,
 	}
 
 	if conf.NewRelicLicenseKey != "" {

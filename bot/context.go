@@ -25,15 +25,7 @@ type Context struct {
 }
 
 func (c *Context) IsStaff(userID string) bool {
-	if c.staffLookupMap == nil {
-		c.staffLookupMap = make(map[string]struct{}, len(c.Config.Staff.Members)) // It is fine to not lock.
-		for _, u := range c.Config.Staff.Members {
-			c.staffLookupMap[u] = struct{}{}
-		}
-	}
-
 	_, ok := c.staffLookupMap[userID]
-
 	return ok
 }
 
