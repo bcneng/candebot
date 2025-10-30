@@ -16,6 +16,7 @@ type Context struct {
 	Version             string
 	TwitterContestToken string
 	Harvester           *telemetry.Harvester
+	RateLimiter         *RateLimiter
 
 	Bus EventBus.Bus
 

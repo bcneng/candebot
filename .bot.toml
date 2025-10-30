@@ -24,3 +24,12 @@ staff = "G983W7L9F" #staff
 
 [twitter]
 contestURL = "https://bcneng-twitter-contest.netlify.app/.netlify/functions/contest"
+
+# Rate limiting configuration
+# Limits how many non-thread messages a user can post in specific channels
+# Staff members are exempt from rate limits
+[[rate_limits]]
+channel_name = "candebot-testing"
+rate_limit_seconds = 60
+max_messages = 5
+apply_to_staff = true

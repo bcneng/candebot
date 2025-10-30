@@ -13,6 +13,7 @@ import (
 	"github.com/bcneng/candebot/inclusion"
 	"github.com/bcneng/candebot/slackx"
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
+	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
 )
 
@@ -39,6 +40,37 @@ func MessageEventHandler(botCtx bot.Context, e slackevents.EventsAPIInnerEvent) 
 		})
 
 		return nil
+	}
+
+	if botCtx.RateLimiter != nil && event.ThreadTimeStamp == "" {
+		isStaff := botCtx.IsStaff(event.User)
+		shouldCheckStaff := botCtx.RateLimiter.ShouldCheckStaff(event.Channel)
+
+		if !isStaff || shouldCheckStaff {
+			allowed, nextAllowedTime := botCtx.RateLimiter.CheckLimit(event.Channel, event.User)
+			if !allowed {
+				messageLink := slackx.LinkToMessage(event.Channel, event.TimeStamp)
+				userChannel, _, _, err := botCtx.Client.OpenConversation(&slack.OpenConversationParameters{
+					Users: []string{event.User},
+				})
+				if err != nil {
+					log.Printf("error opening conversation with user %s: %s", event.User, err)
+				} else {
+					waitDuration := time.Until(nextAllowedTime)
+					msg := fmt.Sprintf(
+						"Your message has been deleted because you've reached the rate limit for this channel.\n\n"+
+							"Message link: %s\n\n"+
+							"You can post again in approximately %s.",
+						messageLink,
+						waitDuration.Round(time.Second),
+					)
+					_ = slackx.Send(botCtx.Client, "", userChannel.ID, msg, false)
+				}
+
+				_, _, _ = botCtx.AdminClient.DeleteMessage(event.Channel, event.TimeStamp)
+				return nil
+			}
+		}
 	}
 
 	switch event.Channel {
