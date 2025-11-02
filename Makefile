@@ -6,7 +6,7 @@ clean:
 	rm -f candebot 
 
 build: clean
-	go build -v .
+	go build -v -ldflags "-X main.Version=$$(git rev-parse --short HEAD)" .
 	@echo candebot built and ready to serve and protect.
 
 test:
