@@ -10,14 +10,17 @@ import (
 
 	"github.com/asaskevich/EventBus"
 
+	"github.com/bcneng/candebot/slackx"
+
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"github.com/slack-go/slack"
 )
 
 // WakeUp wakes up the bot.
 func WakeUp(_ context.Context, conf Config, bus EventBus.Bus) error {
+	client := slack.New(conf.Bot.UserToken)
 	cliContext := Context{
-		Client:      slack.New(conf.Bot.UserToken),
+		Client:      client,
 		AdminClient: slack.New(conf.Bot.AdminToken),
 		Config:      conf,
 		Version:     conf.Version,
@@ -37,6 +40,16 @@ func WakeUp(_ context.Context, conf Config, bus EventBus.Bus) error {
 		cliContext.Harvester = h
 	} else {
 		log.Println("[WARN] No metrics will be sent to NR as there is no License Key configured")
+	}
+
+	if len(conf.RateLimits) > 0 {
+		rateLimiter, err := NewRateLimiter(conf.RateLimits, func(name string) (string, error) {
+			return slackx.FindChannelIDByName(client, name)
+		})
+		if err != nil {
+			return err
+		}
+		cliContext.RateLimiter = rateLimiter
 	}
 
 	return serve(conf, cliContext)

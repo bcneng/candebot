@@ -1,5 +1,5 @@
 lint:
-	golangci-lint run
+	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.6.0 run
 
 clean:
 	@# '-f' to ignore when 'candebot' is not found

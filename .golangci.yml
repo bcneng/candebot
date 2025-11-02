@@ -1,63 +1,72 @@
+version: "2"
 linters:
   enable:
-    - errcheck
     - goconst
-    - revive
-    - ineffassign
-    - unconvert
-    - govet
-    - goimports
     - prealloc
-    - unused
-    - staticcheck
-    - gosimple
-    - megacheck
-linters-settings:
-  revive:
-    ignore-generated-header: false
-    severity: error
-    confidence: 0.8
+    - revive
+    - unconvert
+  settings:
+    revive:
+      confidence: 0.8
+      severity: error
+      rules:
+        - name: atomic
+        - name: blank-imports
+        - name: confusing-naming
+        - name: get-return
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+        - name: empty-block
+        - name: error-naming
+        - name: error-return
+        - name: error-strings
+        - name: errorf
+        - name: exported
+        - name: if-return
+        - name: increment-decrement
+        - name: indent-error-flow
+        - name: package-comments
+        - name: range
+        - name: receiver-naming
+        - name: redefines-builtin-id
+        - name: superfluous-else
+        - name: struct-tag
+        - name: time-naming
+        - name: unexported-naming
+        - name: unexported-return
+        - name: unhandled-error
+          arguments:
+            - fmt.Printf
+            - fmt.Println
+            - fmt.Fprintf
+        - name: unreachable-code
+        - name: unused-parameter
+        - name: var-declaration
+        - name: var-naming
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
     rules:
-      - name: atomic
-      - name: blank-imports
-      - name: confusing-naming
-      - name: get-return
-      - name: context-as-argument
-      - name: context-keys-type
-      - name: dot-imports
-      - name: empty-block
-      - name: error-naming
-      - name: error-return
-      - name: error-strings
-      - name: errorf
-      - name: exported
-      - name: if-return
-      - name: increment-decrement
-      - name: indent-error-flow
-      - name: package-comments
-      - name: range
-      - name: receiver-naming
-      - name: redefines-builtin-id
-      - name: superfluous-else
-      - name: struct-tag
-      - name: time-naming
-      - name: unexported-naming
-      - name: unexported-return
-      - name: unhandled-error
-        arguments: [
-          "fmt.Printf",
-          "fmt.Println",
-          "fmt.Fprintf",
-        ]
-      - name: unreachable-code
-      - name: unused-parameter
-      - name: var-declaration
-      - name: var-naming
+      - path: (.+)\.go$
+        text: composite literal uses unkeyed fields
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 issues:
-  # TODO: uncomment to enable godoc checking, errcheck etc
-  #exclude-use-default: false
-  max-same-issues: 0
   max-issues-per-linter: 0
-  exclude:
-    # vet
-    - 'composite literal uses unkeyed fields'
+  max-same-issues: 0
+formatters:
+  enable:
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

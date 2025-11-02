@@ -15,6 +15,7 @@ Our lovely opinionated Slack bot. Find it in [BcnEng Slack workspace](https://sl
   - `candebirthday` - Days until [@sdecandelario](https://bcneng.slack.com/archives/D9BU155J9) birthday! Something people cares.
 - Filter stopwords in messages. Suggest more inclusive alternatives to the user. See [/inclusion](inclusion).
 - Submission and validation of job posts. Posted in the `#hiring-job-board` channel via a form.
+- Rate limiting for messages. Limit how many non-thread messages users can post in configured channels. Staff members are exempt.
 - Message actions. For example:
   - Deleting a message and the whole thread. Only available to admins.
   - Report messages to the admins.
@@ -38,6 +39,29 @@ There are more environment variables that can be set. Please, check [/bot/config
 By default, `./.bot.toml` is used as the configuration file. If you want to change the path, you can set `-config <filepath>` flag when running the bot.
 
 Please, use the [following file](.bot.toml) as a reference.
+
+#### Rate Limiting
+Configure rate limits for specific channels using the `rate_limits` section. You can define multiple channels, each with their own limits:
+
+```toml
+[[rate_limits]]
+channel_name = "random"
+rate_limit_seconds = 86400
+max_messages = 1
+
+[[rate_limits]]
+channel_name = "candebot-testing"
+rate_limit_seconds = 60
+max_messages = 2
+apply_to_staff = true
+```
+
+- `channel_name`: Name of the channel to apply rate limiting
+- `rate_limit_seconds`: Time window in seconds
+- `max_messages`: Maximum number of non-thread messages allowed in the time window
+- `apply_to_staff`: (optional, default: false) If true, staff members are also rate limited in this channel
+
+By default, staff members are exempt from rate limits. Set `apply_to_staff = true` to apply limits to staff as well. When a user exceeds the limit, their message is deleted and they receive a DM with the message link and time until they can post again.
 
 ## Installation
 
