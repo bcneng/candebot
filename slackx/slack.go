@@ -35,6 +35,8 @@ func Send(c *slack.Client, threadTS, channelID, msg string, scape bool, opts ...
 	return err
 }
 
+var publicPrivate = []string{"public_channel", "private_channel"}
+
 func FindChannelIDByName(client *slack.Client, channel string) (string, error) {
 	if channelNameToIDCache == nil {
 		channelNameToIDCache = make(map[string]string)
@@ -49,7 +51,7 @@ func FindChannelIDByName(client *slack.Client, channel string) (string, error) {
 	var channels []slack.Channel
 	for {
 		var err error
-		channels, cursor, err = client.GetConversations(&slack.GetConversationsParameters{Cursor: cursor, ExcludeArchived: true})
+		channels, cursor, err = client.GetConversations(&slack.GetConversationsParameters{Cursor: cursor, ExcludeArchived: true, Types: publicPrivate})
 		if err != nil {
 			return "", err
 		}
