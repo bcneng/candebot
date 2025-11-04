@@ -42,9 +42,12 @@ func WakeUp(_ context.Context, conf Config, bus EventBus.Bus) error {
 		log.Println("[WARN] No metrics will be sent to NR as there is no License Key configured")
 	}
 
+	channelResolver := slackx.NewChannelResolver(http.DefaultClient, client)
+	cliContext.ChannelResolver = channelResolver
+
 	if len(conf.RateLimits) > 0 {
 		rateLimiter, err := NewRateLimiter(conf.RateLimits, func(name string) (string, error) {
-			return slackx.FindChannelIDByName(client, name)
+			return channelResolver.FindChannelIDByName(name)
 		})
 		if err != nil {
 			return err
