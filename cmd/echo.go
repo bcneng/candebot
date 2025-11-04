@@ -32,7 +32,7 @@ func (e *Echo) Run(ctx bot.Context, slackCtx bot.SlackContext) error {
 		channel = channel[0:i]
 	}
 
-	channelID, err := slackx.FindChannelIDByName(ctx.Client, channel)
+	channelID, err := ctx.ChannelResolver.FindChannelIDByName(channel)
 	if err != nil {
 		_ = slackx.SendEphemeral(ctx.Client, slackCtx.ThreadTimestamp, slackCtx.Channel, slackCtx.User, fmt.Sprintf("Error during channel lookup. Error: %s", err.Error()))
 		return err
