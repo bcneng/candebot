@@ -10,6 +10,7 @@ import (
 
 	"github.com/asaskevich/EventBus"
 
+	"github.com/bcneng/candebot/internal/privacy"
 	"github.com/bcneng/candebot/slackx"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
@@ -54,6 +55,20 @@ func WakeUp(_ context.Context, conf Config, bus EventBus.Bus) error {
 		}
 		cliContext.RateLimiter = rateLimiter
 	}
+
+	trackingConfig := make([]privacy.TrackingDetectionConfig, len(conf.TrackingDetection))
+	for i, cfg := range conf.TrackingDetection {
+		trackingConfig[i] = privacy.TrackingDetectionConfig{
+			ChannelName: cfg.ChannelName,
+		}
+	}
+	trackingDetector, err := privacy.NewTrackingDetector(trackingConfig, func(name string) (string, error) {
+		return channelResolver.FindChannelIDByName(name)
+	})
+	if err != nil {
+		return err
+	}
+	cliContext.TrackingDetector = trackingDetector
 
 	return serve(conf, cliContext)
 }

@@ -11,9 +11,9 @@ import (
 	"github.com/bcneng/candebot/bot"
 	"github.com/bcneng/candebot/cmd"
 	"github.com/bcneng/candebot/inclusion"
+	"github.com/bcneng/candebot/internal/privacy"
 	"github.com/bcneng/candebot/slackx"
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
-	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
 )
 
@@ -27,6 +27,7 @@ func MessageEventHandler(botCtx bot.Context, e slackevents.EventsAPIInnerEvent) 
 	if event.SubType == "" || event.SubType == "message_replied" {
 		// behaviors that apply to all messages posted by users both in channels or threads
 		go checkLanguage(botCtx, event)
+		go checkTracking(botCtx, event)
 	}
 
 	if event.ChannelType == "im" {
@@ -49,23 +50,13 @@ func MessageEventHandler(botCtx bot.Context, e slackevents.EventsAPIInnerEvent) 
 		if !isStaff || shouldCheckStaff {
 			allowed, nextAllowedTime := botCtx.RateLimiter.CheckLimit(event.Channel, event.User)
 			if !allowed {
-				messageLink := slackx.LinkToMessage(event.Channel, event.TimeStamp)
-				userChannel, _, _, err := botCtx.Client.OpenConversation(&slack.OpenConversationParameters{
-					Users: []string{event.User},
-				})
-				if err != nil {
-					log.Printf("error opening conversation with user %s: %s", event.User, err)
-				} else {
-					waitDuration := time.Until(nextAllowedTime)
-					msg := fmt.Sprintf(
-						"Your message has been deleted because you've reached the rate limit for this channel.\n\n"+
-							"Message link: %s\n\n"+
-							"You can post again in approximately %s.",
-						messageLink,
-						waitDuration.Round(time.Second),
-					)
-					_ = slackx.Send(botCtx.Client, "", userChannel.ID, msg, false)
-				}
+				waitDuration := time.Until(nextAllowedTime)
+				msg := fmt.Sprintf(
+					"Your message has been deleted because you've reached the rate limit for this channel.\n\n"+
+						"You can post again in approximately %s.",
+					waitDuration.Round(time.Second),
+				)
+				_ = slackx.SendEphemeral(botCtx.Client, event.ThreadTimeStamp, event.Channel, event.User, msg)
 
 				_, _, _ = botCtx.AdminClient.DeleteMessage(event.Channel, event.TimeStamp)
 				return nil
@@ -134,4 +125,37 @@ func checkLanguage(botCtx bot.Context, event *slackevents.MessageEvent) {
 		Value:     1,
 		Timestamp: time.Now(),
 	})
+}
+
+func checkTracking(botCtx bot.Context, event *slackevents.MessageEvent) {
+	if botCtx.TrackingDetector == nil {
+		return
+	}
+
+	if !botCtx.TrackingDetector.ShouldCheck(event.Channel) {
+		return
+	}
+
+	tracked := privacy.FindTrackedURLs(event.Text)
+	if len(tracked) == 0 {
+		return
+	}
+
+	warning := privacy.FormatWarningMessage(tracked)
+	_ = slackx.SendEphemeral(botCtx.Client, event.ThreadTimeStamp, event.Channel, event.User, warning)
+
+	if botCtx.Harvester != nil {
+		for _, t := range tracked {
+			botCtx.Harvester.RecordMetric(telemetry.Count{
+				Name: fmt.Sprintf("%s.%s", strings.ToLower(botCtx.Config.Bot.Name), "tracking.param_detected"),
+				Attributes: map[string]interface{}{
+					"channel":  event.Channel,
+					"platform": t.Platform,
+					"param":    t.Param,
+				},
+				Value:     1,
+				Timestamp: time.Now(),
+			})
+		}
+	}
 }

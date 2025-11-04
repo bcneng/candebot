@@ -16,6 +16,7 @@ Our lovely opinionated Slack bot. Find it in [BcnEng Slack workspace](https://sl
 - Filter stopwords in messages. Suggest more inclusive alternatives to the user. See [/inclusion](inclusion).
 - Submission and validation of job posts. Posted in the `#hiring-job-board` channel via a form.
 - Rate limiting for messages. Limit how many non-thread messages users can post in configured channels. Staff members are exempt.
+- Tracking parameter detection. Detects privacy-invasive tracking parameters in shared URLs and privately warns users with cleaned alternatives.
 - Message actions. For example:
   - Deleting a message and the whole thread. Only available to admins.
   - Report messages to the admins.
@@ -62,6 +63,21 @@ apply_to_staff = true
 - `apply_to_staff`: (optional, default: false) If true, staff members are also rate limited in this channel
 
 By default, staff members are exempt from rate limits. Set `apply_to_staff = true` to apply limits to staff as well. When a user exceeds the limit, their message is deleted and they receive a DM with the message link and time until they can post again.
+
+#### Tracking Parameter Detection
+Configure tracking parameter detection using the `tracking_detection` section. By default (no config), tracking detection runs in all channels. To limit to specific channels:
+
+```toml
+[[tracking_detection]]
+channel_name = "general"
+
+[[tracking_detection]]
+channel_name = "random"
+```
+
+- `channel_name`: Name of the channel to enable tracking detection
+
+When a message contains URLs with tracking parameters (like Instagram's `igsh`, Facebook's `fbclid`, etc.), the bot sends an ephemeral (private) message to the user warning them about the tracking parameter and providing a cleaned URL without tracking.
 
 ## Installation
 

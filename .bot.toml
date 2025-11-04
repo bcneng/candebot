@@ -33,3 +33,10 @@ channel_name = "candebot-testing"
 rate_limit_seconds = 60
 max_messages = 5
 apply_to_staff = true
+
+# Tracking parameter detection configuration
+# Detects and warns users about privacy-invasive tracking parameters in URLs
+# If no channels are specified, tracking detection runs in all channels
+# To enable for specific channels, add entries like the example below:
+[[tracking_detection]]
+channel_name = "candebot-testing"
