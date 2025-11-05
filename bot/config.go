@@ -51,17 +51,18 @@ func LoadConfigFromFileAndEnvVars(ctx context.Context, envVarsPrefix, filepath s
 }
 
 type Config struct {
-	Bot                 ConfigBot         `env:",prefix=BOT_"`
-	Staff               ConfigStaff       `env:",prefix=STAFF_"`
-	Channels            ConfigChannels    `env:",prefix=CHANNELS_"`
-	Links               ConfigLinks       `env:",prefix=LINKS_"`
-	Twitter             ConfigTwitter     `env:",prefix=TWITTER_"`
-	RateLimits          []RateLimitConfig `toml:"rate_limits"`
-	TwitterContestToken string            `env:"TWITTER_CONTEST_TOKEN"`
-	TwitterContestURL   string            `env:"TWITTER_CONTEST_URL"`
-	NewRelicLicenseKey  string            `env:"NEW_RELIC_LICENSE_KEY"`
-	Debug               bool              `env:"DEBUG"`
-	Version             string            `env:"VERSION"`
+	Bot                 ConfigBot                 `env:",prefix=BOT_"`
+	Staff               ConfigStaff               `env:",prefix=STAFF_"`
+	Channels            ConfigChannels            `env:",prefix=CHANNELS_"`
+	Links               ConfigLinks               `env:",prefix=LINKS_"`
+	Twitter             ConfigTwitter             `env:",prefix=TWITTER_"`
+	RateLimits          []RateLimitConfig         `toml:"rate_limits"`
+	TrackingDetection   []TrackingDetectionConfig `toml:"tracking_detection"`
+	TwitterContestToken string                    `env:"TWITTER_CONTEST_TOKEN"`
+	TwitterContestURL   string                    `env:"TWITTER_CONTEST_URL"`
+	NewRelicLicenseKey  string                    `env:"NEW_RELIC_LICENSE_KEY"`
+	Debug               bool                      `env:"DEBUG"`
+	Version             string                    `env:"VERSION"`
 }
 
 type ConfigBot struct {
@@ -105,4 +106,8 @@ type RateLimitConfig struct {
 	RateLimitSeconds int    `toml:"rate_limit_seconds"`
 	MaxMessages      int    `toml:"max_messages"`
 	ApplyToStaff     bool   `toml:"apply_to_staff"`
+}
+
+type TrackingDetectionConfig struct {
+	ChannelName string `toml:"channel_name"`
 }

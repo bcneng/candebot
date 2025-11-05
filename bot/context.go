@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/asaskevich/EventBus"
+	"github.com/bcneng/candebot/internal/privacy"
 	"github.com/bcneng/candebot/slackx"
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"github.com/slack-go/slack"
@@ -19,6 +20,7 @@ type Context struct {
 	Harvester           *telemetry.Harvester
 	RateLimiter         *RateLimiter
 	ChannelResolver     *slackx.ChannelResolver
+	TrackingDetector    *privacy.TrackingDetector
 
 	Bus EventBus.Bus
 
