@@ -35,7 +35,6 @@ func init() {
 
 func main() {
 	var conf bot.Config
-	conf.Version = Version
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -44,6 +43,11 @@ func main() {
 	err := bot.LoadConfigFromFileAndEnvVars(ctx, initConf.EnvVarsPrefix, initConf.ConfigFilePath, &conf)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	// Set version from build-time variable if not set via env var
+	if conf.Version == "" {
+		conf.Version = Version
 	}
 
 	bus := EventBus.New()
