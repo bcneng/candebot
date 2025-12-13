@@ -843,22 +843,24 @@
                     </div>
                     <div class="code-editor-wrapper">
                         <textarea id="codeEditor">// Example Handler
-var name = 'my-handler';
-var description = 'My custom handler';
-var channels = ['*'];
-var priority = 100;
-var enabled = true;
+var handler = {
+    name: 'my-handler',
+    description: 'My custom handler',
+    channels: ['*'],
+    priority: 100,
+    enabled: true,
 
-function handle(message) {
-    console.log('Received:', message.text);
+    handle: function(message) {
+        console.log('Received:', message.text);
 
-    if (message.text.includes('hello')) {
-        slack.sendEphemeral(message.channel, message.user, 'Hello there!', {});
-        return { handled: true };
+        if (message.text.includes('hello')) {
+            slack.sendEphemeral(message.channel, message.user, 'Hello there!', {});
+            return { handled: true };
+        }
+
+        return { handled: false };
     }
-
-    return { handled: false };
-}</textarea>
+};</textarea>
                     </div>
                 </div>
                 <div class="tab-view" id="apiView">
@@ -1127,13 +1129,13 @@ function handle(message) {
             try {
                 // Create a mock environment for validation
                 const mockApis = { console: {log:()=>{},info:()=>{},warn:()=>{},error:()=>{}}, slack: {}, http: {}, state: {cache:{},store:{}} };
-                const wrappedCode = `(function(console,slack,http,state){${code};return{hasHandle:typeof handle==='function'||(typeof handler==='object'&&typeof handler.handle==='function'),name:typeof handler==='object'?handler.name:(typeof name!=='undefined'?name:null)}})`;
+                const wrappedCode = `(function(console,slack,http,state){${code};return{hasHandle:typeof handler==='object'&&typeof handler.handle==='function',name:typeof handler==='object'?handler.name:null}})`;
                 const check = eval(wrappedCode)(mockApis.console, mockApis.slack, mockApis.http, mockApis.state);
 
                 if (check.hasHandle) {
                     setValidationStatus('valid', check.name ? `Valid: ${check.name}` : 'Valid');
                 } else {
-                    setValidationStatus('invalid', "Missing 'handle' function");
+                    setValidationStatus('invalid', "Missing 'handler.handle' function");
                 }
             } catch (e) {
                 setValidationStatus('invalid', e.message.split('\n')[0].substring(0, 40));
@@ -1315,10 +1317,10 @@ function handle(message) {
 
             try {
                 const apis = createMockAPIs(getHandlerName());
-                const wrappedCode = `(function(console, slack, http, state) { ${code}; return typeof handle === 'function' ? handle : (typeof handler === 'object' && typeof handler.handle === 'function' ? handler.handle : null); })`;
+                const wrappedCode = `(function(console, slack, http, state) { ${code}; return typeof handler === 'object' && typeof handler.handle === 'function' ? handler.handle : null; })`;
                 const handleFn = eval(wrappedCode)(apis.console, apis.slack, apis.http, apis.state);
 
-                if (typeof handleFn !== 'function') throw new Error("Missing 'handle' function");
+                if (typeof handleFn !== 'function') throw new Error("Missing 'handler.handle' function");
                 result = handleFn(message);
             } catch (e) {
                 error = e.message;
