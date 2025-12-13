@@ -43,8 +43,8 @@ apply_to_staff = true
 
 # Extensible JavaScript handlers configuration
 # Allows custom message handlers written in JavaScript
-# See handlers/scripts/README.md for documentation
+# See handlers/js/README.md for documentation
 [handlers]
-dir = "handlers/scripts"    # Directory containing JS handler files
+dir = "handlers/js"    # Directory containing JS handler files
 enabled = true              # Enable/disable the handler system
 default_timeout = 5000      # Default execution timeout in milliseconds

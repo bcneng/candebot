@@ -217,14 +217,14 @@ The handler system can be configured via environment variables or the `.bot.toml
 
 ```toml
 [handlers]
-dir = "handlers/scripts"  # Directory containing handler files
+dir = "handlers/js"  # Directory containing handler files
 enabled = true            # Enable/disable the entire handler system
 default_timeout = 5000    # Default timeout in milliseconds
 ```
 
 Or via environment variables:
 ```
-BOT_HANDLERS_DIR=handlers/scripts
+BOT_HANDLERS_DIR=handlers/js
 BOT_HANDLERS_ENABLED=true
 BOT_HANDLERS_DEFAULT_TIMEOUT=5000
 ```
@@ -257,7 +257,7 @@ Handler logs appear in the bot's standard output with the handler name prefix:
 
 ## Contributing New Handlers
 
-1. Create your handler in `handlers/scripts/`
+1. Create your handler in `handlers/js/`
 2. Test it in a playground channel first (`enabled = false` or limited `channels`)
 3. Submit a PR with your handler
 4. Include documentation in comments explaining what it does

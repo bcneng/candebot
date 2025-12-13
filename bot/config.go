@@ -115,8 +115,8 @@ type TrackingDetectionConfig struct {
 
 // ConfigHandlers holds configuration for the JS handlers system.
 type ConfigHandlers struct {
-	// Dir is the directory containing JS handler files (default: "handlers/scripts")
-	Dir string `env:"DIR,default=handlers/scripts"`
+	// Dir is the directory containing JS handler files (default: "handlers/js")
+	Dir string `env:"DIR,default=handlers/js"`
 	// Enabled controls whether the handler system is active (default: true)
 	Enabled bool `env:"ENABLED,default=true"`
 	// DefaultTimeout is the default handler execution timeout in ms (default: 5000)

@@ -119,7 +119,7 @@ type RuntimeConfig struct {
 // DefaultRuntimeConfig returns the default runtime configuration.
 func DefaultRuntimeConfig() RuntimeConfig {
 	return RuntimeConfig{
-		HandlersDir:    "handlers/scripts",
+		HandlersDir:    "handlers/js",
 		DefaultTimeout: 5000,
 		MaxMemory:      50 * 1024 * 1024, // 50MB
 		AllowedHosts:   nil,              // Allow all

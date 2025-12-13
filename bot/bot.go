@@ -75,7 +75,7 @@ func WakeUp(_ context.Context, conf Config, bus EventBus.Bus) error {
 	if conf.Handlers.Enabled {
 		handlersDir := conf.Handlers.Dir
 		if handlersDir == "" {
-			handlersDir = "handlers/scripts"
+			handlersDir = "handlers/js"
 		}
 
 		runtimeConfig := jsruntime.DefaultRuntimeConfig()
