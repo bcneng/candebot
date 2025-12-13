@@ -958,6 +958,7 @@ function handle(message) {
         let storeState = JSON.parse(localStorage.getItem('handlerSimStore') || '{}');
         let editor = null;
         let validationTimeout = null;
+        let helloWorldCounter = 1;
 
         const templates = {
             tracking: { text: 'Check this out https://instagram.com/p/abc123/?igshid=xyz789', channelName: 'general' },
@@ -1258,6 +1259,14 @@ function handle(message) {
             const code = editor.getValue();
             const message = buildMessage();
             consoleLogs = [];
+
+            // Auto-increment "hello world!" messages
+            const msgInput = document.getElementById('msgText');
+            const helloPattern = /^hello world( \d+)?!$/i;
+            if (helloPattern.test(message.text)) {
+                helloWorldCounter++;
+                msgInput.value = `hello world ${helloWorldCounter}!`;
+            }
 
             // Add the user message first
             addMessage('user', 'Test User', message.text, { channel: message.channelName });
