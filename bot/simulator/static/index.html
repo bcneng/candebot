@@ -1003,31 +1003,51 @@ var handler = {
 
         const apiDocs = `
             <div class="api-section">
-                <h4>Slack API</h4>
-                <div class="api-method"><code>slack.sendMessage(channel, text, opts)</code><div class="desc">Send message to channel</div></div>
-                <div class="api-method"><code>slack.sendEphemeral(channel, user, text, opts)</code><div class="desc">Send ephemeral message</div></div>
-                <div class="api-method"><code>slack.deleteMessage(channel, ts)</code><div class="desc">Delete a message</div></div>
-                <div class="api-method"><code>slack.addReaction(channel, ts, emoji)</code><div class="desc">Add reaction</div></div>
-                <div class="api-method"><code>slack.getUserInfo(userId)</code><div class="desc">Get user info</div></div>
-                <div class="api-method"><code>slack.getChannelInfo(channelId)</code><div class="desc">Get channel info</div></div>
+                <h4>Message Helpers</h4>
+                <div class="api-method"><code>message.reply(text, opts)</code><div class="desc">Send reply to channel</div></div>
+                <div class="api-method"><code>message.replyEphemeral(text, opts)</code><div class="desc">Send ephemeral reply (only visible to user)</div></div>
+                <div class="api-method"><code>message.react(emoji)</code><div class="desc">Add reaction to message</div></div>
+                <div class="api-method"><code>message.delete()</code><div class="desc">Delete the message</div></div>
             </div>
             <div class="api-section">
-                <h4>State API</h4>
-                <div class="api-method"><code>state.cache.get(key)</code> / <code>state.store.get(key)</code><div class="desc">Get value</div></div>
-                <div class="api-method"><code>state.cache.set(key, val)</code> / <code>state.store.set(key, val)</code><div class="desc">Set value</div></div>
-                <div class="api-method"><code>state.cache.delete(key)</code> / <code>state.store.delete(key)</code><div class="desc">Delete key</div></div>
-                <div class="api-method"><code>state.cache.keys()</code> / <code>state.store.keys()</code><div class="desc">List keys</div></div>
+                <h4>Return Values</h4>
+                <div class="api-method"><code>return SKIP</code><div class="desc">Message not handled</div></div>
+                <div class="api-method"><code>return HANDLED</code><div class="desc">Message handled, continue to next handler</div></div>
+                <div class="api-method"><code>return STOP</code><div class="desc">Message handled, stop all handlers</div></div>
             </div>
             <div class="api-section">
-                <h4>Message Object</h4>
+                <h4>Handler Options</h4>
+                <div class="api-method"><code>skipBots: true</code><div class="desc">Auto-skip bot messages</div></div>
+                <div class="api-method"><code>skipThreads: true</code><div class="desc">Auto-skip thread replies</div></div>
+                <div class="api-method"><code>skipDMs: true</code><div class="desc">Auto-skip direct messages</div></div>
+            </div>
+            <div class="api-section">
+                <h4>Message Properties</h4>
                 <div class="api-method">
                     <code>message.text</code> - content<br>
                     <code>message.user</code> - user ID<br>
                     <code>message.channel</code> - channel ID<br>
                     <code>message.channelName</code> - channel name<br>
+                    <code>message.timestamp</code> - message timestamp<br>
                     <code>message.isThread</code> - is thread reply<br>
-                    <code>message.isDM</code> - is direct message
+                    <code>message.isDM</code> - is direct message<br>
+                    <code>message.isBot</code> - is from a bot<br>
+                    <code>message.isStaff</code> - is staff member
                 </div>
+            </div>
+            <div class="api-section">
+                <h4>State API</h4>
+                <div class="api-method"><code>state.cache.get(key)</code><div class="desc">Get value (in-memory)</div></div>
+                <div class="api-method"><code>state.cache.set(key, value)</code><div class="desc">Set value (auto-serializes objects)</div></div>
+                <div class="api-method"><code>state.store.get(key)</code><div class="desc">Get value (persisted)</div></div>
+                <div class="api-method"><code>state.store.set(key, value)</code><div class="desc">Set value (persisted)</div></div>
+            </div>
+            <div class="api-section">
+                <h4>Slack API (advanced)</h4>
+                <div class="api-method"><code>slack.sendMessage(channel, text, opts)</code><div class="desc">Send message</div></div>
+                <div class="api-method"><code>slack.sendEphemeral(channel, user, text, opts)</code><div class="desc">Send ephemeral</div></div>
+                <div class="api-method"><code>slack.addReaction(channel, ts, emoji)</code><div class="desc">Add reaction</div></div>
+                <div class="api-method"><code>slack.getUserInfo(userId)</code><div class="desc">Get user info</div></div>
             </div>
         `;
 
