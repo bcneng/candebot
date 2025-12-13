@@ -13,6 +13,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/lint/lint.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/lint/lint.min.css">
+    <!-- Acorn parser for accurate error locations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/acorn/8.11.3/acorn.min.js"></script>
     <style>
         :root {
             --slack-bg: #1a1d21;
@@ -931,32 +933,22 @@ function handle(message) {
             </div>
         `;
 
-        // Custom linter for handler code
+        // Custom linter for handler code using Acorn parser
         function handlerLinter(text) {
             const errors = [];
-            const wrappedCode = `(function(console,slack,http,state){${text}})`;
             try {
-                new Function(wrappedCode);
+                // Parse as a script (allows var declarations at top level)
+                acorn.parse(text, {
+                    ecmaVersion: 2020,
+                    sourceType: 'script',
+                    locations: true
+                });
             } catch (e) {
-                // Try to extract line number from error
-                const match = e.message.match(/line (\d+)/i);
-                let line = 0;
-                if (match) {
-                    line = parseInt(match[1], 10) - 1; // Adjust for wrapper
-                } else {
-                    // Try to find the error location by parsing incrementally
-                    const lines = text.split('\n');
-                    for (let i = 0; i < lines.length; i++) {
-                        try {
-                            new Function(`(function(console,slack,http,state){${lines.slice(0, i + 1).join('\n')}})`);
-                        } catch {
-                            line = i;
-                            break;
-                        }
-                    }
-                }
+                // Acorn provides accurate line/column in e.loc
+                const line = e.loc ? e.loc.line - 1 : 0;
+                const col = e.loc ? e.loc.column : 0;
                 errors.push({
-                    from: CodeMirror.Pos(line, 0),
+                    from: CodeMirror.Pos(line, col),
                     to: CodeMirror.Pos(line, null),
                     message: e.message,
                     severity: 'error'
