@@ -1465,7 +1465,7 @@ function handle(message) {
         }
 
         function formatTime(date) {
-            return new Date(date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+            return new Date(date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
         }
 
         function showToast(message) {
