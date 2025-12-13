@@ -154,6 +154,37 @@
             border-right: 1px solid var(--slack-border);
         }
 
+        /* Lint error styling */
+        .CodeMirror-lint-marker-error {
+            background: var(--slack-red);
+            border-radius: 50%;
+            width: 8px;
+            height: 8px;
+            margin: 4px;
+        }
+
+        .CodeMirror-lint-tooltip {
+            background: var(--slack-secondary);
+            border: 1px solid var(--slack-border);
+            border-radius: 4px;
+            color: var(--slack-text);
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            padding: 0.5rem 0.75rem;
+            max-width: 400px;
+        }
+
+        .CodeMirror-lint-message-error {
+            background: none;
+            padding-left: 0;
+            color: var(--slack-red);
+        }
+
+        .CodeMirror-lint-mark-error {
+            background: rgba(224, 30, 90, 0.2);
+            border-bottom: 2px wavy var(--slack-red);
+        }
+
         /* Validation status indicator */
         .validation-status {
             display: flex;
@@ -900,7 +931,44 @@ function handle(message) {
             </div>
         `;
 
+        // Custom linter for handler code
+        function handlerLinter(text) {
+            const errors = [];
+            const wrappedCode = `(function(console,slack,http,state){${text}})`;
+            try {
+                new Function(wrappedCode);
+            } catch (e) {
+                // Try to extract line number from error
+                const match = e.message.match(/line (\d+)/i);
+                let line = 0;
+                if (match) {
+                    line = parseInt(match[1], 10) - 1; // Adjust for wrapper
+                } else {
+                    // Try to find the error location by parsing incrementally
+                    const lines = text.split('\n');
+                    for (let i = 0; i < lines.length; i++) {
+                        try {
+                            new Function(`(function(console,slack,http,state){${lines.slice(0, i + 1).join('\n')}})`);
+                        } catch {
+                            line = i;
+                            break;
+                        }
+                    }
+                }
+                errors.push({
+                    from: CodeMirror.Pos(line, 0),
+                    to: CodeMirror.Pos(line, null),
+                    message: e.message,
+                    severity: 'error'
+                });
+            }
+            return errors;
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
+            // Register the linter
+            CodeMirror.registerHelper('lint', 'javascript', handlerLinter);
+
             // Initialize CodeMirror
             editor = CodeMirror.fromTextArea(document.getElementById('codeEditor'), {
                 mode: 'javascript',
@@ -912,6 +980,8 @@ function handle(message) {
                 tabSize: 4,
                 indentWithTabs: false,
                 lineWrapping: false,
+                lint: true,
+                gutters: ['CodeMirror-lint-markers', 'CodeMirror-linenumbers'],
                 extraKeys: {
                     'Ctrl-Enter': executeHandler,
                     'Cmd-Enter': executeHandler
