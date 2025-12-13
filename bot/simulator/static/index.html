@@ -1228,37 +1228,27 @@ function handle(message) {
                 },
                 state: {
                     cache: {
-                        get: (key) => {
-                            const val = cacheState[handlerName]?.[key];
-                            addConsoleLog('log', `state.cache.get("${key}") →`, val !== undefined ? JSON.stringify(val) : 'undefined');
-                            return val;
-                        },
+                        get: (key) => cacheState[handlerName]?.[key],
                         set: (key, val) => {
                             cacheState[handlerName] = cacheState[handlerName] || {};
                             cacheState[handlerName][key] = val;
-                            addConsoleLog('log', `state.cache.set("${key}",`, JSON.stringify(val) + ')');
                         },
-                        delete: (key) => { delete cacheState[handlerName]?.[key]; addConsoleLog('log', `state.cache.delete("${key}")`); },
+                        delete: (key) => { delete cacheState[handlerName]?.[key]; },
                         has: (key) => cacheState[handlerName]?.hasOwnProperty(key) || false,
                         keys: () => Object.keys(cacheState[handlerName] || {}),
-                        clear: () => { cacheState[handlerName] = {}; addConsoleLog('log', 'state.cache.clear()'); }
+                        clear: () => { cacheState[handlerName] = {}; }
                     },
                     store: {
-                        get: (key) => {
-                            const val = storeState[handlerName]?.[key];
-                            addConsoleLog('log', `state.store.get("${key}") →`, val !== undefined ? JSON.stringify(val) : 'undefined');
-                            return val;
-                        },
+                        get: (key) => storeState[handlerName]?.[key],
                         set: (key, val) => {
                             storeState[handlerName] = storeState[handlerName] || {};
                             storeState[handlerName][key] = val;
                             localStorage.setItem('handlerSimStore', JSON.stringify(storeState));
-                            addConsoleLog('log', `state.store.set("${key}",`, JSON.stringify(val) + ')');
                         },
-                        delete: (key) => { delete storeState[handlerName]?.[key]; localStorage.setItem('handlerSimStore', JSON.stringify(storeState)); addConsoleLog('log', `state.store.delete("${key}")`); },
+                        delete: (key) => { delete storeState[handlerName]?.[key]; localStorage.setItem('handlerSimStore', JSON.stringify(storeState)); },
                         has: (key) => storeState[handlerName]?.hasOwnProperty(key) || false,
                         keys: () => Object.keys(storeState[handlerName] || {}),
-                        clear: () => { storeState[handlerName] = {}; localStorage.setItem('handlerSimStore', JSON.stringify(storeState)); addConsoleLog('log', 'state.store.clear()'); }
+                        clear: () => { storeState[handlerName] = {}; localStorage.setItem('handlerSimStore', JSON.stringify(storeState)); }
                     }
                 }
             };
