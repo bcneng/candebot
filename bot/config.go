@@ -56,6 +56,7 @@ type Config struct {
 	Channels            ConfigChannels            `env:",prefix=CHANNELS_"`
 	Links               ConfigLinks               `env:",prefix=LINKS_"`
 	Twitter             ConfigTwitter             `env:",prefix=TWITTER_"`
+	Handlers            ConfigHandlers            `env:",prefix=HANDLERS_"`
 	RateLimits          []RateLimitConfig         `toml:"rate_limits"`
 	TrackingDetection   []TrackingDetectionConfig `toml:"tracking_detection"`
 	TwitterContestToken string                    `env:"TWITTER_CONTEST_TOKEN"`
@@ -110,4 +111,14 @@ type RateLimitConfig struct {
 
 type TrackingDetectionConfig struct {
 	ChannelName string `toml:"channel_name"`
+}
+
+// ConfigHandlers holds configuration for the JS handlers system.
+type ConfigHandlers struct {
+	// Dir is the directory containing JS handler files (default: "handlers/scripts")
+	Dir string `env:"DIR,default=handlers/scripts"`
+	// Enabled controls whether the handler system is active (default: true)
+	Enabled bool `env:"ENABLED,default=true"`
+	// DefaultTimeout is the default handler execution timeout in ms (default: 5000)
+	DefaultTimeout int `env:"DEFAULT_TIMEOUT,default=5000"`
 }

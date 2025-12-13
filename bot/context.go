@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/asaskevich/EventBus"
+	"github.com/bcneng/candebot/internal/jsruntime"
 	"github.com/bcneng/candebot/internal/privacy"
 	"github.com/bcneng/candebot/slackx"
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
@@ -21,6 +22,8 @@ type Context struct {
 	RateLimiter         *RateLimiter
 	ChannelResolver     *slackx.ChannelResolver
 	TrackingDetector    *privacy.TrackingDetector
+	JSRuntime           *jsruntime.Runtime
+	JSLoader            *jsruntime.Loader
 
 	Bus EventBus.Bus
 

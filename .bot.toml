@@ -40,3 +40,11 @@ apply_to_staff = true
 # To enable for specific channels, add entries like the example below:
 # [[tracking_detection]]
 # channel_name = "candebot-testing"
+
+# Extensible JavaScript handlers configuration
+# Allows custom message handlers written in JavaScript
+# See handlers/scripts/README.md for documentation
+[handlers]
+dir = "handlers/scripts"    # Directory containing JS handler files
+enabled = true              # Enable/disable the handler system
+default_timeout = 5000      # Default execution timeout in milliseconds

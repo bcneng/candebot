@@ -10,6 +10,7 @@ import (
 
 	"github.com/asaskevich/EventBus"
 
+	"github.com/bcneng/candebot/internal/jsruntime"
 	"github.com/bcneng/candebot/internal/privacy"
 	"github.com/bcneng/candebot/slackx"
 
@@ -69,6 +70,35 @@ func WakeUp(_ context.Context, conf Config, bus EventBus.Bus) error {
 		return err
 	}
 	cliContext.TrackingDetector = trackingDetector
+
+	// Initialize JS handlers system
+	if conf.Handlers.Enabled {
+		handlersDir := conf.Handlers.Dir
+		if handlersDir == "" {
+			handlersDir = "handlers/scripts"
+		}
+
+		runtimeConfig := jsruntime.DefaultRuntimeConfig()
+		runtimeConfig.HandlersDir = handlersDir
+		if conf.Handlers.DefaultTimeout > 0 {
+			runtimeConfig.DefaultTimeout = conf.Handlers.DefaultTimeout
+		}
+
+		slackClient := jsruntime.NewSlackClient(client, cliContext.AdminClient)
+		jsRuntime := jsruntime.NewRuntime(runtimeConfig, slackClient)
+		jsLoader := jsruntime.NewLoader(jsRuntime, handlersDir)
+
+		if err := jsLoader.LoadAll(); err != nil {
+			log.Printf("[WARN] Some JS handlers failed to load: %v", err)
+		}
+
+		cliContext.JSRuntime = jsRuntime
+		cliContext.JSLoader = jsLoader
+
+		log.Printf("[INFO] JS handlers system initialized with %d handlers", len(jsRuntime.GetHandlers()))
+	} else {
+		log.Println("[INFO] JS handlers system is disabled")
+	}
 
 	return serve(conf, cliContext)
 }

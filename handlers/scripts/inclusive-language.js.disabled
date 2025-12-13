@@ -1,0 +1,77 @@
+// Inclusive Language Filter (JS Port)
+// This is a JavaScript port of the built-in inclusive language filter.
+// Rename to .js to enable (and consider disabling the Go version).
+
+var name = "inclusive-language";
+var description = "Checks messages for non-inclusive language and sends gentle reminders";
+var channels = ["*"]; // All channels
+var priority = 10; // High priority - run early
+var enabled = true;
+var timeout = 3000;
+
+var conductLinks = "\nIn case of doubts please check our <https://bcneng.org/coc|Code of Conduct> and/or our <https://bcneng.org/netiquette|Netiquette> ";
+
+// Filter definitions with regex patterns and replies
+var filters = [
+    // English
+    { pattern: "you guys", reply: "Instead of *guys*, perhaps you mean *pals*? You can read more information about it at https://www.dictionary.com/e/you-guys/... *[Please consider editing your message so it's more inclusive]*" },
+    { pattern: "these guys", reply: "Instead of *guys*, perhaps you mean *gang*? You can read more information about it at https://www.dictionary.com/e/you-guys/... *[Please consider editing your message so it's more inclusive]*" },
+    { pattern: "my guys", reply: "Instead of *guys*, perhaps you mean *crew*? You can read more information about it at https://www.dictionary.com/e/you-guys/... *[Please consider editing your message so it's more inclusive]*" },
+    { pattern: "those guys", reply: "Instead of *guys*, perhaps you mean *people*? You can read more information about it at https://www.dictionary.com/e/you-guys/... *[Please consider editing your message so it's more inclusive]*" },
+    { pattern: "hey guys", reply: "Instead of *guys*, perhaps you mean *y'all*? You can read more information about it at https://www.dictionary.com/e/you-guys/... *[Please consider editing your message so it's more inclusive]*" },
+    { pattern: "hi guys", reply: "Instead of *guys*, perhaps you mean *everyone*? You can read more information about it at https://www.dictionary.com/e/you-guys/... *[Please consider editing your message so it's more inclusive]*" },
+    { pattern: "the guys", reply: "Instead of *guys*, perhaps you mean *folks*? You can read more information about it at https://www.dictionary.com/e/you-guys/... *[Please consider editing your message so it's more inclusive]*" },
+    { pattern: "\\bguys\\b", reply: "Instead of *guys*, have you considered a more gender-neutral pronoun like *folks*? You can read more information about it at https://www.dictionary.com/e/you-guys/... *[Please consider editing your message so it's more inclusive]*" },
+    { pattern: "\\bcrazy\\b", reply: "Using the word *crazy* is considered by some to be insensitive to sufferers of mental illness, maybe you mean *outrageous*, *unthinkable*, *nonsensical*, *incomprehensible*? Have you considered a different adjective like *ridiculous*? You can read more information about it at https://www.selfdefined.app/definitions/crazy/" },
+    { pattern: "\\binsane\\b", reply: "The word *insane* is considered by some to be insensitive to sufferers of mental illness. Perhaps you mean *outrageous*, *unthinkable*, *nonsensical*, *incomprehensible*? Have you considered a different adjective like *ridiculous*? You can read more information about it at https://www.selfdefined.app/definitions/crazy/" },
+    { pattern: "\\bslave\\b", reply: 'If you are referring to a data replication strategy, please consider a term such as "follower" or "replica". You can read more information about it at https://www.selfdefined.app/definitions/master-slave/' },
+    { pattern: "\\bwhitelist\\b", reply: "Instead of *whitelist*, perhaps you mean *allowlist*? You can read more information in https://www.linkedin.com/pulse/allowlist-blocklist-better-terms-everyone-lets-use-them-rob-black/ ... *[Please consider editing your message so it's more inclusive]*" },
+    { pattern: "\\bblacklist\\b", reply: "Instead of *blacklist*, perhaps you mean *blocklist*? You can read more information in https://www.linkedin.com/pulse/allowlist-blocklist-better-terms-everyone-lets-use-them-rob-black/ ... *[Please consider editing your message so it's more inclusive]*" },
+    { pattern: "\\bgentlem[ae]n\\b", reply: "Instead of *gentleman/gentlemen*, perhaps you mean *folks*?... *[Please consider editing your message so it's more inclusive]*" },
+    { pattern: "\\blad(y|ies)\\b", reply: "Instead of *lady/ladies*, perhaps you mean *folks*?... *[Please consider editing your message so it's more inclusive]*" },
+
+    // Spanish
+    { pattern: "\\bdiscapacitad[ao]\\b", reply: "Ante todo somos personas, y no queremos que se nos etiquete, puesto que la discapacidad es una característica más de todas las que se tiene, no lo único por lo que se debe reconocer.\nPor eso es importante anteponer la palabra *persona* y lo más aconsejable es utilizar el término *persona con discapacidad* y no *discapacitado*.\nMás info en https://www.cocemfe.es/wp-content/uploads/2019/02/20181010_COCEMFE_Lenguaje_inclusivo.pdf" },
+    { pattern: "\\bminusvalid[ao]\\b", reply: "*Minusválido* es un término peyorativo y vulnera la dignidad de las personas con discapacidad, al atribuirse un nulo o reducido valor a una persona, o utilizarse generalmente con elevada carga negativa. Considera usar *persona con discapacidad*.\nMás info en https://www.cocemfe.es/wp-content/uploads/2019/02/20181010_COCEMFE_Lenguaje_inclusivo.pdf" },
+    { pattern: "\\bretrasad[ao]\\b", reply: "*Retrasado* y *Retraso mental* son términos despectivos eliminados del vocabulario psiquiátrico y, según la OMS, la forma correcta para referiste a ese grupo de enfermedades y transtornos es *Trastorno del desarrollo intelectual*" },
+    { pattern: "retraso mental", reply: "*Retrasado* y *Retraso mental* son términos despectivos eliminados del vocabulario psiquiátrico y, según la OMS, la forma correcta para referiste a ese grupo de enfermedades y transtornos es *Trastorno del desarrollo intelectual*" },
+    { pattern: "\\bchicos\\b", reply: "En vez de *chicos*, quizá quisiste decir *chiques*, *colegas*, *grupo*, *personas*? Para más información (en inglés), puedes consultar https://www.dictionary.com/e/you-guys/... *[Considera editar tu mensaje para que sea más inclusivo]*" },
+    { pattern: "\\blocura\\b", reply: "La palabra *locura* es considerada por algunas personas como irrespetuosa hacia las personas que sufren alguna enfermedad mental.\nQuizá quisiste decir *indignante*, *impensable*, *absurdo*, *incomprensible*? Has considerado usar un adjetivo diferente como *ridículo*?" },
+    { pattern: "\\bloc[ao]\\b", reply: "La palabra *loco/loca* es considerada por algunas personas como irrespetuosa hacia las personas que sufren alguna enfermedad mental.\nQuizá quisiste decir *indignante*, *impensable*, *absurdo*, *incomprensible*? Has considerado usar un adjetivo diferente como *ridículo*?" },
+];
+
+// Remove accents from text for matching
+function removeAccents(str) {
+    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function handle(message) {
+    // Skip bot messages
+    if (message.botId) {
+        return { handled: false };
+    }
+
+    var text = removeAccents(message.text.toLowerCase());
+
+    for (var i = 0; i < filters.length; i++) {
+        var filter = filters[i];
+        var regex = new RegExp(filter.pattern, "i");
+
+        if (regex.test(text)) {
+            var reply = filter.reply + conductLinks;
+
+            try {
+                slack.sendEphemeral(message.channel, message.user, reply, {
+                    threadTimestamp: message.threadTimestamp
+                });
+                console.info("Sent inclusive language reminder for pattern:", filter.pattern);
+            } catch (e) {
+                console.error("Failed to send ephemeral:", e);
+            }
+
+            return { handled: true, stopPropagation: false };
+        }
+    }
+
+    return { handled: false };
+}

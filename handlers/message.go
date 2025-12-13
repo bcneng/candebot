@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"log"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/bcneng/candebot/bot"
 	"github.com/bcneng/candebot/cmd"
 	"github.com/bcneng/candebot/inclusion"
+	"github.com/bcneng/candebot/internal/jsruntime"
 	"github.com/bcneng/candebot/internal/privacy"
 	"github.com/bcneng/candebot/slackx"
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
@@ -28,6 +30,8 @@ func MessageEventHandler(botCtx bot.Context, e slackevents.EventsAPIInnerEvent) 
 		// behaviors that apply to all messages posted by users both in channels or threads
 		go checkLanguage(botCtx, event)
 		go checkTracking(botCtx, event)
+		// Execute JS handlers asynchronously
+		go executeJSHandlers(botCtx, event)
 	}
 
 	if event.ChannelType == "im" {
@@ -156,6 +160,50 @@ func checkTracking(botCtx bot.Context, event *slackevents.MessageEvent) {
 				Value:     1,
 				Timestamp: time.Now(),
 			})
+		}
+	}
+}
+
+// executeJSHandlers runs all matching JS handlers for the message event.
+func executeJSHandlers(botCtx bot.Context, event *slackevents.MessageEvent) {
+	if botCtx.JSRuntime == nil {
+		return
+	}
+
+	// Resolve channel name if possible
+	channelName := event.Channel
+	if botCtx.ChannelResolver != nil {
+		// For now, use channel ID as the name for matching
+		// Handlers can use both channel ID and name patterns
+		channelName = event.Channel
+	}
+
+	// Build message data for JS handlers
+	message := jsruntime.MessageData{
+		Type:            "message",
+		Channel:         event.Channel,
+		ChannelName:     channelName,
+		ChannelType:     event.ChannelType,
+		User:            event.User,
+		Text:            event.Text,
+		Timestamp:       event.TimeStamp,
+		ThreadTimestamp: event.ThreadTimeStamp,
+		IsThread:        event.ThreadTimeStamp != "",
+		IsDM:            event.ChannelType == "im",
+		BotID:           event.BotID,
+		SubType:         event.SubType,
+	}
+
+	// Execute handlers with a timeout context
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	results := botCtx.JSRuntime.ExecuteHandlers(ctx, channelName, message)
+
+	// Log results for debugging
+	for i, result := range results {
+		if result.Error != "" {
+			log.Printf("[JS Handler %d] Error: %s", i, result.Error)
 		}
 	}
 }
