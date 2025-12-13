@@ -1230,9 +1230,9 @@ function handle(message) {
                 },
                 slack: {
                     sendMessage: (channel, text, opts) => {
-                        const timestamp = `${Date.now()/1000}`;
-                        addMessage('slack', 'Bot', text, { action: 'sendMessage', channel, ts: timestamp });
-                        return { channel, timestamp };
+                        const ts = `${Date.now()/1000}`;
+                        addMessage('slack', 'Bot', text, { action: 'sendMessage', channel, ts });
+                        return { channel, ts };
                     },
                     sendEphemeral: (channel, user, text, opts) => {
                         addMessage('slack', 'Bot', text, { action: 'ephemeral', user, ephemeral: true });
