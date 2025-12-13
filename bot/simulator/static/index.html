@@ -6,165 +6,91 @@
     <title>Handler Simulator</title>
     <style>
         :root {
-            --bg-primary: #1a1a2e;
-            --bg-secondary: #16213e;
-            --bg-tertiary: #0f3460;
-            --accent: #e94560;
-            --accent-light: #ff6b6b;
-            --text-primary: #eee;
-            --text-secondary: #aaa;
-            --success: #4ade80;
-            --warning: #fbbf24;
-            --error: #f87171;
-            --info: #60a5fa;
-            --border-radius: 12px;
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --slack-bg: #1a1d21;
+            --slack-secondary: #222529;
+            --slack-hover: #27242c;
+            --slack-border: #383838;
+            --slack-text: #d1d2d3;
+            --slack-text-muted: #9a9b9d;
+            --slack-accent: #1264a3;
+            --slack-link: #1d9bd1;
+            --slack-green: #2bac76;
+            --slack-yellow: #e8a300;
+            --slack-red: #e01e5a;
+            --slack-purple: #4a154b;
+            --border-radius: 8px;
+            --transition: all 0.15s ease;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
-            color: var(--text-primary);
+            font-family: 'Lato', 'Segoe UI', system-ui, sans-serif;
+            background: var(--slack-bg);
+            color: var(--slack-text);
             min-height: 100vh;
+            font-size: 15px;
+            line-height: 1.46668;
         }
 
-        .bg-animation {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            pointer-events: none;
-            z-index: -1;
-        }
-
-        .bg-animation::before {
-            content: '';
-            position: absolute;
-            width: 200%; height: 200%;
-            top: -50%; left: -50%;
-            background: radial-gradient(circle at 30% 30%, rgba(233, 69, 96, 0.05) 0%, transparent 50%),
-                        radial-gradient(circle at 70% 70%, rgba(96, 165, 250, 0.05) 0%, transparent 50%);
-            animation: bgPulse 15s ease-in-out infinite;
-        }
-
-        @keyframes bgPulse {
-            0%, 100% { transform: scale(1) rotate(0deg); }
-            50% { transform: scale(1.1) rotate(5deg); }
-        }
-
+        /* Header - Slack style */
         header {
-            background: rgba(22, 33, 62, 0.8);
-            backdrop-filter: blur(10px);
-            padding: 1rem 2rem;
+            background: var(--slack-purple);
+            padding: 0.75rem 1.5rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            animation: slideDown 0.5s ease-out;
-        }
-
-        @keyframes slideDown {
-            from { transform: translateY(-100%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+            border-bottom: 1px solid var(--slack-border);
         }
 
         .logo {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            font-size: 1.5rem;
+            gap: 0.5rem;
+            font-size: 1.125rem;
             font-weight: 700;
-            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: white;
         }
 
-        .logo-icon { font-size: 2rem; animation: bounce 2s ease-in-out infinite; }
+        .header-actions { display: flex; gap: 0.75rem; align-items: center; }
 
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
-        }
-
-        .header-actions { display: flex; gap: 1rem; align-items: center; }
-
-        .badge {
-            background: rgba(74, 222, 128, 0.2);
-            color: var(--success);
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
+        /* Layout */
         .container {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            grid-template-rows: auto 1fr auto;
-            gap: 1.5rem;
-            padding: 1.5rem;
-            max-width: 1800px;
-            margin: 0 auto;
-            min-height: calc(100vh - 70px);
+            grid-template-rows: 1fr auto;
+            height: calc(100vh - 52px);
         }
 
         .panel {
-            background: rgba(22, 33, 62, 0.6);
-            backdrop-filter: blur(10px);
-            border-radius: var(--border-radius);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--slack-secondary);
+            border-right: 1px solid var(--slack-border);
+            display: flex;
+            flex-direction: column;
             overflow: hidden;
-            animation: fadeInUp 0.6s ease-out backwards;
-            transition: var(--transition);
         }
 
-        .panel:hover {
-            border-color: rgba(233, 69, 96, 0.3);
-            box-shadow: 0 8px 32px rgba(233, 69, 96, 0.1);
-        }
-
-        .panel:nth-child(1) { animation-delay: 0.1s; }
-        .panel:nth-child(2) { animation-delay: 0.2s; }
-        .panel:nth-child(3) { animation-delay: 0.3s; }
-        .panel:nth-child(4) { animation-delay: 0.4s; }
-
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .panel:last-child { border-right: none; }
 
         .panel-header {
-            padding: 1rem 1.25rem;
-            background: rgba(15, 52, 96, 0.5);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.75rem 1rem;
+            background: var(--slack-bg);
+            border-bottom: 1px solid var(--slack-border);
             display: flex;
             align-items: center;
             justify-content: space-between;
-        }
-
-        .panel-title {
-            font-size: 1rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+            font-weight: 700;
+            font-size: 0.9375rem;
         }
 
         .panel-content {
-            padding: 1rem;
-            height: calc(100% - 56px);
+            flex: 1;
             overflow: auto;
+            padding: 0;
         }
 
-        .editor-panel { grid-column: 1; grid-row: 1 / 3; }
-
+        /* Code Editor */
         .editor-panel .panel-content {
-            padding: 0;
             display: flex;
             flex-direction: column;
         }
@@ -172,25 +98,25 @@
         .handler-select {
             display: flex;
             gap: 0.5rem;
-            padding: 1rem;
-            background: rgba(15, 52, 96, 0.3);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.75rem 1rem;
+            background: var(--slack-bg);
+            border-bottom: 1px solid var(--slack-border);
         }
 
         select, input, textarea {
-            background: rgba(26, 26, 46, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            padding: 0.75rem 1rem;
-            color: var(--text-primary);
-            font-size: 0.9rem;
+            background: var(--slack-bg);
+            border: 1px solid var(--slack-border);
+            border-radius: 4px;
+            padding: 0.5rem 0.75rem;
+            color: var(--slack-text);
+            font-size: 0.875rem;
             transition: var(--transition);
         }
 
         select:focus, input:focus, textarea:focus {
             outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.2);
+            border-color: var(--slack-accent);
+            box-shadow: 0 0 0 1px var(--slack-accent);
         }
 
         select { flex: 1; cursor: pointer; }
@@ -199,473 +125,533 @@
             flex: 1;
             width: 100%;
             resize: none;
-            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
             font-size: 13px;
-            line-height: 1.6;
+            line-height: 1.5;
             padding: 1rem;
-            background: rgba(26, 26, 46, 0.5);
+            background: #0d1117;
             border: none;
             border-radius: 0;
+            color: #c9d1d9;
             tab-size: 2;
         }
 
-        .code-editor:focus { box-shadow: none; border: none; }
+        .code-editor:focus { box-shadow: none; }
 
-        .message-panel { grid-column: 2; grid-row: 1; }
+        /* Message Panel - Slack style */
+        .message-panel { grid-row: 1 / 3; }
 
-        .message-form {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.75rem;
+        .message-composer {
+            padding: 1rem;
+            background: var(--slack-bg);
+            border-bottom: 1px solid var(--slack-border);
         }
 
-        .message-form .full-width { grid-column: 1 / -1; }
+        .composer-input {
+            background: var(--slack-secondary);
+            border: 1px solid var(--slack-border);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            width: 100%;
+            color: var(--slack-text);
+            font-size: 0.9375rem;
+            resize: none;
+        }
 
-        .form-group {
+        .composer-input:focus {
+            border-color: var(--slack-text-muted);
+        }
+
+        .composer-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.5rem;
+        }
+
+        .composer-options {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .composer-fields {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .field-group {
             display: flex;
             flex-direction: column;
             gap: 0.25rem;
         }
 
-        .form-group label {
+        .field-group label {
             font-size: 0.75rem;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            color: var(--slack-text-muted);
+            font-weight: 600;
         }
 
-        .form-group input { padding: 0.5rem 0.75rem; }
+        .field-group input, .field-group select {
+            padding: 0.375rem 0.5rem;
+            font-size: 0.8125rem;
+        }
 
+        /* Slack Messages */
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem 0;
+        }
+
+        .slack-message {
+            display: flex;
+            padding: 0.5rem 1.25rem;
+            gap: 0.75rem;
+            transition: var(--transition);
+        }
+
+        .slack-message:hover {
+            background: var(--slack-hover);
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 4px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.875rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .avatar.bot {
+            background: linear-gradient(135deg, #2bac76 0%, #1a8f5c 100%);
+        }
+
+        .avatar.system {
+            background: linear-gradient(135deg, #e01e5a 0%, #b01848 100%);
+        }
+
+        .message-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            margin-bottom: 0.125rem;
+        }
+
+        .message-author {
+            font-weight: 700;
+            color: var(--slack-text);
+            font-size: 0.9375rem;
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            color: var(--slack-text-muted);
+        }
+
+        .message-badge {
+            font-size: 0.6875rem;
+            padding: 0.125rem 0.375rem;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+
+        .message-badge.api { background: rgba(29, 155, 209, 0.2); color: var(--slack-link); }
+        .message-badge.error { background: rgba(224, 30, 90, 0.2); color: var(--slack-red); }
+        .message-badge.state { background: rgba(232, 163, 0, 0.2); color: var(--slack-yellow); }
+
+        .message-text {
+            color: var(--slack-text);
+            word-wrap: break-word;
+        }
+
+        .message-text code {
+            background: rgba(29, 155, 209, 0.1);
+            color: var(--slack-red);
+            padding: 0.125rem 0.25rem;
+            border-radius: 3px;
+            font-size: 0.8125rem;
+            font-family: 'Monaco', 'Menlo', monospace;
+        }
+
+        .message-text .channel {
+            color: var(--slack-link);
+            background: rgba(29, 155, 209, 0.1);
+            padding: 0 0.125rem;
+            border-radius: 3px;
+        }
+
+        /* Thread style for related messages */
+        .thread-container {
+            margin-left: 2.75rem;
+            padding-left: 0.75rem;
+            border-left: 2px solid var(--slack-border);
+            margin-top: 0.5rem;
+        }
+
+        .thread-message {
+            padding: 0.375rem 0;
+        }
+
+        /* Reactions */
+        .reactions {
+            display: flex;
+            gap: 0.375rem;
+            margin-top: 0.375rem;
+        }
+
+        .reaction {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.125rem 0.5rem;
+            background: var(--slack-bg);
+            border: 1px solid var(--slack-border);
+            border-radius: 12px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .reaction:hover {
+            background: var(--slack-hover);
+            border-color: var(--slack-text-muted);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            background: var(--slack-bg);
+            border-bottom: 1px solid var(--slack-border);
+        }
+
+        .tab {
+            padding: 0.625rem 1rem;
+            background: none;
+            border: none;
+            color: var(--slack-text-muted);
+            cursor: pointer;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .tab:hover { color: var(--slack-text); }
+
+        .tab.active {
+            color: var(--slack-text);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--slack-accent);
+        }
+
+        .tab-badge {
+            background: var(--slack-red);
+            color: white;
+            padding: 0.0625rem 0.375rem;
+            border-radius: 8px;
+            font-size: 0.6875rem;
+            margin-left: 0.25rem;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.8125rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .btn-primary {
+            background: var(--slack-green);
+            color: white;
+        }
+
+        .btn-primary:hover { background: #229c68; }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--slack-text);
+            border: 1px solid var(--slack-border);
+        }
+
+        .btn-secondary:hover { background: var(--slack-hover); }
+
+        .btn-icon {
+            padding: 0.375rem;
+            background: none;
+            border: none;
+            color: var(--slack-text-muted);
+            cursor: pointer;
+            border-radius: 4px;
+            transition: var(--transition);
+        }
+
+        .btn-icon:hover {
+            background: var(--slack-hover);
+            color: var(--slack-text);
+        }
+
+        /* State Panel */
+        .state-panel {
+            grid-column: 1 / -1;
+            border-top: 1px solid var(--slack-border);
+            max-height: 200px;
+        }
+
+        .state-panel .panel-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1px;
+            background: var(--slack-border);
+            padding: 0;
+        }
+
+        .state-section {
+            background: var(--slack-secondary);
+            padding: 0.75rem;
+        }
+
+        .state-section h4 {
+            font-size: 0.75rem;
+            color: var(--slack-text-muted);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .state-editor {
+            width: 100%;
+            min-height: 80px;
+            resize: none;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 11px;
+            background: var(--slack-bg);
+            border: 1px solid var(--slack-border);
+            border-radius: 4px;
+            padding: 0.5rem;
+        }
+
+        /* Quick Templates */
         .templates {
             display: flex;
+            gap: 0.375rem;
             flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-top: 0.75rem;
-            padding-top: 0.75rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .template-btn {
-            padding: 0.35rem 0.75rem;
-            background: rgba(96, 165, 250, 0.15);
-            border: 1px solid rgba(96, 165, 250, 0.3);
-            border-radius: 20px;
-            color: var(--info);
+            padding: 0.25rem 0.625rem;
+            background: var(--slack-bg);
+            border: 1px solid var(--slack-border);
+            border-radius: 16px;
+            color: var(--slack-text-muted);
             font-size: 0.75rem;
             cursor: pointer;
             transition: var(--transition);
         }
 
         .template-btn:hover {
-            background: rgba(96, 165, 250, 0.25);
-            transform: translateY(-1px);
+            border-color: var(--slack-accent);
+            color: var(--slack-text);
         }
 
-        .output-panel { grid-column: 2; grid-row: 2; }
-
-        .output-panel .panel-content {
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .output-tabs {
-            display: flex;
-            background: rgba(15, 52, 96, 0.3);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            flex-wrap: wrap;
-        }
-
-        .output-tab {
-            padding: 0.75rem 1rem;
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            font-size: 0.8rem;
-            transition: var(--transition);
-            position: relative;
-        }
-
-        .output-tab:hover { color: var(--text-primary); }
-        .output-tab.active { color: var(--accent); }
-
-        .output-tab.active::after {
-            content: '';
-            position: absolute;
-            bottom: 0; left: 0; right: 0;
-            height: 2px;
-            background: var(--accent);
-            animation: slideIn 0.3s ease-out;
-        }
-
-        .tab-badge {
-            background: var(--accent);
-            color: white;
-            padding: 0.1rem 0.4rem;
-            border-radius: 10px;
-            font-size: 0.65rem;
-            margin-left: 0.3rem;
-        }
-
-        @keyframes slideIn {
-            from { transform: scaleX(0); }
-            to { transform: scaleX(1); }
-        }
-
-        .output-content {
-            flex: 1;
-            overflow: auto;
-            padding: 1rem;
-            font-family: 'JetBrains Mono', 'Consolas', monospace;
-            font-size: 12px;
-        }
-
-        .output-view { display: none; }
-        .output-view.active { display: block; animation: fadeIn 0.3s ease-out; }
-
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        .log-entry {
-            padding: 0.5rem 0.75rem;
-            margin-bottom: 0.5rem;
-            border-radius: 6px;
-            background: rgba(26, 26, 46, 0.5);
-            display: flex;
-            gap: 0.75rem;
-            align-items: flex-start;
-            animation: logSlide 0.3s ease-out;
-        }
-
-        @keyframes logSlide {
-            from { opacity: 0; transform: translateX(-10px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        .log-time { color: var(--text-secondary); font-size: 0.75rem; white-space: nowrap; }
-
-        .log-level {
-            padding: 0.125rem 0.5rem;
+        /* Result display */
+        .result-block {
+            background: var(--slack-bg);
+            border: 1px solid var(--slack-border);
             border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            white-space: nowrap;
-        }
-
-        .log-level.log { background: rgba(96, 165, 250, 0.2); color: var(--info); }
-        .log-level.info { background: rgba(74, 222, 128, 0.2); color: var(--success); }
-        .log-level.warn { background: rgba(251, 191, 36, 0.2); color: var(--warning); }
-        .log-level.error { background: rgba(248, 113, 113, 0.2); color: var(--error); }
-        .log-level.debug { background: rgba(170, 170, 170, 0.2); color: var(--text-secondary); }
-        .log-level.slack { background: rgba(233, 69, 96, 0.2); color: var(--accent); }
-        .log-level.http { background: rgba(139, 92, 246, 0.2); color: #a78bfa; }
-        .log-level.state { background: rgba(236, 72, 153, 0.2); color: #f472b6; }
-
-        .log-message { flex: 1; word-break: break-word; }
-
-        .state-panel { grid-column: 1 / -1; grid-row: 3; }
-
-        .state-panel .panel-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-
-        .state-section {
-            background: rgba(26, 26, 46, 0.5);
-            border-radius: 8px;
-            padding: 1rem;
-        }
-
-        .state-section h4 {
-            font-size: 0.85rem;
-            margin-bottom: 0.75rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .state-editor {
-            width: 100%;
-            min-height: 100px;
-            resize: vertical;
-            font-family: 'JetBrains Mono', 'Consolas', monospace;
+            padding: 0.75rem;
+            margin: 0.5rem 1.25rem;
+            font-family: 'Monaco', 'Menlo', monospace;
             font-size: 12px;
-        }
-
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .btn:active { transform: scale(0.95); }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(233, 69, 96, 0.3);
-        }
-
-        .btn-primary:hover {
-            box-shadow: 0 6px 20px rgba(233, 69, 96, 0.4);
-            transform: translateY(-2px);
-        }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--text-primary);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .btn-secondary:hover { background: rgba(255, 255, 255, 0.2); }
-        .btn-sm { padding: 0.5rem 1rem; font-size: 0.8rem; }
-
-        .btn-icon {
-            padding: 0.5rem;
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            border-radius: 6px;
-            transition: var(--transition);
-        }
-
-        .btn-icon:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--text-primary);
-        }
-
-        .result-display {
-            background: rgba(26, 26, 46, 0.8);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1rem;
         }
 
         .result-header {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 0.75rem;
-        }
-
-        .result-badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        .result-badge.success { background: rgba(74, 222, 128, 0.2); color: var(--success); }
-        .result-badge.error { background: rgba(248, 113, 113, 0.2); color: var(--error); }
-
-        .result-duration { font-size: 0.75rem; color: var(--text-secondary); }
-
-        .result-json {
-            background: rgba(15, 52, 96, 0.5);
-            border-radius: 6px;
-            padding: 0.75rem;
-            font-family: 'JetBrains Mono', 'Consolas', monospace;
-            font-size: 12px;
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-
-        .validation-result { padding: 0; }
-
-        .validation-item {
-            display: flex;
-            align-items: flex-start;
             gap: 0.5rem;
-            padding: 0.5rem 0;
+            margin-bottom: 0.5rem;
+            font-family: 'Lato', sans-serif;
         }
 
-        .validation-icon { font-size: 1rem; }
-        .validation-icon.error { color: var(--error); }
-        .validation-icon.warning { color: var(--warning); }
-        .validation-icon.success { color: var(--success); }
+        .result-status {
+            padding: 0.125rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
 
-        /* History */
+        .result-status.success { background: rgba(43, 172, 118, 0.2); color: var(--slack-green); }
+        .result-status.error { background: rgba(224, 30, 90, 0.2); color: var(--slack-red); }
+
+        /* History items */
         .history-item {
-            background: rgba(26, 26, 46, 0.5);
-            border-radius: 8px;
-            padding: 0.75rem;
-            margin-bottom: 0.75rem;
+            padding: 0.75rem 1.25rem;
+            border-bottom: 1px solid var(--slack-border);
             cursor: pointer;
             transition: var(--transition);
-            border: 1px solid transparent;
         }
 
-        .history-item:hover {
-            border-color: var(--accent);
-            background: rgba(26, 26, 46, 0.8);
-        }
+        .history-item:hover { background: var(--slack-hover); }
 
         .history-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.25rem;
         }
 
-        .history-time { font-size: 0.75rem; color: var(--text-secondary); }
-        .history-status { font-size: 0.7rem; }
+        .history-time { font-size: 0.75rem; color: var(--slack-text-muted); }
 
         .history-message {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
+            font-size: 0.875rem;
+            color: var(--slack-text-muted);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
-        /* API Reference */
+        /* API Docs */
         .api-section {
-            margin-bottom: 1.5rem;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--slack-border);
         }
 
         .api-section h4 {
-            color: var(--accent);
+            color: var(--slack-text);
             margin-bottom: 0.75rem;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+            font-size: 0.9375rem;
         }
 
         .api-method {
-            background: rgba(26, 26, 46, 0.5);
-            border-radius: 6px;
+            background: var(--slack-bg);
+            border-radius: 4px;
             padding: 0.5rem 0.75rem;
             margin-bottom: 0.5rem;
-            font-size: 0.8rem;
+            font-size: 0.8125rem;
         }
 
         .api-method code {
-            color: var(--info);
-            background: rgba(96, 165, 250, 0.15);
-            padding: 0.1rem 0.4rem;
-            border-radius: 4px;
+            color: var(--slack-link);
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.8125rem;
         }
 
         .api-method .desc {
-            color: var(--text-secondary);
+            color: var(--slack-text-muted);
             font-size: 0.75rem;
             margin-top: 0.25rem;
         }
 
-        /* Pattern Tester */
-        .pattern-tester {
-            background: rgba(26, 26, 46, 0.5);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-top: 1rem;
-        }
-
-        .pattern-tester h5 {
-            margin-bottom: 0.75rem;
-            font-size: 0.85rem;
-        }
-
-        .pattern-result {
-            margin-top: 0.5rem;
-            padding: 0.5rem;
-            border-radius: 4px;
-            font-size: 0.8rem;
-        }
-
-        .pattern-result.match {
-            background: rgba(74, 222, 128, 0.15);
-            color: var(--success);
-        }
-
-        .pattern-result.no-match {
-            background: rgba(248, 113, 113, 0.15);
-            color: var(--error);
-        }
-
-        .toast-container {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            z-index: 1000;
+        /* Empty state */
+        .empty-state {
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+            color: var(--slack-text-muted);
+            text-align: center;
+        }
+
+        .empty-state-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--slack-border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--slack-text-muted); }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
         }
 
         .toast {
-            background: var(--bg-tertiary);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            padding: 1rem 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            animation: toastIn 0.3s ease-out;
+            background: var(--slack-text);
+            color: var(--slack-bg);
+            padding: 0.75rem 1.25rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            animation: toastIn 0.2s ease;
         }
 
-        .toast.hiding { animation: toastOut 0.3s ease-out forwards; }
+        .toast.hiding { animation: toastOut 0.2s ease forwards; }
 
         @keyframes toastIn {
-            from { opacity: 0; transform: translateX(100%); }
-            to { opacity: 1; transform: translateX(0); }
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         @keyframes toastOut {
-            to { opacity: 0; transform: translateX(100%); }
+            to { opacity: 0; transform: translateY(-10px); }
         }
 
-        @media (max-width: 1200px) {
+        @media (max-width: 1000px) {
             .container {
                 grid-template-columns: 1fr;
-                grid-template-rows: auto auto auto auto;
+                grid-template-rows: auto 1fr auto;
             }
-            .editor-panel { grid-column: 1; grid-row: 1; min-height: 400px; }
-            .message-panel { grid-column: 1; grid-row: 2; }
-            .output-panel { grid-column: 1; grid-row: 3; min-height: 300px; }
-            .state-panel { grid-column: 1; grid-row: 4; }
-            .state-panel .panel-content { grid-template-columns: 1fr; }
+            .editor-panel { max-height: 300px; }
+            .message-panel { grid-row: auto; }
         }
     </style>
 </head>
 <body>
-    <div class="bg-animation"></div>
-
     <header>
         <div class="logo">
-            <span class="logo-icon">🤖</span>
+            <span>🤖</span>
             <span>Handler Simulator</span>
         </div>
         <div class="header-actions">
-            <span class="badge">100% Client-Side</span>
-            <button class="btn btn-secondary btn-sm" onclick="switchTab('api')">📚 API Docs</button>
+            <button class="btn btn-secondary" onclick="switchTab('api')">📚 API Docs</button>
         </div>
     </header>
 
     <main class="container">
         <section class="panel editor-panel">
             <div class="panel-header">
-                <h2 class="panel-title">📝 Handler Code</h2>
-                <div style="display: flex; gap: 0.5rem;">
-                    <button class="btn btn-secondary btn-sm" onclick="validateCode()">✓ Validate</button>
-                    <button class="btn btn-primary btn-sm" onclick="executeHandler()">▶ Run</button>
+                <span>Handler Code</span>
+                <div style="display:flex;gap:0.5rem">
+                    <button class="btn btn-secondary" onclick="validateCode()">Validate</button>
+                    <button class="btn btn-primary" onclick="executeHandler()">▶ Run</button>
                 </div>
             </div>
             <div class="panel-content">
                 <div class="handler-select">
                     <select id="handlerSelect" onchange="loadHandler()">
-                        <option value="">-- Load existing handler --</option>
+                        <option value="">Load existing handler...</option>
                     </select>
                     <button class="btn-icon" onclick="refreshHandlers()" title="Refresh">🔄</button>
                 </div>
@@ -680,7 +666,7 @@ function handle(message) {
     console.log('Received:', message.text);
 
     if (message.text.includes('hello')) {
-        slack.sendEphemeral(message.channel, message.user, 'Hello there!', {});
+        slack.sendEphemeral(message.channel, message.user, 'Hello there! 👋', {});
         return { handled: true };
     }
 
@@ -691,93 +677,75 @@ function handle(message) {
 
         <section class="panel message-panel">
             <div class="panel-header">
-                <h2 class="panel-title">💬 Test Message</h2>
-                <button class="btn btn-primary btn-sm" onclick="executeHandler()">📤 Send</button>
+                <span>Output</span>
+                <button class="btn-icon" onclick="clearOutput()" title="Clear">🗑️</button>
+            </div>
+            <div class="tabs">
+                <button class="tab active" data-tab="messages" onclick="switchTab('messages')">Messages</button>
+                <button class="tab" data-tab="history" onclick="switchTab('history')">History<span class="tab-badge" id="historyCount">0</span></button>
+                <button class="tab" data-tab="api" onclick="switchTab('api')">API Reference</button>
             </div>
             <div class="panel-content">
-                <div class="message-form">
-                    <div class="form-group">
-                        <label>Channel ID</label>
-                        <input type="text" id="msgChannel" value="C12345678">
+                <div class="tab-view active" id="messagesView">
+                    <div class="messages-container" id="messagesContainer"></div>
+                </div>
+                <div class="tab-view" id="historyView">
+                    <div id="historyContainer"></div>
+                </div>
+                <div class="tab-view" id="apiView">
+                    <div id="apiContainer"></div>
+                </div>
+            </div>
+            <div class="message-composer">
+                <div class="composer-fields">
+                    <div class="field-group">
+                        <label>Channel</label>
+                        <input type="text" id="msgChannelName" value="general" placeholder="general">
                     </div>
-                    <div class="form-group">
-                        <label>Channel Name</label>
-                        <input type="text" id="msgChannelName" value="general">
+                    <div class="field-group">
+                        <label>User</label>
+                        <input type="text" id="msgUser" value="U87654321" placeholder="U12345">
                     </div>
-                    <div class="form-group">
-                        <label>User ID</label>
-                        <input type="text" id="msgUser" value="U87654321">
-                    </div>
-                    <div class="form-group">
-                        <label>Channel Type</label>
+                    <div class="field-group">
+                        <label>Type</label>
                         <select id="msgChannelType">
                             <option value="channel">Channel</option>
                             <option value="im">DM</option>
                         </select>
                     </div>
-                    <div class="form-group full-width">
-                        <label>Message Text</label>
-                        <input type="text" id="msgText" value="hello world!">
-                    </div>
-                    <div class="form-group">
-                        <label>Thread TS</label>
-                        <input type="text" id="msgThreadTs" value="" placeholder="Empty = not thread">
-                    </div>
-                    <div class="form-group">
-                        <label>Timestamp</label>
-                        <input type="text" id="msgTimestamp" value="" placeholder="Auto-generated">
-                    </div>
                 </div>
-                <div class="templates">
-                    <span style="font-size:0.75rem;color:var(--text-secondary);margin-right:0.5rem">Templates:</span>
-                    <button class="template-btn" onclick="applyTemplate('tracking')">🔗 URL with tracking</button>
-                    <button class="template-btn" onclick="applyTemplate('inclusive')">💬 Inclusive lang test</button>
-                    <button class="template-btn" onclick="applyTemplate('thread')">🧵 Thread reply</button>
-                    <button class="template-btn" onclick="applyTemplate('dm')">📩 Direct message</button>
-                    <button class="template-btn" onclick="applyTemplate('job')">💼 Job board post</button>
-                </div>
-            </div>
-        </section>
-
-        <section class="panel output-panel">
-            <div class="panel-header">
-                <h2 class="panel-title">📊 Output</h2>
-                <button class="btn-icon" onclick="clearOutput()" title="Clear all">🗑️</button>
-            </div>
-            <div class="panel-content">
-                <div class="output-tabs">
-                    <button class="output-tab active" data-tab="logs" onclick="switchTab('logs')">Logs</button>
-                    <button class="output-tab" data-tab="result" onclick="switchTab('result')">Result</button>
-                    <button class="output-tab" data-tab="history" onclick="switchTab('history')">History<span class="tab-badge" id="historyCount">0</span></button>
-                    <button class="output-tab" data-tab="validation" onclick="switchTab('validation')">Validation</button>
-                    <button class="output-tab" data-tab="api" onclick="switchTab('api')">API Reference</button>
-                </div>
-                <div class="output-content">
-                    <div class="output-view active" id="logsView"><div id="logsContainer"></div></div>
-                    <div class="output-view" id="resultView"><div id="resultContainer"></div></div>
-                    <div class="output-view" id="historyView"><div id="historyContainer"></div></div>
-                    <div class="output-view" id="validationView"><div id="validationContainer"></div></div>
-                    <div class="output-view" id="apiView"><div id="apiContainer"></div></div>
+                <input type="hidden" id="msgChannel" value="C12345678">
+                <input type="hidden" id="msgTimestamp" value="">
+                <input type="hidden" id="msgThreadTs" value="">
+                <textarea class="composer-input" id="msgText" rows="2" placeholder="Write a message to test your handler...">hello world!</textarea>
+                <div class="composer-actions">
+                    <div class="templates">
+                        <button class="template-btn" onclick="applyTemplate('tracking')">🔗 Tracking URL</button>
+                        <button class="template-btn" onclick="applyTemplate('inclusive')">💬 Inclusive lang</button>
+                        <button class="template-btn" onclick="applyTemplate('thread')">🧵 Thread</button>
+                        <button class="template-btn" onclick="applyTemplate('job')">💼 Job post</button>
+                    </div>
+                    <button class="btn btn-primary" onclick="executeHandler()">Send Message</button>
                 </div>
             </div>
         </section>
 
         <section class="panel state-panel">
             <div class="panel-header">
-                <h2 class="panel-title">💾 State Storage</h2>
-                <div style="display: flex; gap: 0.5rem;">
-                    <button class="btn btn-secondary btn-sm" onclick="loadState()">🔄 Refresh</button>
-                    <button class="btn btn-secondary btn-sm" onclick="saveState()">💾 Save</button>
-                    <button class="btn btn-secondary btn-sm" onclick="clearState()">🗑️ Clear</button>
+                <span>State</span>
+                <div style="display:flex;gap:0.5rem">
+                    <button class="btn-icon" onclick="loadState()" title="Refresh">🔄</button>
+                    <button class="btn-icon" onclick="saveState()" title="Save">💾</button>
+                    <button class="btn-icon" onclick="clearState()" title="Clear">🗑️</button>
                 </div>
             </div>
             <div class="panel-content">
                 <div class="state-section">
-                    <h4><span>🔄 Cache (Session)</span><span style="font-weight:400;font-size:0.75rem;color:var(--text-secondary)">Lost on refresh</span></h4>
+                    <h4>Cache (Session) - lost on refresh</h4>
                     <textarea class="state-editor" id="cacheEditor">{}</textarea>
                 </div>
                 <div class="state-section">
-                    <h4><span>📁 Store (Persistent)</span><span style="font-weight:400;font-size:0.75rem;color:var(--text-secondary)">localStorage</span></h4>
+                    <h4>Store (Persistent) - localStorage</h4>
                     <textarea class="state-editor" id="storeEditor">{}</textarea>
                 </div>
             </div>
@@ -789,166 +757,45 @@ function handle(message) {
     <script>
         // State
         let handlers = [];
-        let logs = [];
+        let messages = [];
         let history = JSON.parse(localStorage.getItem('handlerSimHistory') || '[]');
         let cacheState = {};
         let storeState = JSON.parse(localStorage.getItem('handlerSimStore') || '{}');
 
-        // Message templates
         const templates = {
-            tracking: {
-                text: 'Check out this link https://instagram.com/p/abc123/?igshid=xyz789',
-                channelName: 'general',
-                channelType: 'channel'
-            },
-            inclusive: {
-                text: 'Hey guys, can someone help me with this?',
-                channelName: 'random',
-                channelType: 'channel'
-            },
-            thread: {
-                text: 'Thanks for the info!',
-                channelName: 'general',
-                channelType: 'channel',
-                threadTs: '1234567890.123456'
-            },
-            dm: {
-                text: 'Hi, I have a question',
-                channelName: '',
-                channelType: 'im'
-            },
-            job: {
-                text: 'We are hiring senior engineers!',
-                channelName: 'hiring-job-board',
-                channel: 'C30CUFT2B',
-                channelType: 'channel'
-            }
+            tracking: { text: 'Check this out https://instagram.com/p/abc123/?igshid=xyz789', channelName: 'general' },
+            inclusive: { text: 'Hey guys, can someone help me with this?', channelName: 'random' },
+            thread: { text: 'Thanks for the info!', channelName: 'general', threadTs: '1234567890.123456' },
+            job: { text: 'We are hiring senior engineers!', channelName: 'hiring-job-board', channel: 'C30CUFT2B' }
         };
 
-        // API Documentation
         const apiDocs = `
             <div class="api-section">
-                <h4>📨 slack</h4>
-                <div class="api-method">
-                    <code>slack.sendMessage(channel, text, opts)</code>
-                    <div class="desc">Send a message to a channel. Returns {channel, timestamp}</div>
-                </div>
-                <div class="api-method">
-                    <code>slack.sendEphemeral(channel, user, text, opts)</code>
-                    <div class="desc">Send ephemeral message visible only to user</div>
-                </div>
-                <div class="api-method">
-                    <code>slack.deleteMessage(channel, timestamp)</code>
-                    <div class="desc">Delete a message (requires admin token)</div>
-                </div>
-                <div class="api-method">
-                    <code>slack.updateMessage(channel, timestamp, text)</code>
-                    <div class="desc">Update an existing message</div>
-                </div>
-                <div class="api-method">
-                    <code>slack.addReaction(channel, timestamp, emoji)</code>
-                    <div class="desc">Add an emoji reaction to a message</div>
-                </div>
-                <div class="api-method">
-                    <code>slack.removeReaction(channel, timestamp, emoji)</code>
-                    <div class="desc">Remove an emoji reaction</div>
-                </div>
-                <div class="api-method">
-                    <code>slack.getUserInfo(userId)</code>
-                    <div class="desc">Get user info: {id, name, realName, displayName, isBot, isAdmin}</div>
-                </div>
-                <div class="api-method">
-                    <code>slack.getChannelInfo(channelId)</code>
-                    <div class="desc">Get channel info: {id, name, topic, purpose, isPrivate, memberCount}</div>
-                </div>
+                <h4>📨 Slack API</h4>
+                <div class="api-method"><code>slack.sendMessage(channel, text, opts)</code><div class="desc">Send message to channel</div></div>
+                <div class="api-method"><code>slack.sendEphemeral(channel, user, text, opts)</code><div class="desc">Send ephemeral message</div></div>
+                <div class="api-method"><code>slack.deleteMessage(channel, ts)</code><div class="desc">Delete a message</div></div>
+                <div class="api-method"><code>slack.addReaction(channel, ts, emoji)</code><div class="desc">Add reaction</div></div>
+                <div class="api-method"><code>slack.getUserInfo(userId)</code><div class="desc">Get user info</div></div>
+                <div class="api-method"><code>slack.getChannelInfo(channelId)</code><div class="desc">Get channel info</div></div>
             </div>
             <div class="api-section">
-                <h4>🌐 http</h4>
-                <div class="api-method">
-                    <code>http.get(url, opts)</code>
-                    <div class="desc">HTTP GET request. Returns {status, statusText, body, headers}</div>
-                </div>
-                <div class="api-method">
-                    <code>http.post(url, body, opts)</code>
-                    <div class="desc">HTTP POST request. opts: {headers: {}}</div>
-                </div>
-            </div>
-            <div class="api-section">
-                <h4>💾 state.cache / state.store</h4>
-                <div class="api-method">
-                    <code>state.cache.get(key)</code> / <code>state.store.get(key)</code>
-                    <div class="desc">Get value by key (returns undefined if not found)</div>
-                </div>
-                <div class="api-method">
-                    <code>state.cache.set(key, value)</code> / <code>state.store.set(key, value)</code>
-                    <div class="desc">Set a value (value should be JSON-serializable)</div>
-                </div>
-                <div class="api-method">
-                    <code>state.cache.delete(key)</code> / <code>state.store.delete(key)</code>
-                    <div class="desc">Delete a key</div>
-                </div>
-                <div class="api-method">
-                    <code>state.cache.has(key)</code> / <code>state.store.has(key)</code>
-                    <div class="desc">Check if key exists (returns boolean)</div>
-                </div>
-                <div class="api-method">
-                    <code>state.cache.keys()</code> / <code>state.store.keys()</code>
-                    <div class="desc">Get all keys (returns array)</div>
-                </div>
-                <div class="api-method">
-                    <code>state.cache.clear()</code> / <code>state.store.clear()</code>
-                    <div class="desc">Clear all keys for this handler</div>
-                </div>
-            </div>
-            <div class="api-section">
-                <h4>📋 console</h4>
-                <div class="api-method">
-                    <code>console.log(...args)</code>, <code>console.info(...args)</code>
-                    <div class="desc">Log messages (visible in Logs tab)</div>
-                </div>
-                <div class="api-method">
-                    <code>console.warn(...args)</code>, <code>console.error(...args)</code>
-                    <div class="desc">Log warnings and errors</div>
-                </div>
+                <h4>💾 State API</h4>
+                <div class="api-method"><code>state.cache.get(key)</code> / <code>state.store.get(key)</code><div class="desc">Get value</div></div>
+                <div class="api-method"><code>state.cache.set(key, val)</code> / <code>state.store.set(key, val)</code><div class="desc">Set value</div></div>
+                <div class="api-method"><code>state.cache.delete(key)</code> / <code>state.store.delete(key)</code><div class="desc">Delete key</div></div>
+                <div class="api-method"><code>state.cache.keys()</code> / <code>state.store.keys()</code><div class="desc">List keys</div></div>
             </div>
             <div class="api-section">
                 <h4>📩 Message Object</h4>
                 <div class="api-method">
-                    <code>message.text</code> - Message text content<br>
-                    <code>message.user</code> - User ID who sent the message<br>
-                    <code>message.channel</code> - Channel ID<br>
-                    <code>message.channelName</code> - Channel name<br>
-                    <code>message.channelType</code> - "channel", "im", or "group"<br>
-                    <code>message.timestamp</code> - Message timestamp<br>
-                    <code>message.threadTimestamp</code> - Thread parent TS (empty if not in thread)<br>
-                    <code>message.isThread</code> - Boolean: is this a thread reply?<br>
-                    <code>message.isDM</code> - Boolean: is this a direct message?<br>
-                    <code>message.botId</code> - Bot ID if message from bot<br>
-                    <code>message.subType</code> - Message subtype
+                    <code>message.text</code> - content<br>
+                    <code>message.user</code> - user ID<br>
+                    <code>message.channel</code> - channel ID<br>
+                    <code>message.channelName</code> - channel name<br>
+                    <code>message.isThread</code> - is thread reply<br>
+                    <code>message.isDM</code> - is direct message
                 </div>
-            </div>
-            <div class="api-section">
-                <h4>↩️ Return Value</h4>
-                <div class="api-method">
-                    <code>return { handled: true }</code>
-                    <div class="desc">Message was handled by this handler</div>
-                </div>
-                <div class="api-method">
-                    <code>return { handled: true, stopPropagation: true }</code>
-                    <div class="desc">Stop other handlers from running</div>
-                </div>
-            </div>
-            <div class="pattern-tester">
-                <h5>🎯 Channel Pattern Tester</h5>
-                <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem">
-                    <input type="text" id="patternInput" placeholder="Pattern (e.g., offtopic-*)" style="flex:1;padding:0.5rem">
-                    <input type="text" id="channelInput" placeholder="Channel name" style="flex:1;padding:0.5rem">
-                    <button class="btn btn-secondary btn-sm" onclick="testPattern()">Test</button>
-                </div>
-                <div class="desc" style="margin-bottom:0.5rem;color:var(--text-secondary)">
-                    Patterns: exact match, glob (*), or regex (/pattern/)
-                </div>
-                <div id="patternResult"></div>
             </div>
         `;
 
@@ -957,59 +804,22 @@ function handle(message) {
             loadState();
             updateHistoryCount();
             document.getElementById('apiContainer').innerHTML = apiDocs;
+            showEmptyState();
         });
 
         function switchTab(tab) {
-            document.querySelectorAll('.output-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-            document.querySelectorAll('.output-view').forEach(v => v.classList.toggle('active', v.id === tab + 'View'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+            document.querySelectorAll('.tab-view').forEach(v => v.classList.toggle('active', v.id === tab + 'View'));
         }
 
         function applyTemplate(name) {
             const t = templates[name];
             if (!t) return;
             if (t.text) document.getElementById('msgText').value = t.text;
-            if (t.channelName !== undefined) document.getElementById('msgChannelName').value = t.channelName;
+            if (t.channelName) document.getElementById('msgChannelName').value = t.channelName;
             if (t.channel) document.getElementById('msgChannel').value = t.channel;
-            if (t.channelType) document.getElementById('msgChannelType').value = t.channelType;
             document.getElementById('msgThreadTs').value = t.threadTs || '';
-            showToast('Template applied: ' + name, 'info');
-        }
-
-        function testPattern() {
-            const pattern = document.getElementById('patternInput').value;
-            const channel = document.getElementById('channelInput').value;
-            const result = document.getElementById('patternResult');
-
-            if (!pattern || !channel) {
-                result.innerHTML = '';
-                return;
-            }
-
-            let matches = false;
-            let explanation = '';
-
-            if (pattern === '*') {
-                matches = true;
-                explanation = 'Wildcard * matches all channels';
-            } else if (pattern.startsWith('/') && pattern.endsWith('/')) {
-                try {
-                    const regex = new RegExp(pattern.slice(1, -1));
-                    matches = regex.test(channel);
-                    explanation = `Regex ${pattern} ${matches ? 'matches' : 'does not match'}`;
-                } catch (e) {
-                    explanation = 'Invalid regex: ' + e.message;
-                }
-            } else if (pattern.includes('*')) {
-                const regexPattern = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
-                const regex = new RegExp('^' + regexPattern + '$');
-                matches = regex.test(channel);
-                explanation = `Glob pattern ${pattern} ${matches ? 'matches' : 'does not match'}`;
-            } else {
-                matches = pattern === channel;
-                explanation = `Exact match ${matches ? 'succeeded' : 'failed'}`;
-            }
-
-            result.innerHTML = `<div class="pattern-result ${matches ? 'match' : 'no-match'}">${matches ? '✓' : '✗'} ${explanation}</div>`;
+            showToast('Template: ' + name);
         }
 
         async function refreshHandlers() {
@@ -1017,16 +827,15 @@ function handle(message) {
                 const res = await fetch('/_simulator/api/handlers');
                 handlers = await res.json();
                 const select = document.getElementById('handlerSelect');
-                select.innerHTML = '<option value="">-- Load existing handler --</option>';
+                select.innerHTML = '<option value="">Load existing handler...</option>';
                 handlers.forEach(h => {
                     const opt = document.createElement('option');
                     opt.value = h.filename;
-                    opt.textContent = `${h.name} ${h.enabled ? '' : '(disabled)'}`;
+                    opt.textContent = h.name + (h.enabled ? '' : ' (disabled)');
                     select.appendChild(opt);
                 });
-                showToast('Handlers loaded', 'success');
             } catch (e) {
-                showToast('Failed to load handlers', 'error');
+                showToast('Failed to load handlers');
             }
         }
 
@@ -1036,13 +845,12 @@ function handle(message) {
             const handler = handlers.find(h => h.filename === filename);
             if (handler) {
                 document.getElementById('codeEditor').value = handler.code;
-                showToast('Loaded: ' + handler.name, 'success');
+                showToast('Loaded: ' + handler.name);
             }
         }
 
         function buildMessage() {
-            const ts = document.getElementById('msgTimestamp').value ||
-                       `${Math.floor(Date.now()/1000)}.${String(Date.now()%1000000).padStart(6,'0')}`;
+            const ts = document.getElementById('msgTimestamp').value || `${Math.floor(Date.now()/1000)}.${String(Date.now()%1000000).padStart(6,'0')}`;
             const threadTs = document.getElementById('msgThreadTs').value;
             return {
                 type: 'message',
@@ -1060,70 +868,57 @@ function handle(message) {
             };
         }
 
-        function addLog(level, ...args) {
-            logs.push({
-                level,
-                message: args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '),
-                time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 })
-            });
+        function addMessage(type, author, text, extra = {}) {
+            messages.push({ type, author, text, time: new Date(), ...extra });
         }
 
         function createMockAPIs(handlerName) {
             return {
                 console: {
-                    log: (...args) => addLog('log', ...args),
-                    info: (...args) => addLog('info', ...args),
-                    warn: (...args) => addLog('warn', ...args),
-                    error: (...args) => addLog('error', ...args),
-                    debug: (...args) => addLog('debug', ...args),
+                    log: (...args) => addMessage('log', 'Console', args.join(' ')),
+                    info: (...args) => addMessage('info', 'Console', args.join(' ')),
+                    warn: (...args) => addMessage('warn', 'Console', '⚠️ ' + args.join(' ')),
+                    error: (...args) => addMessage('error', 'Console', '❌ ' + args.join(' ')),
                 },
                 slack: {
                     sendMessage: (channel, text, opts) => {
-                        addLog('slack', `📤 sendMessage to ${channel}: ${text.substring(0, 100)}`);
+                        addMessage('slack', 'Bot', text, { action: 'sendMessage', channel });
                         return { channel, timestamp: `${Date.now()/1000}` };
                     },
                     sendEphemeral: (channel, user, text, opts) => {
-                        addLog('slack', `👻 sendEphemeral to ${user}: ${text.substring(0, 100)}`);
+                        addMessage('slack', 'Bot', `👻 ${text}`, { action: 'ephemeral', user });
                     },
-                    addReaction: (channel, ts, emoji) => addLog('slack', `👍 addReaction :${emoji}:`),
-                    removeReaction: (channel, ts, emoji) => addLog('slack', `👎 removeReaction :${emoji}:`),
-                    deleteMessage: (channel, ts) => addLog('slack', `🗑️ deleteMessage ${ts}`),
-                    updateMessage: (channel, ts, text) => addLog('slack', `✏️ updateMessage: ${text.substring(0, 100)}`),
+                    addReaction: (channel, ts, emoji) => addMessage('slack', 'Bot', `Added :${emoji}: reaction`, { action: 'reaction' }),
+                    deleteMessage: (channel, ts) => addMessage('slack', 'Bot', `🗑️ Deleted message`, { action: 'delete' }),
                     getUserInfo: (userId) => {
-                        addLog('slack', `👤 getUserInfo ${userId}`);
-                        return { id: userId, name: 'testuser', realName: 'Test User', isBot: false, isAdmin: false };
+                        addMessage('api', 'API', `getUserInfo(${userId})`, { action: 'api' });
+                        return { id: userId, name: 'testuser', realName: 'Test User', isBot: false };
                     },
                     getChannelInfo: (channelId) => {
-                        addLog('slack', `📢 getChannelInfo ${channelId}`);
+                        addMessage('api', 'API', `getChannelInfo(${channelId})`, { action: 'api' });
                         return { id: channelId, name: 'test-channel', isPrivate: false };
                     }
                 },
                 http: {
-                    get: (url, opts) => {
-                        addLog('http', `🌐 GET ${url}`);
-                        return { status: 200, statusText: 'OK (simulated)', body: '{}' };
-                    },
-                    post: (url, body, opts) => {
-                        addLog('http', `🌐 POST ${url}`);
-                        return { status: 200, statusText: 'OK (simulated)', body: '{}' };
-                    }
+                    get: (url) => { addMessage('api', 'HTTP', `GET ${url}`); return { status: 200, body: '{}' }; },
+                    post: (url) => { addMessage('api', 'HTTP', `POST ${url}`); return { status: 200, body: '{}' }; }
                 },
                 state: {
                     cache: {
-                        get: (key) => { const v = cacheState[handlerName]?.[key]; addLog('state', `📖 cache.get(${key}) = ${v}`); return v; },
-                        set: (key, val) => { cacheState[handlerName] = cacheState[handlerName] || {}; cacheState[handlerName][key] = val; addLog('state', `📝 cache.set(${key})`); },
-                        delete: (key) => { delete cacheState[handlerName]?.[key]; addLog('state', `🗑️ cache.delete(${key})`); },
+                        get: (key) => { const v = cacheState[handlerName]?.[key]; addMessage('state', 'State', `cache.get("${key}") → ${v}`); return v; },
+                        set: (key, val) => { cacheState[handlerName] = cacheState[handlerName] || {}; cacheState[handlerName][key] = val; addMessage('state', 'State', `cache.set("${key}")`); },
+                        delete: (key) => { delete cacheState[handlerName]?.[key]; },
                         has: (key) => cacheState[handlerName]?.hasOwnProperty(key) || false,
                         keys: () => Object.keys(cacheState[handlerName] || {}),
-                        clear: () => { cacheState[handlerName] = {}; addLog('state', '🧹 cache.clear()'); }
+                        clear: () => { cacheState[handlerName] = {}; }
                     },
                     store: {
-                        get: (key) => { const v = storeState[handlerName]?.[key]; addLog('state', `📖 store.get(${key}) = ${v}`); return v; },
-                        set: (key, val) => { storeState[handlerName] = storeState[handlerName] || {}; storeState[handlerName][key] = val; localStorage.setItem('handlerSimStore', JSON.stringify(storeState)); addLog('state', `📝 store.set(${key})`); },
-                        delete: (key) => { delete storeState[handlerName]?.[key]; localStorage.setItem('handlerSimStore', JSON.stringify(storeState)); addLog('state', `🗑️ store.delete(${key})`); },
+                        get: (key) => { const v = storeState[handlerName]?.[key]; return v; },
+                        set: (key, val) => { storeState[handlerName] = storeState[handlerName] || {}; storeState[handlerName][key] = val; localStorage.setItem('handlerSimStore', JSON.stringify(storeState)); },
+                        delete: (key) => { delete storeState[handlerName]?.[key]; localStorage.setItem('handlerSimStore', JSON.stringify(storeState)); },
                         has: (key) => storeState[handlerName]?.hasOwnProperty(key) || false,
                         keys: () => Object.keys(storeState[handlerName] || {}),
-                        clear: () => { storeState[handlerName] = {}; localStorage.setItem('handlerSimStore', JSON.stringify(storeState)); addLog('state', '🧹 store.clear()'); }
+                        clear: () => { storeState[handlerName] = {}; localStorage.setItem('handlerSimStore', JSON.stringify(storeState)); }
                     }
                 }
             };
@@ -1132,7 +927,10 @@ function handle(message) {
         function executeHandler() {
             const code = document.getElementById('codeEditor').value;
             const message = buildMessage();
-            logs = [];
+            messages = [];
+
+            // Add the user message first
+            addMessage('user', 'Test User', message.text, { channel: message.channelName });
 
             const start = performance.now();
             let result = null;
@@ -1140,127 +938,117 @@ function handle(message) {
 
             try {
                 const apis = createMockAPIs('simulator');
-                const wrappedCode = `
-                    (function(console, slack, http, state) {
-                        ${code}
-                        return typeof handle === 'function' ? handle : null;
-                    })
-                `;
+                const wrappedCode = `(function(console, slack, http, state) { ${code}; return typeof handle === 'function' ? handle : null; })`;
+                const handleFn = eval(wrappedCode)(apis.console, apis.slack, apis.http, apis.state);
 
-                const createHandler = eval(wrappedCode);
-                const handleFn = createHandler(apis.console, apis.slack, apis.http, apis.state);
-
-                if (typeof handleFn !== 'function') {
-                    throw new Error("Handler must define a 'handle' function");
-                }
-
+                if (typeof handleFn !== 'function') throw new Error("Missing 'handle' function");
                 result = handleFn(message);
             } catch (e) {
                 error = e.message;
-                addLog('error', 'Execution error:', e.message);
+                addMessage('error', 'Error', e.message);
             }
 
             const duration = (performance.now() - start).toFixed(2);
 
+            // Add result message
+            if (!error) {
+                addMessage('result', 'Handler', `Completed in ${duration}ms`, { result, success: true });
+            }
+
             // Save to history
-            const entry = {
+            history.unshift({
                 id: Date.now(),
                 time: new Date().toLocaleString(),
-                message: message.text.substring(0, 50),
+                message: message.text.substring(0, 40),
                 success: !error,
                 duration,
-                result,
-                error,
-                logs: [...logs]
-            };
-            history.unshift(entry);
-            if (history.length > 50) history.pop();
+                messages: [...messages]
+            });
+            if (history.length > 30) history.pop();
             localStorage.setItem('handlerSimHistory', JSON.stringify(history));
             updateHistoryCount();
 
-            displayLogs();
-            displayResult(result, error, duration);
+            renderMessages();
             displayHistory();
             loadState();
-            switchTab('logs');
-
-            if (error) {
-                showToast('Error: ' + error, 'error');
-            } else {
-                showToast(`Executed in ${duration}ms`, 'success');
-            }
+            switchTab('messages');
         }
 
         function validateCode() {
             const code = document.getElementById('codeEditor').value;
-            const errors = [];
-            const warnings = [];
-            let metadata = {};
+            messages = [];
 
             try {
                 const apis = createMockAPIs('validator');
-                const wrappedCode = `(function(console,slack,http,state){${code};return{name:typeof name!=='undefined'?name:null,description:typeof description!=='undefined'?description:null,channels:typeof channels!=='undefined'?channels:null,priority:typeof priority!=='undefined'?priority:null,enabled:typeof enabled!=='undefined'?enabled:null,hasHandle:typeof handle==='function'}})`;
+                const wrappedCode = `(function(console,slack,http,state){${code};return{hasHandle:typeof handle==='function',name:typeof name!=='undefined'?name:null}})`;
                 const check = eval(wrappedCode)(apis.console, apis.slack, apis.http, apis.state);
 
-                metadata = check;
-
-                if (!check.hasHandle) errors.push("Missing required 'handle' function");
-                if (!check.name) warnings.push("Should define 'name' variable");
-                if (!check.channels) warnings.push("Should define 'channels' array");
-                if (!check.description) warnings.push("Should define 'description' variable");
+                if (check.hasHandle) {
+                    addMessage('result', 'Validator', `✅ Code is valid! Handler: ${check.name || 'unnamed'}`, { success: true });
+                } else {
+                    addMessage('error', 'Validator', "❌ Missing 'handle' function");
+                }
             } catch (e) {
-                errors.push('Syntax error: ' + e.message);
+                addMessage('error', 'Validator', '❌ Syntax error: ' + e.message);
             }
 
-            displayValidation(errors, warnings, metadata);
-            switchTab('validation');
-
-            if (errors.length === 0) {
-                showToast('Code is valid!', 'success');
-            } else {
-                showToast('Code has errors', 'error');
-            }
+            renderMessages();
+            switchTab('messages');
         }
 
-        function displayLogs() {
-            const container = document.getElementById('logsContainer');
-            if (logs.length === 0) {
-                container.innerHTML = '<div style="color:var(--text-secondary);text-align:center;padding:2rem">No logs. Run a handler to see output.</div>';
-                return;
-            }
-            container.innerHTML = logs.map((log, i) => `
-                <div class="log-entry" style="animation-delay:${i*30}ms">
-                    <span class="log-time">${log.time}</span>
-                    <span class="log-level ${log.level}">${log.level}</span>
-                    <span class="log-message">${escapeHtml(log.message)}</span>
-                </div>
-            `).join('');
-        }
-
-        function displayResult(result, error, duration) {
-            const container = document.getElementById('resultContainer');
-            container.innerHTML = `
-                <div class="result-display">
-                    <div class="result-header">
-                        <span class="result-badge ${error ? 'error' : 'success'}">${error ? 'Error' : 'Success'}</span>
-                        <span class="result-duration">${duration}ms</span>
-                    </div>
-                    ${error ? `<div style="color:var(--error);margin-bottom:0.75rem">${escapeHtml(error)}</div>` : ''}
-                    ${result ? `<h4 style="margin-bottom:0.5rem;font-size:0.85rem">Return Value:</h4><div class="result-json">${escapeHtml(JSON.stringify(result, null, 2))}</div>` : ''}
+        function showEmptyState() {
+            document.getElementById('messagesContainer').innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">💬</div>
+                    <div>No messages yet</div>
+                    <div style="font-size:0.875rem;margin-top:0.25rem">Run a handler to see output</div>
                 </div>`;
+        }
+
+        function renderMessages() {
+            const container = document.getElementById('messagesContainer');
+            if (messages.length === 0) { showEmptyState(); return; }
+
+            container.innerHTML = messages.map(m => {
+                const avatarClass = m.type === 'user' ? '' : m.type === 'error' ? 'system' : 'bot';
+                const initial = m.author[0].toUpperCase();
+                const badge = m.type === 'api' ? '<span class="message-badge api">API</span>' :
+                             m.type === 'error' ? '<span class="message-badge error">ERROR</span>' :
+                             m.type === 'state' ? '<span class="message-badge state">STATE</span>' : '';
+
+                let text = escapeHtml(m.text);
+                // Format channel mentions
+                text = text.replace(/#([\w-]+)/g, '<span class="channel">#$1</span>');
+
+                return `
+                    <div class="slack-message">
+                        <div class="avatar ${avatarClass}">${initial}</div>
+                        <div class="message-content">
+                            <div class="message-header">
+                                <span class="message-author">${escapeHtml(m.author)}</span>
+                                ${badge}
+                                <span class="message-time">${formatTime(m.time)}</span>
+                            </div>
+                            <div class="message-text">${text}</div>
+                            ${m.result ? `<div class="result-block"><div class="result-header"><span class="result-status success">Success</span></div><pre>${escapeHtml(JSON.stringify(m.result, null, 2))}</pre></div>` : ''}
+                        </div>
+                    </div>`;
+            }).join('');
+
+            container.scrollTop = container.scrollHeight;
         }
 
         function displayHistory() {
             const container = document.getElementById('historyContainer');
             if (history.length === 0) {
-                container.innerHTML = '<div style="color:var(--text-secondary);text-align:center;padding:2rem">No execution history yet.</div>';
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><div>No history yet</div></div>';
                 return;
             }
             container.innerHTML = history.map(h => `
                 <div class="history-item" onclick="viewHistoryItem(${h.id})">
                     <div class="history-header">
                         <span class="history-time">${h.time}</span>
-                        <span class="history-status result-badge ${h.success ? 'success' : 'error'}">${h.success ? '✓' : '✗'} ${h.duration}ms</span>
+                        <span class="result-status ${h.success ? 'success' : 'error'}">${h.success ? '✓' : '✗'} ${h.duration}ms</span>
                     </div>
                     <div class="history-message">"${escapeHtml(h.message)}..."</div>
                 </div>
@@ -1270,45 +1058,24 @@ function handle(message) {
         function viewHistoryItem(id) {
             const item = history.find(h => h.id === id);
             if (!item) return;
-            logs = item.logs;
-            displayLogs();
-            displayResult(item.result, item.error, item.duration);
-            switchTab('logs');
-            showToast('Viewing history from ' + item.time, 'info');
+            messages = item.messages;
+            renderMessages();
+            switchTab('messages');
+            showToast('Viewing: ' + item.time);
         }
 
         function updateHistoryCount() {
             document.getElementById('historyCount').textContent = history.length;
         }
 
-        function displayValidation(errors, warnings, metadata) {
-            const container = document.getElementById('validationContainer');
-            let html = '<div class="validation-result">';
-
-            if (errors.length === 0) {
-                html += '<div class="validation-item"><span class="validation-icon success">✓</span><span>Code is valid</span></div>';
-            }
-            errors.forEach(e => html += `<div class="validation-item"><span class="validation-icon error">✗</span><span>${escapeHtml(e)}</span></div>`);
-            warnings.forEach(w => html += `<div class="validation-item"><span class="validation-icon warning">⚠</span><span>${escapeHtml(w)}</span></div>`);
-
-            html += `<div style="margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.1)">
-                <h4 style="margin-bottom:0.5rem">Metadata</h4>
-                <div class="result-json">${escapeHtml(JSON.stringify(metadata, null, 2))}</div>
-            </div></div>`;
-
-            container.innerHTML = html;
-        }
-
         function clearOutput() {
-            logs = [];
+            messages = [];
             history = [];
             localStorage.removeItem('handlerSimHistory');
             updateHistoryCount();
-            document.getElementById('logsContainer').innerHTML = '';
-            document.getElementById('resultContainer').innerHTML = '';
-            document.getElementById('validationContainer').innerHTML = '';
+            showEmptyState();
             displayHistory();
-            showToast('Output and history cleared', 'success');
+            showToast('Cleared');
         }
 
         function loadState() {
@@ -1321,10 +1088,8 @@ function handle(message) {
                 cacheState = JSON.parse(document.getElementById('cacheEditor').value);
                 storeState = JSON.parse(document.getElementById('storeEditor').value);
                 localStorage.setItem('handlerSimStore', JSON.stringify(storeState));
-                showToast('State saved', 'success');
-            } catch (e) {
-                showToast('Invalid JSON', 'error');
-            }
+                showToast('Saved');
+            } catch (e) { showToast('Invalid JSON'); }
         }
 
         function clearState() {
@@ -1332,18 +1097,20 @@ function handle(message) {
             storeState = {};
             localStorage.removeItem('handlerSimStore');
             loadState();
-            showToast('State cleared', 'success');
+            showToast('State cleared');
         }
 
-        function showToast(message, type = 'info') {
+        function formatTime(date) {
+            return new Date(date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        }
+
+        function showToast(message) {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
             toast.className = 'toast';
-            const icons = { success: '✓', error: '✗', warning: '⚠', info: 'ℹ' };
-            const colors = { success: 'var(--success)', error: 'var(--error)', warning: 'var(--warning)', info: 'var(--info)' };
-            toast.innerHTML = `<span style="color:${colors[type]};font-size:1.25rem">${icons[type]}</span><span>${escapeHtml(message)}</span>`;
+            toast.textContent = message;
             container.appendChild(toast);
-            setTimeout(() => { toast.classList.add('hiding'); setTimeout(() => toast.remove(), 300); }, 3000);
+            setTimeout(() => { toast.classList.add('hiding'); setTimeout(() => toast.remove(), 200); }, 2000);
         }
 
         function escapeHtml(text) {
@@ -1354,11 +1121,12 @@ function handle(message) {
 
         document.addEventListener('keydown', e => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); executeHandler(); }
-            if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); validateCode(); }
         });
 
-        // Initialize history display
+        // Initialize
         displayHistory();
     </script>
+
+    <style>.tab-view { display: none; } .tab-view.active { display: block; height: 100%; }</style>
 </body>
 </html>
