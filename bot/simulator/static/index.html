@@ -764,7 +764,9 @@ function handle(message) {
                 <div class="composer-fields">
                     <div class="field-group">
                         <label>Channel</label>
-                        <input type="text" id="msgChannelName" value="general" placeholder="general">
+                        <select id="msgChannelName" onchange="updateChannelId()">
+                            <option value="general" data-id="C2Y6L58TX">general</option>
+                        </select>
                     </div>
                     <div class="field-group">
                         <label>User</label>
@@ -852,6 +854,7 @@ function handle(message) {
     <script>
         // State
         let handlers = [];
+        let channels = [];
         let messages = [];
         let consoleLogs = [];
         let history = JSON.parse(localStorage.getItem('handlerSimHistory') || '[]');
@@ -864,7 +867,7 @@ function handle(message) {
             tracking: { text: 'Check this out https://instagram.com/p/abc123/?igshid=xyz789', channelName: 'general' },
             inclusive: { text: 'Hey guys, can someone help me with this?', channelName: 'random' },
             thread: { text: 'Thanks for the info!', channelName: 'general', threadTs: '1234567890.123456' },
-            job: { text: 'We are hiring senior engineers!', channelName: 'hiring-job-board', channel: 'C30CUFT2B' }
+            job: { text: 'We are hiring senior engineers!', channelName: 'hiring-job-board' }
         };
 
         const apiDocs = `
@@ -923,6 +926,7 @@ function handle(message) {
             });
 
             refreshHandlers();
+            fetchChannels();
             loadState();
             updateHistoryCount();
             document.getElementById('apiContainer').innerHTML = apiDocs;
@@ -932,6 +936,28 @@ function handle(message) {
             // Initial validation
             setTimeout(autoValidate, 100);
         });
+
+        async function fetchChannels() {
+            try {
+                const res = await fetch('https://raw.githubusercontent.com/bcneng/website/refs/heads/main/data/channels.json');
+                channels = await res.json();
+                const select = document.getElementById('msgChannelName');
+                select.innerHTML = channels.map(c =>
+                    `<option value="${c.name}" data-id="${c.id}">${c.name}</option>`
+                ).join('');
+                // Select general by default
+                select.value = 'general';
+                updateChannelId();
+            } catch (e) {
+                console.error('Failed to fetch channels:', e);
+            }
+        }
+
+        function updateChannelId() {
+            const select = document.getElementById('msgChannelName');
+            const option = select.options[select.selectedIndex];
+            document.getElementById('msgChannel').value = option?.dataset?.id || 'C12345678';
+        }
 
         function setValidationStatus(status, text) {
             const el = document.getElementById('validationStatus');
@@ -975,8 +1001,10 @@ function handle(message) {
             const t = templates[name];
             if (!t) return;
             if (t.text) document.getElementById('msgText').value = t.text;
-            if (t.channelName) document.getElementById('msgChannelName').value = t.channelName;
-            if (t.channel) document.getElementById('msgChannel').value = t.channel;
+            if (t.channelName) {
+                document.getElementById('msgChannelName').value = t.channelName;
+                updateChannelId();
+            }
             document.getElementById('msgThreadTs').value = t.threadTs || '';
             showToast('Template: ' + name);
         }
