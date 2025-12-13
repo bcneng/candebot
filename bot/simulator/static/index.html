@@ -474,6 +474,7 @@
         .console-line.info { color: var(--slack-link); }
         .console-line.warn { color: var(--slack-yellow); }
         .console-line.error { color: var(--slack-red); }
+        .console-line.result { color: var(--slack-yellow); }
 
         /* Tabs */
         .tabs {
@@ -1273,7 +1274,7 @@ function handle(message) {
             if (!error) {
                 addConsoleLog('info', `Completed in ${duration}ms`);
                 if (result !== undefined) {
-                    addConsoleLog('log', 'Result:', JSON.stringify(result));
+                    addConsoleLog('result', 'Result:', JSON.stringify(result));
                 }
             }
 
