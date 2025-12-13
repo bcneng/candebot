@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Handler Simulator</title>
+    <style>
+        :root {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-tertiary: #0f3460;
+            --accent: #e94560;
+            --accent-light: #ff6b6b;
+            --text-primary: #eee;
+            --text-secondary: #aaa;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --error: #f87171;
+            --info: #60a5fa;
+            --border-radius: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .bg-animation {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            width: 200%; height: 200%;
+            top: -50%; left: -50%;
+            background: radial-gradient(circle at 30% 30%, rgba(233, 69, 96, 0.05) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 70%, rgba(96, 165, 250, 0.05) 0%, transparent 50%);
+            animation: bgPulse 15s ease-in-out infinite;
+        }
+
+        @keyframes bgPulse {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.1) rotate(5deg); }
+        }
+
+        header {
+            background: rgba(22, 33, 62, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            animation: slideDown 0.5s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-icon { font-size: 2rem; animation: bounce 2s ease-in-out infinite; }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .badge {
+            background: rgba(74, 222, 128, 0.2);
+            color: var(--success);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto 1fr auto;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            max-width: 1800px;
+            margin: 0 auto;
+            min-height: calc(100vh - 70px);
+        }
+
+        .panel {
+            background: rgba(22, 33, 62, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: var(--border-radius);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            animation: fadeInUp 0.6s ease-out backwards;
+            transition: var(--transition);
+        }
+
+        .panel:hover {
+            border-color: rgba(233, 69, 96, 0.3);
+            box-shadow: 0 8px 32px rgba(233, 69, 96, 0.1);
+        }
+
+        .panel:nth-child(1) { animation-delay: 0.1s; }
+        .panel:nth-child(2) { animation-delay: 0.2s; }
+        .panel:nth-child(3) { animation-delay: 0.3s; }
+        .panel:nth-child(4) { animation-delay: 0.4s; }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .panel-header {
+            padding: 1rem 1.25rem;
+            background: rgba(15, 52, 96, 0.5);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .panel-title {
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .panel-content {
+            padding: 1rem;
+            height: calc(100% - 56px);
+            overflow: auto;
+        }
+
+        .editor-panel { grid-column: 1; grid-row: 1 / 3; }
+
+        .editor-panel .panel-content {
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .handler-select {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: rgba(15, 52, 96, 0.3);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        select, input, textarea {
+            background: rgba(26, 26, 46, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+
+        select:focus, input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.2);
+        }
+
+        select { flex: 1; cursor: pointer; }
+
+        .code-editor {
+            flex: 1;
+            width: 100%;
+            resize: none;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            padding: 1rem;
+            background: rgba(26, 26, 46, 0.5);
+            border: none;
+            border-radius: 0;
+            tab-size: 2;
+        }
+
+        .code-editor:focus { box-shadow: none; border: none; }
+
+        .message-panel { grid-column: 2; grid-row: 1; }
+
+        .message-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .message-form .full-width { grid-column: 1 / -1; }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .form-group label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input { padding: 0.5rem 0.75rem; }
+
+        .output-panel { grid-column: 2; grid-row: 2; }
+
+        .output-panel .panel-content {
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .output-tabs {
+            display: flex;
+            background: rgba(15, 52, 96, 0.3);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .output-tab {
+            padding: 0.75rem 1.25rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .output-tab:hover { color: var(--text-primary); }
+        .output-tab.active { color: var(--accent); }
+
+        .output-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 2px;
+            background: var(--accent);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: scaleX(0); }
+            to { transform: scaleX(1); }
+        }
+
+        .output-content {
+            flex: 1;
+            overflow: auto;
+            padding: 1rem;
+            font-family: 'JetBrains Mono', 'Consolas', monospace;
+            font-size: 12px;
+        }
+
+        .output-view { display: none; }
+        .output-view.active { display: block; animation: fadeIn 0.3s ease-out; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .log-entry {
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.5rem;
+            border-radius: 6px;
+            background: rgba(26, 26, 46, 0.5);
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+            animation: logSlide 0.3s ease-out;
+        }
+
+        @keyframes logSlide {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .log-time { color: var(--text-secondary); font-size: 0.75rem; white-space: nowrap; }
+
+        .log-level {
+            padding: 0.125rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .log-level.log { background: rgba(96, 165, 250, 0.2); color: var(--info); }
+        .log-level.info { background: rgba(74, 222, 128, 0.2); color: var(--success); }
+        .log-level.warn { background: rgba(251, 191, 36, 0.2); color: var(--warning); }
+        .log-level.error { background: rgba(248, 113, 113, 0.2); color: var(--error); }
+        .log-level.debug { background: rgba(170, 170, 170, 0.2); color: var(--text-secondary); }
+        .log-level.slack { background: rgba(233, 69, 96, 0.2); color: var(--accent); }
+        .log-level.http { background: rgba(139, 92, 246, 0.2); color: #a78bfa; }
+        .log-level.state { background: rgba(236, 72, 153, 0.2); color: #f472b6; }
+
+        .log-message { flex: 1; word-break: break-word; }
+
+        .state-panel { grid-column: 1 / -1; grid-row: 3; }
+
+        .state-panel .panel-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .state-section {
+            background: rgba(26, 26, 46, 0.5);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .state-section h4 {
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .state-editor {
+            width: 100%;
+            min-height: 120px;
+            resize: vertical;
+            font-family: 'JetBrains Mono', 'Consolas', monospace;
+            font-size: 12px;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:active { transform: scale(0.95); }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(233, 69, 96, 0.3);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 6px 20px rgba(233, 69, 96, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover { background: rgba(255, 255, 255, 0.2); }
+        .btn-sm { padding: 0.5rem 1rem; font-size: 0.8rem; }
+
+        .btn-icon {
+            padding: 0.5rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 6px;
+            transition: var(--transition);
+        }
+
+        .btn-icon:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        .result-display {
+            background: rgba(26, 26, 46, 0.8);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .result-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .result-badge.success { background: rgba(74, 222, 128, 0.2); color: var(--success); }
+        .result-badge.error { background: rgba(248, 113, 113, 0.2); color: var(--error); }
+
+        .result-duration { font-size: 0.75rem; color: var(--text-secondary); }
+
+        .result-json {
+            background: rgba(15, 52, 96, 0.5);
+            border-radius: 6px;
+            padding: 0.75rem;
+            font-family: 'JetBrains Mono', 'Consolas', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .validation-result { padding: 1rem; }
+
+        .validation-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            padding: 0.5rem 0;
+        }
+
+        .validation-icon { font-size: 1rem; }
+        .validation-icon.error { color: var(--error); }
+        .validation-icon.warning { color: var(--warning); }
+        .validation-icon.success { color: var(--success); }
+
+        .toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .toast {
+            background: var(--bg-tertiary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            animation: toastIn 0.3s ease-out;
+        }
+
+        .toast.hiding { animation: toastOut 0.3s ease-out forwards; }
+
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(100%); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes toastOut {
+            to { opacity: 0; transform: translateX(100%); }
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto auto;
+            }
+            .editor-panel { grid-column: 1; grid-row: 1; min-height: 400px; }
+            .message-panel { grid-column: 1; grid-row: 2; }
+            .output-panel { grid-column: 1; grid-row: 3; min-height: 300px; }
+            .state-panel { grid-column: 1; grid-row: 4; }
+            .state-panel .panel-content { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+
+    <header>
+        <div class="logo">
+            <span class="logo-icon">🤖</span>
+            <span>Handler Simulator</span>
+        </div>
+        <span class="badge">100% Client-Side</span>
+    </header>
+
+    <main class="container">
+        <section class="panel editor-panel">
+            <div class="panel-header">
+                <h2 class="panel-title">📝 Handler Code</h2>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-secondary btn-sm" onclick="validateCode()">✓ Validate</button>
+                    <button class="btn btn-primary btn-sm" onclick="executeHandler()">▶ Run</button>
+                </div>
+            </div>
+            <div class="panel-content">
+                <div class="handler-select">
+                    <select id="handlerSelect" onchange="loadHandler()">
+                        <option value="">-- Load existing handler --</option>
+                    </select>
+                    <button class="btn-icon" onclick="refreshHandlers()" title="Refresh">🔄</button>
+                </div>
+                <textarea class="code-editor" id="codeEditor" spellcheck="false">// Example Handler
+var name = 'my-handler';
+var description = 'My custom handler';
+var channels = ['*'];
+var priority = 100;
+var enabled = true;
+
+function handle(message) {
+    console.log('Received:', message.text);
+
+    if (message.text.includes('hello')) {
+        slack.sendEphemeral(message.channel, message.user, 'Hello there!', {});
+        return { handled: true };
+    }
+
+    return { handled: false };
+}</textarea>
+            </div>
+        </section>
+
+        <section class="panel message-panel">
+            <div class="panel-header">
+                <h2 class="panel-title">💬 Test Message</h2>
+                <button class="btn btn-primary btn-sm" onclick="executeHandler()">📤 Send</button>
+            </div>
+            <div class="panel-content">
+                <div class="message-form">
+                    <div class="form-group">
+                        <label>Channel</label>
+                        <input type="text" id="msgChannel" value="C12345678">
+                    </div>
+                    <div class="form-group">
+                        <label>Channel Name</label>
+                        <input type="text" id="msgChannelName" value="general">
+                    </div>
+                    <div class="form-group">
+                        <label>User</label>
+                        <input type="text" id="msgUser" value="U87654321">
+                    </div>
+                    <div class="form-group">
+                        <label>Timestamp</label>
+                        <input type="text" id="msgTimestamp" value="" placeholder="Auto">
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Message Text</label>
+                        <input type="text" id="msgText" value="hello world!">
+                    </div>
+                    <div class="form-group">
+                        <label>Thread TS</label>
+                        <input type="text" id="msgThreadTs" value="" placeholder="Empty = not thread">
+                    </div>
+                    <div class="form-group">
+                        <label>Channel Type</label>
+                        <select id="msgChannelType">
+                            <option value="channel">Channel</option>
+                            <option value="im">DM</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel output-panel">
+            <div class="panel-header">
+                <h2 class="panel-title">📊 Output</h2>
+                <button class="btn-icon" onclick="clearOutput()" title="Clear">🗑️</button>
+            </div>
+            <div class="panel-content">
+                <div class="output-tabs">
+                    <button class="output-tab active" data-tab="logs" onclick="switchTab('logs')">Logs</button>
+                    <button class="output-tab" data-tab="result" onclick="switchTab('result')">Result</button>
+                    <button class="output-tab" data-tab="validation" onclick="switchTab('validation')">Validation</button>
+                </div>
+                <div class="output-content">
+                    <div class="output-view active" id="logsView"><div id="logsContainer"></div></div>
+                    <div class="output-view" id="resultView"><div id="resultContainer"></div></div>
+                    <div class="output-view" id="validationView"><div id="validationContainer"></div></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel state-panel">
+            <div class="panel-header">
+                <h2 class="panel-title">💾 State Storage</h2>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-secondary btn-sm" onclick="loadState()">🔄 Load</button>
+                    <button class="btn btn-secondary btn-sm" onclick="saveState()">💾 Save</button>
+                    <button class="btn btn-secondary btn-sm" onclick="clearState()">🗑️ Clear</button>
+                </div>
+            </div>
+            <div class="panel-content">
+                <div class="state-section">
+                    <h4><span>🔄 Cache (Session)</span><span style="font-weight:400;font-size:0.75rem;color:var(--text-secondary)">Lost on refresh</span></h4>
+                    <textarea class="state-editor" id="cacheEditor">{}</textarea>
+                </div>
+                <div class="state-section">
+                    <h4><span>📁 Store (Persistent)</span><span style="font-weight:400;font-size:0.75rem;color:var(--text-secondary)">localStorage</span></h4>
+                    <textarea class="state-editor" id="storeEditor">{}</textarea>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // State management
+        let handlers = [];
+        let logs = [];
+        let cacheState = {};
+        let storeState = JSON.parse(localStorage.getItem('handlerSimStore') || '{}');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshHandlers();
+            loadState();
+        });
+
+        function switchTab(tab) {
+            document.querySelectorAll('.output-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+            document.querySelectorAll('.output-view').forEach(v => v.classList.toggle('active', v.id === tab + 'View'));
+        }
+
+        async function refreshHandlers() {
+            try {
+                const res = await fetch('/_simulator/api/handlers');
+                handlers = await res.json();
+                const select = document.getElementById('handlerSelect');
+                select.innerHTML = '<option value="">-- Load existing handler --</option>';
+                handlers.forEach(h => {
+                    const opt = document.createElement('option');
+                    opt.value = h.filename;
+                    opt.textContent = `${h.name} ${h.enabled ? '' : '(disabled)'}`;
+                    select.appendChild(opt);
+                });
+                showToast('Handlers loaded', 'success');
+            } catch (e) {
+                showToast('Failed to load handlers', 'error');
+            }
+        }
+
+        function loadHandler() {
+            const filename = document.getElementById('handlerSelect').value;
+            if (!filename) return;
+            const handler = handlers.find(h => h.filename === filename);
+            if (handler) {
+                document.getElementById('codeEditor').value = handler.code;
+                showToast('Loaded: ' + handler.name, 'success');
+            }
+        }
+
+        function buildMessage() {
+            const ts = document.getElementById('msgTimestamp').value ||
+                       `${Math.floor(Date.now()/1000)}.${String(Date.now()%1000000).padStart(6,'0')}`;
+            const threadTs = document.getElementById('msgThreadTs').value;
+            return {
+                type: 'message',
+                channel: document.getElementById('msgChannel').value,
+                channelName: document.getElementById('msgChannelName').value,
+                channelType: document.getElementById('msgChannelType').value,
+                user: document.getElementById('msgUser').value,
+                text: document.getElementById('msgText').value,
+                timestamp: ts,
+                threadTimestamp: threadTs,
+                isThread: !!threadTs,
+                isDM: document.getElementById('msgChannelType').value === 'im',
+                botId: '',
+                subType: ''
+            };
+        }
+
+        function addLog(level, ...args) {
+            logs.push({
+                level,
+                message: args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '),
+                time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 })
+            });
+        }
+
+        function createMockAPIs(handlerName) {
+            return {
+                console: {
+                    log: (...args) => addLog('log', ...args),
+                    info: (...args) => addLog('info', ...args),
+                    warn: (...args) => addLog('warn', ...args),
+                    error: (...args) => addLog('error', ...args),
+                    debug: (...args) => addLog('debug', ...args),
+                },
+                slack: {
+                    sendMessage: (channel, text, opts) => {
+                        addLog('slack', `📤 sendMessage to ${channel}: ${text.substring(0, 100)}`);
+                        return { channel, timestamp: `${Date.now()/1000}` };
+                    },
+                    sendEphemeral: (channel, user, text, opts) => {
+                        addLog('slack', `👻 sendEphemeral to ${user}: ${text.substring(0, 100)}`);
+                    },
+                    addReaction: (channel, ts, emoji) => addLog('slack', `👍 addReaction :${emoji}:`),
+                    removeReaction: (channel, ts, emoji) => addLog('slack', `👎 removeReaction :${emoji}:`),
+                    deleteMessage: (channel, ts) => addLog('slack', `🗑️ deleteMessage ${ts}`),
+                    updateMessage: (channel, ts, text) => addLog('slack', `✏️ updateMessage: ${text.substring(0, 100)}`),
+                    getUserInfo: (userId) => {
+                        addLog('slack', `👤 getUserInfo ${userId}`);
+                        return { id: userId, name: 'testuser', realName: 'Test User', isBot: false, isAdmin: false };
+                    },
+                    getChannelInfo: (channelId) => {
+                        addLog('slack', `📢 getChannelInfo ${channelId}`);
+                        return { id: channelId, name: 'test-channel', isPrivate: false };
+                    }
+                },
+                http: {
+                    get: (url, opts) => {
+                        addLog('http', `🌐 GET ${url}`);
+                        return { status: 200, statusText: 'OK (simulated)', body: '{}' };
+                    },
+                    post: (url, body, opts) => {
+                        addLog('http', `🌐 POST ${url}`);
+                        return { status: 200, statusText: 'OK (simulated)', body: '{}' };
+                    }
+                },
+                state: {
+                    cache: {
+                        get: (key) => { const v = cacheState[handlerName]?.[key]; addLog('state', `📖 cache.get(${key}) = ${v}`); return v; },
+                        set: (key, val) => { cacheState[handlerName] = cacheState[handlerName] || {}; cacheState[handlerName][key] = val; addLog('state', `📝 cache.set(${key})`); },
+                        delete: (key) => { delete cacheState[handlerName]?.[key]; addLog('state', `🗑️ cache.delete(${key})`); },
+                        has: (key) => cacheState[handlerName]?.hasOwnProperty(key) || false,
+                        keys: () => Object.keys(cacheState[handlerName] || {}),
+                        clear: () => { cacheState[handlerName] = {}; addLog('state', '🧹 cache.clear()'); }
+                    },
+                    store: {
+                        get: (key) => { const v = storeState[handlerName]?.[key]; addLog('state', `📖 store.get(${key}) = ${v}`); return v; },
+                        set: (key, val) => { storeState[handlerName] = storeState[handlerName] || {}; storeState[handlerName][key] = val; localStorage.setItem('handlerSimStore', JSON.stringify(storeState)); addLog('state', `📝 store.set(${key})`); },
+                        delete: (key) => { delete storeState[handlerName]?.[key]; localStorage.setItem('handlerSimStore', JSON.stringify(storeState)); addLog('state', `🗑️ store.delete(${key})`); },
+                        has: (key) => storeState[handlerName]?.hasOwnProperty(key) || false,
+                        keys: () => Object.keys(storeState[handlerName] || {}),
+                        clear: () => { storeState[handlerName] = {}; localStorage.setItem('handlerSimStore', JSON.stringify(storeState)); addLog('state', '🧹 store.clear()'); }
+                    }
+                }
+            };
+        }
+
+        function executeHandler() {
+            const code = document.getElementById('codeEditor').value;
+            const message = buildMessage();
+            logs = [];
+
+            const start = performance.now();
+            let result = null;
+            let error = null;
+
+            try {
+                // Create isolated execution context
+                const apis = createMockAPIs('simulator');
+
+                // Build the execution wrapper
+                const wrappedCode = `
+                    (function(console, slack, http, state) {
+                        ${code}
+                        return typeof handle === 'function' ? handle : null;
+                    })
+                `;
+
+                const createHandler = eval(wrappedCode);
+                const handleFn = createHandler(apis.console, apis.slack, apis.http, apis.state);
+
+                if (typeof handleFn !== 'function') {
+                    throw new Error("Handler must define a 'handle' function");
+                }
+
+                result = handleFn(message);
+            } catch (e) {
+                error = e.message;
+                addLog('error', 'Execution error:', e.message);
+            }
+
+            const duration = (performance.now() - start).toFixed(2);
+
+            displayLogs();
+            displayResult(result, error, duration);
+            loadState();
+            switchTab('logs');
+
+            if (error) {
+                showToast('Error: ' + error, 'error');
+            } else {
+                showToast(`Executed in ${duration}ms`, 'success');
+            }
+        }
+
+        function validateCode() {
+            const code = document.getElementById('codeEditor').value;
+            const errors = [];
+            const warnings = [];
+            let metadata = {};
+
+            try {
+                // Try to parse
+                const apis = createMockAPIs('validator');
+                const wrappedCode = `(function(console,slack,http,state){${code};return{name:typeof name!=='undefined'?name:null,description:typeof description!=='undefined'?description:null,channels:typeof channels!=='undefined'?channels:null,priority:typeof priority!=='undefined'?priority:null,enabled:typeof enabled!=='undefined'?enabled:null,hasHandle:typeof handle==='function'}})`;
+                const check = eval(wrappedCode)(apis.console, apis.slack, apis.http, apis.state);
+
+                metadata = check;
+
+                if (!check.hasHandle) errors.push("Missing required 'handle' function");
+                if (!check.name) warnings.push("Should define 'name' variable");
+                if (!check.channels) warnings.push("Should define 'channels' array");
+                if (!check.description) warnings.push("Should define 'description' variable");
+            } catch (e) {
+                errors.push('Syntax error: ' + e.message);
+            }
+
+            displayValidation(errors, warnings, metadata);
+            switchTab('validation');
+
+            if (errors.length === 0) {
+                showToast('Code is valid!', 'success');
+            } else {
+                showToast('Code has errors', 'error');
+            }
+        }
+
+        function displayLogs() {
+            const container = document.getElementById('logsContainer');
+            if (logs.length === 0) {
+                container.innerHTML = '<div style="color:var(--text-secondary);text-align:center;padding:2rem">No logs. Run a handler to see output.</div>';
+                return;
+            }
+            container.innerHTML = logs.map((log, i) => `
+                <div class="log-entry" style="animation-delay:${i*30}ms">
+                    <span class="log-time">${log.time}</span>
+                    <span class="log-level ${log.level}">${log.level}</span>
+                    <span class="log-message">${escapeHtml(log.message)}</span>
+                </div>
+            `).join('');
+        }
+
+        function displayResult(result, error, duration) {
+            const container = document.getElementById('resultContainer');
+            container.innerHTML = `
+                <div class="result-display">
+                    <div class="result-header">
+                        <span class="result-badge ${error ? 'error' : 'success'}">${error ? 'Error' : 'Success'}</span>
+                        <span class="result-duration">${duration}ms</span>
+                    </div>
+                    ${error ? `<div style="color:var(--error);margin-bottom:0.75rem">${escapeHtml(error)}</div>` : ''}
+                    ${result ? `<h4 style="margin-bottom:0.5rem;font-size:0.85rem">Return Value:</h4><div class="result-json">${escapeHtml(JSON.stringify(result, null, 2))}</div>` : ''}
+                </div>`;
+        }
+
+        function displayValidation(errors, warnings, metadata) {
+            const container = document.getElementById('validationContainer');
+            let html = '<div class="validation-result">';
+
+            if (errors.length === 0) {
+                html += '<div class="validation-item"><span class="validation-icon success">✓</span><span>Code is valid</span></div>';
+            }
+            errors.forEach(e => html += `<div class="validation-item"><span class="validation-icon error">✗</span><span>${escapeHtml(e)}</span></div>`);
+            warnings.forEach(w => html += `<div class="validation-item"><span class="validation-icon warning">⚠</span><span>${escapeHtml(w)}</span></div>`);
+
+            html += `<div style="margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.1)">
+                <h4 style="margin-bottom:0.5rem">Metadata</h4>
+                <div class="result-json">${escapeHtml(JSON.stringify(metadata, null, 2))}</div>
+            </div></div>`;
+
+            container.innerHTML = html;
+        }
+
+        function clearOutput() {
+            logs = [];
+            document.getElementById('logsContainer').innerHTML = '';
+            document.getElementById('resultContainer').innerHTML = '';
+            document.getElementById('validationContainer').innerHTML = '';
+            showToast('Cleared', 'success');
+        }
+
+        function loadState() {
+            document.getElementById('cacheEditor').value = JSON.stringify(cacheState, null, 2);
+            document.getElementById('storeEditor').value = JSON.stringify(storeState, null, 2);
+        }
+
+        function saveState() {
+            try {
+                cacheState = JSON.parse(document.getElementById('cacheEditor').value);
+                storeState = JSON.parse(document.getElementById('storeEditor').value);
+                localStorage.setItem('handlerSimStore', JSON.stringify(storeState));
+                showToast('State saved', 'success');
+            } catch (e) {
+                showToast('Invalid JSON', 'error');
+            }
+        }
+
+        function clearState() {
+            cacheState = {};
+            storeState = {};
+            localStorage.removeItem('handlerSimStore');
+            loadState();
+            showToast('State cleared', 'success');
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            const icons = { success: '✓', error: '✗', warning: '⚠', info: 'ℹ' };
+            const colors = { success: 'var(--success)', error: 'var(--error)', warning: 'var(--warning)', info: 'var(--info)' };
+            toast.innerHTML = `<span style="color:${colors[type]};font-size:1.25rem">${icons[type]}</span><span>${escapeHtml(message)}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.classList.add('hiding'); setTimeout(() => toast.remove(), 300); }, 3000);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        document.addEventListener('keydown', e => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); executeHandler(); }
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); validateCode(); }
+        });
+    </script>
+</body>
+</html>

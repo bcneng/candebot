@@ -11,6 +11,7 @@ import (
 
 	"github.com/asaskevich/EventBus"
 
+	"github.com/bcneng/candebot/bot/simulator"
 	"github.com/bcneng/candebot/internal/jsruntime"
 	"github.com/bcneng/candebot/internal/privacy"
 	"github.com/bcneng/candebot/slackx"
@@ -187,6 +188,15 @@ func serve(conf Config, cliContext Context) error {
 
 	http.HandleFunc("/events", eventsAPIHandler(cliContext))
 	http.HandleFunc("/interact", interactAPIHandler(cliContext))
+
+	// Register handler simulator (available at /_simulator/)
+	handlersDir := conf.Handlers.Dir
+	if handlersDir == "" {
+		handlersDir = "handlers/js"
+	}
+	sim := simulator.NewServer(handlersDir)
+	sim.RegisterRoutes(http.DefaultServeMux)
+	log.Println("[INFO] Handler simulator available at /_simulator/")
 
 	log.Println("[INFO] Slash server listening on port", conf.Bot.Server.Port)
 
