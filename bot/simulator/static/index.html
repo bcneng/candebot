@@ -54,7 +54,7 @@
 
         .header-actions { display: flex; gap: 0.75rem; align-items: center; }
 
-        /* Layout */
+        /* Layout - Code on left, Output on right */
         .container {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -89,8 +89,13 @@
             padding: 0;
         }
 
-        /* Code Editor */
-        .editor-panel .panel-content {
+        /* Code Editor Panel - Left side */
+        .code-panel {
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+        .code-panel .panel-content {
             display: flex;
             flex-direction: column;
         }
@@ -138,9 +143,15 @@
 
         .code-editor:focus { box-shadow: none; }
 
-        /* Message Panel - Slack style */
-        .message-panel { grid-row: 1 / 3; }
+        /* Output Panel - Right side */
+        .output-panel {
+            grid-column: 2;
+            grid-row: 1;
+            display: flex;
+            flex-direction: column;
+        }
 
+        /* Message Composer - At top of output panel */
         .message-composer {
             padding: 1rem;
             background: var(--slack-bg);
@@ -198,11 +209,39 @@
             font-size: 0.8125rem;
         }
 
+        /* Output section with messages */
+        .output-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .output-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border-bottom: 1px solid var(--slack-border);
+        }
+
+        .section-header {
+            padding: 0.5rem 1rem;
+            background: var(--slack-bg);
+            border-bottom: 1px solid var(--slack-border);
+            font-weight: 700;
+            font-size: 0.8125rem;
+            color: var(--slack-text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
         /* Slack Messages */
         .messages-container {
             flex: 1;
             overflow-y: auto;
-            padding: 1rem 0;
+            padding: 0.5rem 0;
         }
 
         .slack-message {
@@ -293,42 +332,34 @@
             border-radius: 3px;
         }
 
-        /* Thread style for related messages */
-        .thread-container {
-            margin-left: 2.75rem;
-            padding-left: 0.75rem;
-            border-left: 2px solid var(--slack-border);
-            margin-top: 0.5rem;
-        }
-
-        .thread-message {
-            padding: 0.375rem 0;
-        }
-
-        /* Reactions */
-        .reactions {
+        /* Console section */
+        .console-section {
+            height: 150px;
+            min-height: 100px;
             display: flex;
-            gap: 0.375rem;
-            margin-top: 0.375rem;
+            flex-direction: column;
         }
 
-        .reaction {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
+        .console-output {
+            flex: 1;
+            overflow-y: auto;
+            background: #0d1117;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            padding: 0.5rem;
+        }
+
+        .console-line {
             padding: 0.125rem 0.5rem;
-            background: var(--slack-bg);
-            border: 1px solid var(--slack-border);
-            border-radius: 12px;
-            font-size: 0.75rem;
-            cursor: pointer;
-            transition: var(--transition);
+            white-space: pre-wrap;
+            word-wrap: break-word;
         }
 
-        .reaction:hover {
-            background: var(--slack-hover);
-            border-color: var(--slack-text-muted);
-        }
+        .console-line.log { color: #c9d1d9; }
+        .console-line.info { color: var(--slack-link); }
+        .console-line.warn { color: var(--slack-yellow); }
+        .console-line.error { color: var(--slack-red); }
 
         /* Tabs */
         .tabs {
@@ -421,6 +452,7 @@
         /* State Panel */
         .state-panel {
             grid-column: 1 / -1;
+            grid-row: 2;
             border-top: 1px solid var(--slack-border);
             max-height: 200px;
         }
@@ -618,44 +650,46 @@
             to { opacity: 0; transform: translateY(-10px); }
         }
 
+        .tab-view { display: none; }
+        .tab-view.active { display: flex; flex-direction: column; height: 100%; }
+
         @media (max-width: 1000px) {
             .container {
                 grid-template-columns: 1fr;
                 grid-template-rows: auto 1fr auto;
             }
-            .editor-panel { max-height: 300px; }
-            .message-panel { grid-row: auto; }
+            .code-panel { max-height: 300px; grid-column: 1; }
+            .output-panel { grid-column: 1; }
         }
     </style>
 </head>
 <body>
     <header>
         <div class="logo">
-            <span>🤖</span>
             <span>Handler Simulator</span>
         </div>
         <div class="header-actions">
-            <button class="btn btn-secondary" onclick="switchTab('api')">📚 API Docs</button>
+            <button class="btn btn-secondary" onclick="validateCode()">Validate</button>
+            <button class="btn btn-primary" onclick="executeHandler()">Run</button>
         </div>
     </header>
 
     <main class="container">
-        <section class="panel editor-panel">
-            <div class="panel-header">
-                <span>Handler Code</span>
-                <div style="display:flex;gap:0.5rem">
-                    <button class="btn btn-secondary" onclick="validateCode()">Validate</button>
-                    <button class="btn btn-primary" onclick="executeHandler()">▶ Run</button>
-                </div>
+        <!-- Left Panel: Code Editor -->
+        <section class="panel code-panel">
+            <div class="tabs">
+                <button class="tab active" data-tab="code" onclick="switchCodeTab('code')">Handler Code</button>
+                <button class="tab" data-tab="api" onclick="switchCodeTab('api')">API Reference</button>
             </div>
             <div class="panel-content">
-                <div class="handler-select">
-                    <select id="handlerSelect" onchange="loadHandler()">
-                        <option value="">Load existing handler...</option>
-                    </select>
-                    <button class="btn-icon" onclick="refreshHandlers()" title="Refresh">🔄</button>
-                </div>
-                <textarea class="code-editor" id="codeEditor" spellcheck="false">// Example Handler
+                <div class="tab-view active" id="codeView">
+                    <div class="handler-select">
+                        <select id="handlerSelect" onchange="loadHandler()">
+                            <option value="">Load existing handler...</option>
+                        </select>
+                        <button class="btn-icon" onclick="refreshHandlers()" title="Refresh">Refresh</button>
+                    </div>
+                    <textarea class="code-editor" id="codeEditor" spellcheck="false">// Example Handler
 var name = 'my-handler';
 var description = 'My custom handler';
 var channels = ['*'];
@@ -666,36 +700,22 @@ function handle(message) {
     console.log('Received:', message.text);
 
     if (message.text.includes('hello')) {
-        slack.sendEphemeral(message.channel, message.user, 'Hello there! 👋', {});
+        slack.sendEphemeral(message.channel, message.user, 'Hello there!', {});
         return { handled: true };
     }
 
     return { handled: false };
 }</textarea>
-            </div>
-        </section>
-
-        <section class="panel message-panel">
-            <div class="panel-header">
-                <span>Output</span>
-                <button class="btn-icon" onclick="clearOutput()" title="Clear">🗑️</button>
-            </div>
-            <div class="tabs">
-                <button class="tab active" data-tab="messages" onclick="switchTab('messages')">Messages</button>
-                <button class="tab" data-tab="history" onclick="switchTab('history')">History<span class="tab-badge" id="historyCount">0</span></button>
-                <button class="tab" data-tab="api" onclick="switchTab('api')">API Reference</button>
-            </div>
-            <div class="panel-content">
-                <div class="tab-view active" id="messagesView">
-                    <div class="messages-container" id="messagesContainer"></div>
-                </div>
-                <div class="tab-view" id="historyView">
-                    <div id="historyContainer"></div>
                 </div>
                 <div class="tab-view" id="apiView">
                     <div id="apiContainer"></div>
                 </div>
             </div>
+        </section>
+
+        <!-- Right Panel: Message & Output -->
+        <section class="panel output-panel">
+            <!-- Message Composer at top -->
             <div class="message-composer">
                 <div class="composer-fields">
                     <div class="field-group">
@@ -720,23 +740,54 @@ function handle(message) {
                 <textarea class="composer-input" id="msgText" rows="2" placeholder="Write a message to test your handler...">hello world!</textarea>
                 <div class="composer-actions">
                     <div class="templates">
-                        <button class="template-btn" onclick="applyTemplate('tracking')">🔗 Tracking URL</button>
-                        <button class="template-btn" onclick="applyTemplate('inclusive')">💬 Inclusive lang</button>
-                        <button class="template-btn" onclick="applyTemplate('thread')">🧵 Thread</button>
-                        <button class="template-btn" onclick="applyTemplate('job')">💼 Job post</button>
+                        <button class="template-btn" onclick="applyTemplate('tracking')">Tracking URL</button>
+                        <button class="template-btn" onclick="applyTemplate('inclusive')">Inclusive lang</button>
+                        <button class="template-btn" onclick="applyTemplate('thread')">Thread</button>
+                        <button class="template-btn" onclick="applyTemplate('job')">Job post</button>
                     </div>
                     <button class="btn btn-primary" onclick="executeHandler()">Send Message</button>
                 </div>
             </div>
+
+            <!-- Output content area -->
+            <div class="output-content">
+                <!-- Messages/Output section -->
+                <div class="output-section">
+                    <div class="section-header">
+                        <span>Output</span>
+                        <div style="display:flex;gap:0.5rem">
+                            <button class="btn-icon" onclick="switchOutputTab('messages')" title="Messages">Messages</button>
+                            <button class="btn-icon" onclick="switchOutputTab('history')" title="History">History <span id="historyCount">0</span></button>
+                            <button class="btn-icon" onclick="clearOutput()" title="Clear">Clear</button>
+                        </div>
+                    </div>
+                    <div class="tab-view active" id="messagesOutputView">
+                        <div class="messages-container" id="messagesContainer"></div>
+                    </div>
+                    <div class="tab-view" id="historyOutputView">
+                        <div class="messages-container" id="historyContainer"></div>
+                    </div>
+                </div>
+
+                <!-- Console section -->
+                <div class="console-section">
+                    <div class="section-header">
+                        <span>Console</span>
+                        <button class="btn-icon" onclick="clearConsole()" title="Clear console">Clear</button>
+                    </div>
+                    <div class="console-output" id="consoleOutput"></div>
+                </div>
+            </div>
         </section>
 
+        <!-- Bottom: State Panel -->
         <section class="panel state-panel">
             <div class="panel-header">
                 <span>State</span>
                 <div style="display:flex;gap:0.5rem">
-                    <button class="btn-icon" onclick="loadState()" title="Refresh">🔄</button>
-                    <button class="btn-icon" onclick="saveState()" title="Save">💾</button>
-                    <button class="btn-icon" onclick="clearState()" title="Clear">🗑️</button>
+                    <button class="btn-icon" onclick="loadState()" title="Refresh">Refresh</button>
+                    <button class="btn-icon" onclick="saveState()" title="Save">Save</button>
+                    <button class="btn-icon" onclick="clearState()" title="Clear">Clear</button>
                 </div>
             </div>
             <div class="panel-content">
@@ -758,6 +809,7 @@ function handle(message) {
         // State
         let handlers = [];
         let messages = [];
+        let consoleLogs = [];
         let history = JSON.parse(localStorage.getItem('handlerSimHistory') || '[]');
         let cacheState = {};
         let storeState = JSON.parse(localStorage.getItem('handlerSimStore') || '{}');
@@ -771,7 +823,7 @@ function handle(message) {
 
         const apiDocs = `
             <div class="api-section">
-                <h4>📨 Slack API</h4>
+                <h4>Slack API</h4>
                 <div class="api-method"><code>slack.sendMessage(channel, text, opts)</code><div class="desc">Send message to channel</div></div>
                 <div class="api-method"><code>slack.sendEphemeral(channel, user, text, opts)</code><div class="desc">Send ephemeral message</div></div>
                 <div class="api-method"><code>slack.deleteMessage(channel, ts)</code><div class="desc">Delete a message</div></div>
@@ -780,14 +832,14 @@ function handle(message) {
                 <div class="api-method"><code>slack.getChannelInfo(channelId)</code><div class="desc">Get channel info</div></div>
             </div>
             <div class="api-section">
-                <h4>💾 State API</h4>
+                <h4>State API</h4>
                 <div class="api-method"><code>state.cache.get(key)</code> / <code>state.store.get(key)</code><div class="desc">Get value</div></div>
                 <div class="api-method"><code>state.cache.set(key, val)</code> / <code>state.store.set(key, val)</code><div class="desc">Set value</div></div>
                 <div class="api-method"><code>state.cache.delete(key)</code> / <code>state.store.delete(key)</code><div class="desc">Delete key</div></div>
                 <div class="api-method"><code>state.cache.keys()</code> / <code>state.store.keys()</code><div class="desc">List keys</div></div>
             </div>
             <div class="api-section">
-                <h4>📩 Message Object</h4>
+                <h4>Message Object</h4>
                 <div class="api-method">
                     <code>message.text</code> - content<br>
                     <code>message.user</code> - user ID<br>
@@ -805,11 +857,20 @@ function handle(message) {
             updateHistoryCount();
             document.getElementById('apiContainer').innerHTML = apiDocs;
             showEmptyState();
+            showEmptyConsole();
         });
 
-        function switchTab(tab) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-            document.querySelectorAll('.tab-view').forEach(v => v.classList.toggle('active', v.id === tab + 'View'));
+        function switchCodeTab(tab) {
+            document.querySelectorAll('.code-panel .tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+            document.querySelectorAll('.code-panel .tab-view').forEach(v => {
+                v.classList.toggle('active', v.id === tab + 'View');
+            });
+        }
+
+        function switchOutputTab(tab) {
+            document.getElementById('messagesOutputView').classList.toggle('active', tab === 'messages');
+            document.getElementById('historyOutputView').classList.toggle('active', tab === 'history');
+            if (tab === 'history') displayHistory();
         }
 
         function applyTemplate(name) {
@@ -845,6 +906,7 @@ function handle(message) {
             const handler = handlers.find(h => h.filename === filename);
             if (handler) {
                 document.getElementById('codeEditor').value = handler.code;
+                switchCodeTab('code');
                 showToast('Loaded: ' + handler.name);
             }
         }
@@ -872,13 +934,23 @@ function handle(message) {
             messages.push({ type, author, text, time: new Date(), ...extra });
         }
 
+        function addConsoleLog(level, ...args) {
+            const text = args.map(a => {
+                if (typeof a === 'object') {
+                    try { return JSON.stringify(a); } catch { return String(a); }
+                }
+                return String(a);
+            }).join(' ');
+            consoleLogs.push({ level, text, time: new Date() });
+        }
+
         function createMockAPIs(handlerName) {
             return {
                 console: {
-                    log: (...args) => addMessage('log', 'Console', args.join(' ')),
-                    info: (...args) => addMessage('info', 'Console', args.join(' ')),
-                    warn: (...args) => addMessage('warn', 'Console', '⚠️ ' + args.join(' ')),
-                    error: (...args) => addMessage('error', 'Console', '❌ ' + args.join(' ')),
+                    log: (...args) => addConsoleLog('log', ...args),
+                    info: (...args) => addConsoleLog('info', ...args),
+                    warn: (...args) => addConsoleLog('warn', ...args),
+                    error: (...args) => addConsoleLog('error', ...args),
                 },
                 slack: {
                     sendMessage: (channel, text, opts) => {
@@ -886,10 +958,10 @@ function handle(message) {
                         return { channel, timestamp: `${Date.now()/1000}` };
                     },
                     sendEphemeral: (channel, user, text, opts) => {
-                        addMessage('slack', 'Bot', `👻 ${text}`, { action: 'ephemeral', user });
+                        addMessage('slack', 'Bot', `[ephemeral] ${text}`, { action: 'ephemeral', user });
                     },
                     addReaction: (channel, ts, emoji) => addMessage('slack', 'Bot', `Added :${emoji}: reaction`, { action: 'reaction' }),
-                    deleteMessage: (channel, ts) => addMessage('slack', 'Bot', `🗑️ Deleted message`, { action: 'delete' }),
+                    deleteMessage: (channel, ts) => addMessage('slack', 'Bot', `Deleted message`, { action: 'delete' }),
                     getUserInfo: (userId) => {
                         addMessage('api', 'API', `getUserInfo(${userId})`, { action: 'api' });
                         return { id: userId, name: 'testuser', realName: 'Test User', isBot: false };
@@ -905,15 +977,15 @@ function handle(message) {
                 },
                 state: {
                     cache: {
-                        get: (key) => { const v = cacheState[handlerName]?.[key]; addMessage('state', 'State', `cache.get("${key}") → ${v}`); return v; },
-                        set: (key, val) => { cacheState[handlerName] = cacheState[handlerName] || {}; cacheState[handlerName][key] = val; addMessage('state', 'State', `cache.set("${key}")`); },
+                        get: (key) => cacheState[handlerName]?.[key],
+                        set: (key, val) => { cacheState[handlerName] = cacheState[handlerName] || {}; cacheState[handlerName][key] = val; },
                         delete: (key) => { delete cacheState[handlerName]?.[key]; },
                         has: (key) => cacheState[handlerName]?.hasOwnProperty(key) || false,
                         keys: () => Object.keys(cacheState[handlerName] || {}),
                         clear: () => { cacheState[handlerName] = {}; }
                     },
                     store: {
-                        get: (key) => { const v = storeState[handlerName]?.[key]; return v; },
+                        get: (key) => storeState[handlerName]?.[key],
                         set: (key, val) => { storeState[handlerName] = storeState[handlerName] || {}; storeState[handlerName][key] = val; localStorage.setItem('handlerSimStore', JSON.stringify(storeState)); },
                         delete: (key) => { delete storeState[handlerName]?.[key]; localStorage.setItem('handlerSimStore', JSON.stringify(storeState)); },
                         has: (key) => storeState[handlerName]?.hasOwnProperty(key) || false,
@@ -928,6 +1000,7 @@ function handle(message) {
             const code = document.getElementById('codeEditor').value;
             const message = buildMessage();
             messages = [];
+            consoleLogs = [];
 
             // Add the user message first
             addMessage('user', 'Test User', message.text, { channel: message.channelName });
@@ -946,6 +1019,7 @@ function handle(message) {
             } catch (e) {
                 error = e.message;
                 addMessage('error', 'Error', e.message);
+                addConsoleLog('error', e.message);
             }
 
             const duration = (performance.now() - start).toFixed(2);
@@ -962,21 +1036,24 @@ function handle(message) {
                 message: message.text.substring(0, 40),
                 success: !error,
                 duration,
-                messages: [...messages]
+                messages: [...messages],
+                consoleLogs: [...consoleLogs]
             });
             if (history.length > 30) history.pop();
             localStorage.setItem('handlerSimHistory', JSON.stringify(history));
             updateHistoryCount();
 
             renderMessages();
+            renderConsole();
             displayHistory();
             loadState();
-            switchTab('messages');
+            switchOutputTab('messages');
         }
 
         function validateCode() {
             const code = document.getElementById('codeEditor').value;
             messages = [];
+            consoleLogs = [];
 
             try {
                 const apis = createMockAPIs('validator');
@@ -984,25 +1061,33 @@ function handle(message) {
                 const check = eval(wrappedCode)(apis.console, apis.slack, apis.http, apis.state);
 
                 if (check.hasHandle) {
-                    addMessage('result', 'Validator', `✅ Code is valid! Handler: ${check.name || 'unnamed'}`, { success: true });
+                    addMessage('result', 'Validator', `Code is valid! Handler: ${check.name || 'unnamed'}`, { success: true });
+                    addConsoleLog('info', 'Validation passed');
                 } else {
-                    addMessage('error', 'Validator', "❌ Missing 'handle' function");
+                    addMessage('error', 'Validator', "Missing 'handle' function");
+                    addConsoleLog('error', "Missing 'handle' function");
                 }
             } catch (e) {
-                addMessage('error', 'Validator', '❌ Syntax error: ' + e.message);
+                addMessage('error', 'Validator', 'Syntax error: ' + e.message);
+                addConsoleLog('error', 'Syntax error:', e.message);
             }
 
             renderMessages();
-            switchTab('messages');
+            renderConsole();
+            switchOutputTab('messages');
         }
 
         function showEmptyState() {
             document.getElementById('messagesContainer').innerHTML = `
                 <div class="empty-state">
-                    <div class="empty-state-icon">💬</div>
+                    <div class="empty-state-icon">Output</div>
                     <div>No messages yet</div>
                     <div style="font-size:0.875rem;margin-top:0.25rem">Run a handler to see output</div>
                 </div>`;
+        }
+
+        function showEmptyConsole() {
+            document.getElementById('consoleOutput').innerHTML = '<div class="console-line log" style="color:var(--slack-text-muted)">Console output will appear here...</div>';
         }
 
         function renderMessages() {
@@ -1038,17 +1123,33 @@ function handle(message) {
             container.scrollTop = container.scrollHeight;
         }
 
+        function renderConsole() {
+            const container = document.getElementById('consoleOutput');
+            if (consoleLogs.length === 0) { showEmptyConsole(); return; }
+
+            container.innerHTML = consoleLogs.map(log =>
+                `<div class="console-line ${log.level}">${escapeHtml(log.text)}</div>`
+            ).join('');
+
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function clearConsole() {
+            consoleLogs = [];
+            showEmptyConsole();
+        }
+
         function displayHistory() {
             const container = document.getElementById('historyContainer');
             if (history.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><div>No history yet</div></div>';
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">History</div><div>No history yet</div></div>';
                 return;
             }
             container.innerHTML = history.map(h => `
                 <div class="history-item" onclick="viewHistoryItem(${h.id})">
                     <div class="history-header">
                         <span class="history-time">${h.time}</span>
-                        <span class="result-status ${h.success ? 'success' : 'error'}">${h.success ? '✓' : '✗'} ${h.duration}ms</span>
+                        <span class="result-status ${h.success ? 'success' : 'error'}">${h.success ? 'OK' : 'ERR'} ${h.duration}ms</span>
                     </div>
                     <div class="history-message">"${escapeHtml(h.message)}..."</div>
                 </div>
@@ -1058,9 +1159,11 @@ function handle(message) {
         function viewHistoryItem(id) {
             const item = history.find(h => h.id === id);
             if (!item) return;
-            messages = item.messages;
+            messages = item.messages || [];
+            consoleLogs = item.consoleLogs || [];
             renderMessages();
-            switchTab('messages');
+            renderConsole();
+            switchOutputTab('messages');
             showToast('Viewing: ' + item.time);
         }
 
@@ -1070,10 +1173,12 @@ function handle(message) {
 
         function clearOutput() {
             messages = [];
+            consoleLogs = [];
             history = [];
             localStorage.removeItem('handlerSimHistory');
             updateHistoryCount();
             showEmptyState();
+            showEmptyConsole();
             displayHistory();
             showToast('Cleared');
         }
@@ -1126,7 +1231,5 @@ function handle(message) {
         // Initialize
         displayHistory();
     </script>
-
-    <style>.tab-view { display: none; } .tab-view.active { display: block; height: 100%; }</style>
 </body>
 </html>
