@@ -977,20 +977,37 @@ function handle(message) {
                 },
                 state: {
                     cache: {
-                        get: (key) => cacheState[handlerName]?.[key],
-                        set: (key, val) => { cacheState[handlerName] = cacheState[handlerName] || {}; cacheState[handlerName][key] = val; },
-                        delete: (key) => { delete cacheState[handlerName]?.[key]; },
+                        get: (key) => {
+                            const val = cacheState[handlerName]?.[key];
+                            addConsoleLog('log', `state.cache.get("${key}") →`, val !== undefined ? JSON.stringify(val) : 'undefined');
+                            return val;
+                        },
+                        set: (key, val) => {
+                            cacheState[handlerName] = cacheState[handlerName] || {};
+                            cacheState[handlerName][key] = val;
+                            addConsoleLog('log', `state.cache.set("${key}",`, JSON.stringify(val) + ')');
+                        },
+                        delete: (key) => { delete cacheState[handlerName]?.[key]; addConsoleLog('log', `state.cache.delete("${key}")`); },
                         has: (key) => cacheState[handlerName]?.hasOwnProperty(key) || false,
                         keys: () => Object.keys(cacheState[handlerName] || {}),
-                        clear: () => { cacheState[handlerName] = {}; }
+                        clear: () => { cacheState[handlerName] = {}; addConsoleLog('log', 'state.cache.clear()'); }
                     },
                     store: {
-                        get: (key) => storeState[handlerName]?.[key],
-                        set: (key, val) => { storeState[handlerName] = storeState[handlerName] || {}; storeState[handlerName][key] = val; localStorage.setItem('handlerSimStore', JSON.stringify(storeState)); },
-                        delete: (key) => { delete storeState[handlerName]?.[key]; localStorage.setItem('handlerSimStore', JSON.stringify(storeState)); },
+                        get: (key) => {
+                            const val = storeState[handlerName]?.[key];
+                            addConsoleLog('log', `state.store.get("${key}") →`, val !== undefined ? JSON.stringify(val) : 'undefined');
+                            return val;
+                        },
+                        set: (key, val) => {
+                            storeState[handlerName] = storeState[handlerName] || {};
+                            storeState[handlerName][key] = val;
+                            localStorage.setItem('handlerSimStore', JSON.stringify(storeState));
+                            addConsoleLog('log', `state.store.set("${key}",`, JSON.stringify(val) + ')');
+                        },
+                        delete: (key) => { delete storeState[handlerName]?.[key]; localStorage.setItem('handlerSimStore', JSON.stringify(storeState)); addConsoleLog('log', `state.store.delete("${key}")`); },
                         has: (key) => storeState[handlerName]?.hasOwnProperty(key) || false,
                         keys: () => Object.keys(storeState[handlerName] || {}),
-                        clear: () => { storeState[handlerName] = {}; localStorage.setItem('handlerSimStore', JSON.stringify(storeState)); }
+                        clear: () => { storeState[handlerName] = {}; localStorage.setItem('handlerSimStore', JSON.stringify(storeState)); addConsoleLog('log', 'state.store.clear()'); }
                     }
                 }
             };
@@ -1046,7 +1063,7 @@ function handle(message) {
             renderMessages();
             renderConsole();
             displayHistory();
-            loadState();
+            loadState(true);  // Highlight state changes
             switchOutputTab('messages');
         }
 
@@ -1183,9 +1200,23 @@ function handle(message) {
             showToast('Cleared');
         }
 
-        function loadState() {
-            document.getElementById('cacheEditor').value = JSON.stringify(cacheState, null, 2);
-            document.getElementById('storeEditor').value = JSON.stringify(storeState, null, 2);
+        function loadState(highlight = false) {
+            const cacheEditor = document.getElementById('cacheEditor');
+            const storeEditor = document.getElementById('storeEditor');
+            cacheEditor.value = JSON.stringify(cacheState, null, 2);
+            storeEditor.value = JSON.stringify(storeState, null, 2);
+
+            if (highlight && Object.keys(cacheState).length > 0) {
+                // Highlight cache section to show it changed
+                cacheEditor.style.borderColor = 'var(--slack-green)';
+                cacheEditor.style.boxShadow = '0 0 0 2px rgba(43, 172, 118, 0.3)';
+                setTimeout(() => {
+                    cacheEditor.style.borderColor = '';
+                    cacheEditor.style.boxShadow = '';
+                }, 1500);
+                // Scroll state panel into view
+                document.querySelector('.state-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
         }
 
         function saveState() {
