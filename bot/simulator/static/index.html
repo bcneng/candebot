@@ -1194,12 +1194,16 @@ function handle(message) {
             return {
                 type: 'message',
                 channel: document.getElementById('msgChannel').value,
+                channelId: document.getElementById('msgChannel').value,
                 channelName: document.getElementById('msgChannelName').value,
                 channelType: document.getElementById('msgChannelType').value,
                 user: document.getElementById('msgUser').value,
+                userId: document.getElementById('msgUser').value,
                 text: document.getElementById('msgText').value,
                 ts,
+                timestamp: ts,  // alias for compatibility
                 threadTs,
+                threadTimestamp: threadTs,  // alias for compatibility
                 isThread: !!threadTs,
                 isDM: document.getElementById('msgChannelType').value === 'im',
                 botId: '',
