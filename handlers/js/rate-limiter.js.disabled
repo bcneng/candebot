@@ -20,26 +20,6 @@ var channelLimits = {
     // "general": { rateLimitSeconds: 120, maxMessages: 10, applyToStaff: false },
 };
 
-// Staff members exempt from rate limits (unless applyToStaff is true)
-// Add user IDs here
-var staffMembers = [
-    "U2Y6QQHST", // gonzaloserrano
-    "U3256HZH9", // mavi
-    "U2XDM2L0G", // ronnylt
-    "U36H6F3CN", // sdecandelario
-    "U2WPLA0KA", // smoya
-];
-
-// Check if a user is a staff member
-function isStaff(userId) {
-    for (var i = 0; i < staffMembers.length; i++) {
-        if (staffMembers[i] === userId) {
-            return true;
-        }
-    }
-    return false;
-}
-
 // Get rate limit config for a channel (by ID or name)
 function getChannelLimit(channel, channelName) {
     // Check by channel ID first
@@ -143,9 +123,8 @@ function handle(message) {
         return { handled: false };
     }
 
-    // Check staff exemption
-    var userIsStaff = isStaff(message.user);
-    if (userIsStaff && !limit.applyToStaff) {
+    // Check staff exemption (isStaff is provided by the bot)
+    if (message.isStaff && !limit.applyToStaff) {
         return { handled: false };
     }
 

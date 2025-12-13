@@ -892,6 +892,12 @@ function handle(message) {
                             <option value="im">DM</option>
                         </select>
                     </div>
+                    <div class="field-group">
+                        <label style="display:flex;align-items:center;gap:0.25rem;cursor:pointer">
+                            <input type="checkbox" id="msgIsStaff" style="margin:0">
+                            Staff
+                        </label>
+                    </div>
                 </div>
                 <input type="hidden" id="msgChannel" value="C12345678">
                 <input type="hidden" id="msgTimestamp" value="">
@@ -1202,6 +1208,7 @@ function handle(message) {
                 threadTimestamp,
                 isThread: !!threadTimestamp,
                 isDM: document.getElementById('msgChannelType').value === 'im',
+                isStaff: document.getElementById('msgIsStaff').checked,
                 botId: '',
                 subType: ''
             };
