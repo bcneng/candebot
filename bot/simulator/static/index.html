@@ -882,7 +882,13 @@ function handle(message) {
                         </select>
                     </div>
                     <div class="field-group">
-                        <label>User</label>
+                        <label style="display:flex;justify-content:space-between;align-items:center">
+                            <span>User</span>
+                            <label style="display:flex;align-items:center;gap:0.25rem;cursor:pointer;font-weight:normal">
+                                <input type="checkbox" id="msgIsStaff" style="margin:0">
+                                IsStaff
+                            </label>
+                        </label>
                         <input type="text" id="msgUser" value="U87654321" placeholder="U12345">
                     </div>
                     <div class="field-group">
@@ -891,12 +897,6 @@ function handle(message) {
                             <option value="channel">Channel</option>
                             <option value="im">DM</option>
                         </select>
-                    </div>
-                    <div class="field-group">
-                        <label style="display:flex;align-items:center;gap:0.25rem;cursor:pointer">
-                            <input type="checkbox" id="msgIsStaff" style="margin:0">
-                            Staff
-                        </label>
                     </div>
                 </div>
                 <input type="hidden" id="msgChannel" value="C12345678">

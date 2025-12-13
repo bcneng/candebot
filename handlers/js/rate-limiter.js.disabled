@@ -5,13 +5,6 @@
 // Uses state.cache for in-memory state (resets on bot restart).
 // Configure channels and limits in the 'channelLimits' object below.
 
-var name = "rate-limiter";
-var description = "Enforces message rate limits in configured channels";
-var channels = ["*"]; // We filter internally based on channelLimits config
-var priority = 1; // Run early to catch rate-limited messages before other handlers
-var enabled = true;
-var timeout = 5000;
-
 // Configuration: Channel rate limits
 // Add channel names or IDs with their limits here
 var channelLimits = {
@@ -101,58 +94,67 @@ function formatDuration(ms) {
     return minutes + " minute" + (minutes === 1 ? "" : "s") + " and " + seconds + " second" + (seconds === 1 ? "" : "s");
 }
 
-function handle(message) {
-    // Skip bot messages
-    if (message.botId) {
-        return { handled: false };
+var handler = {
+    name: "rate-limiter",
+    description: "Enforces message rate limits in configured channels",
+    channels: ["*"], // We filter internally based on channelLimits config
+    priority: 1, // Run early to catch rate-limited messages before other handlers
+    enabled: true,
+    timeout: 5000,
+
+    handle: function(message) {
+        // Skip bot messages
+        if (message.botId) {
+            return { handled: false };
+        }
+
+        // Only check non-thread messages
+        if (message.threadTimestamp) {
+            return { handled: false };
+        }
+
+        // Skip DMs
+        if (message.isDM) {
+            return { handled: false };
+        }
+
+        // Check if this channel has rate limiting configured
+        var limit = getChannelLimit(message.channel, message.channelName);
+        if (!limit) {
+            return { handled: false };
+        }
+
+        // Check staff exemption (isStaff is provided by the bot)
+        if (message.isStaff && !limit.applyToStaff) {
+            return { handled: false };
+        }
+
+        // Check rate limit
+        var result = checkRateLimit(message.channel, message.user, limit);
+
+        if (result.allowed) {
+            return { handled: false };
+        }
+
+        // Rate limited - delete the message and notify user
+        var waitMs = result.nextAllowedTime - now();
+        if (waitMs < 0) waitMs = 0;
+
+        var msg = "Your message has been deleted because you've reached the rate limit for this channel.\n\n" +
+                  "You can post again in approximately " + formatDuration(waitMs) + ".";
+
+        try {
+            slack.sendEphemeral(message.channel, message.user, msg, {
+                threadTimestamp: message.threadTimestamp
+            });
+
+            slack.deleteMessage(message.channel, message.timestamp);
+            console.info("Rate limited user", message.user, "in channel", message.channel);
+        } catch (e) {
+            console.error("Failed to handle rate limit:", e);
+        }
+
+        // Stop propagation since message was deleted
+        return { handled: true, stopPropagation: true };
     }
-
-    // Only check non-thread messages
-    if (message.threadTimestamp) {
-        return { handled: false };
-    }
-
-    // Skip DMs
-    if (message.isDM) {
-        return { handled: false };
-    }
-
-    // Check if this channel has rate limiting configured
-    var limit = getChannelLimit(message.channel, message.channelName);
-    if (!limit) {
-        return { handled: false };
-    }
-
-    // Check staff exemption (isStaff is provided by the bot)
-    if (message.isStaff && !limit.applyToStaff) {
-        return { handled: false };
-    }
-
-    // Check rate limit
-    var result = checkRateLimit(message.channel, message.user, limit);
-
-    if (result.allowed) {
-        return { handled: false };
-    }
-
-    // Rate limited - delete the message and notify user
-    var waitMs = result.nextAllowedTime - now();
-    if (waitMs < 0) waitMs = 0;
-
-    var msg = "Your message has been deleted because you've reached the rate limit for this channel.\n\n" +
-              "You can post again in approximately " + formatDuration(waitMs) + ".";
-
-    try {
-        slack.sendEphemeral(message.channel, message.user, msg, {
-            threadTimestamp: message.threadTimestamp
-        });
-
-        slack.deleteMessage(message.channel, message.timestamp);
-        console.info("Rate limited user", message.user, "in channel", message.channel);
-    } catch (e) {
-        console.error("Failed to handle rate limit:", e);
-    }
-
-    // Stop propagation since message was deleted
-    return { handled: true, stopPropagation: true };
-}
+};

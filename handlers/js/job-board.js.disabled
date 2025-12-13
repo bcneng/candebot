@@ -6,61 +6,44 @@
 //
 // Ported from Go: handlers/message.go (Jobs channel case)
 
-var name = "job-board";
-var description = "Enforces job board channel rules - non-staff can only post in threads";
-var channels = ["hiring-job-board", "C30CUFT2B"]; // Channel name and ID
-var priority = 2; // Run early, after rate limiter
-var enabled = true;
-var timeout = 3000;
+var handler = {
+    name: "job-board",
+    description: "Enforces job board channel rules - non-staff can only post in threads",
+    channels: ["hiring-job-board", "C30CUFT2B"], // Channel name and ID
+    priority: 2, // Run early, after rate limiter
+    enabled: true,
+    timeout: 3000,
 
-// Staff members who can post messages in the channel
-var staffMembers = [
-    "U2Y6QQHST", // gonzaloserrano
-    "U3256HZH9", // mavi
-    "U2XDM2L0G", // ronnylt
-    "U36H6F3CN", // sdecandelario
-    "U2WPLA0KA", // smoya
-];
-
-// Check if a user is a staff member
-function isStaff(userId) {
-    for (var i = 0; i < staffMembers.length; i++) {
-        if (staffMembers[i] === userId) {
-            return true;
+    handle: function(message) {
+        // Skip bot messages
+        if (message.botId) {
+            return { handled: false };
         }
+
+        // Staff members can do anything (isStaff is provided by the bot)
+        if (message.isStaff) {
+            return { handled: false };
+        }
+
+        // Non-staff can post in threads (replies)
+        if (message.threadTimestamp) {
+            return { handled: false };
+        }
+
+        // Non-staff posting a non-thread message - delete it
+        try {
+            slack.deleteMessage(message.channel, message.timestamp);
+            console.info("Deleted non-thread message from non-staff user", message.user, "in job board");
+
+            // Optionally send an ephemeral message explaining the rules
+            slack.sendEphemeral(message.channel, message.user,
+                "Your message was removed because only staff members can create new posts in the job board channel.\n\n" +
+                "If you'd like to respond to an existing job posting, please reply in a thread.", {});
+        } catch (e) {
+            console.error("Failed to delete job board message:", e);
+        }
+
+        // Stop propagation since message was deleted
+        return { handled: true, stopPropagation: true };
     }
-    return false;
-}
-
-function handle(message) {
-    // Skip bot messages
-    if (message.botId) {
-        return { handled: false };
-    }
-
-    // Staff members can do anything
-    if (isStaff(message.user)) {
-        return { handled: false };
-    }
-
-    // Non-staff can post in threads (replies)
-    if (message.threadTimestamp) {
-        return { handled: false };
-    }
-
-    // Non-staff posting a non-thread message - delete it
-    try {
-        slack.deleteMessage(message.channel, message.timestamp);
-        console.info("Deleted non-thread message from non-staff user", message.user, "in job board");
-
-        // Optionally send an ephemeral message explaining the rules
-        slack.sendEphemeral(message.channel, message.user,
-            "Your message was removed because only staff members can create new posts in the job board channel.\n\n" +
-            "If you'd like to respond to an existing job posting, please reply in a thread.", {});
-    } catch (e) {
-        console.error("Failed to delete job board message:", e);
-    }
-
-    // Stop propagation since message was deleted
-    return { handled: true, stopPropagation: true };
-}
+};

@@ -2,13 +2,6 @@
 // Detects privacy-invasive tracking parameters in URLs and warns users.
 // Ported from Go: internal/privacy/tracker.go
 
-var name = "tracking-detector";
-var description = "Detects tracking parameters in URLs and warns users about privacy implications";
-var channels = ["*"];
-var priority = 20;
-var enabled = true;
-var timeout = 3000;
-
 // Known tracking parameters and their associated platforms
 var trackedParams = [
     { name: "igsh", platform: "Instagram" },
@@ -200,28 +193,37 @@ function formatWarningMessage(tracked) {
     return msg;
 }
 
-function handle(message) {
-    // Skip bot messages
-    if (message.botId) {
-        return { handled: false };
+var handler = {
+    name: "tracking-detector",
+    description: "Detects tracking parameters in URLs and warns users about privacy implications",
+    channels: ["*"],
+    priority: 20,
+    enabled: true,
+    timeout: 3000,
+
+    handle: function(message) {
+        // Skip bot messages
+        if (message.botId) {
+            return { handled: false };
+        }
+
+        var tracked = findTrackedURLs(message.text);
+
+        if (tracked.length === 0) {
+            return { handled: false };
+        }
+
+        var warning = formatWarningMessage(tracked);
+
+        try {
+            slack.sendEphemeral(message.channel, message.user, warning, {
+                threadTimestamp: message.threadTimestamp
+            });
+            console.info("Sent tracking warning for", tracked.length, "URL(s)");
+        } catch (e) {
+            console.error("Failed to send tracking warning:", e);
+        }
+
+        return { handled: true, stopPropagation: false };
     }
-
-    var tracked = findTrackedURLs(message.text);
-
-    if (tracked.length === 0) {
-        return { handled: false };
-    }
-
-    var warning = formatWarningMessage(tracked);
-
-    try {
-        slack.sendEphemeral(message.channel, message.user, warning, {
-            threadTimestamp: message.threadTimestamp
-        });
-        console.info("Sent tracking warning for", tracked.length, "URL(s)");
-    } catch (e) {
-        console.error("Failed to send tracking warning:", e);
-    }
-
-    return { handled: true, stopPropagation: false };
-}
+};

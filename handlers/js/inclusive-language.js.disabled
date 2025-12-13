@@ -2,13 +2,6 @@
 // Checks messages for non-inclusive language and sends gentle educational reminders.
 // Ported from Go: inclusion/language.go
 
-var name = "inclusive-language";
-var description = "Checks messages for non-inclusive language and sends educational reminders";
-var channels = ["*"];
-var priority = 10;
-var enabled = true;
-var timeout = 3000;
-
 var conductLinks = "\nIn case of doubts please check our <https://bcneng.org/coc|Code of Conduct> and/or our <https://bcneng.org/netiquette|Netiquette> ";
 
 // Filter definitions - each has a pattern (regex) and reply message
@@ -71,35 +64,44 @@ function removeAccents(str) {
     return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
-function handle(message) {
-    // Skip bot messages
-    if (message.botId) {
+var handler = {
+    name: "inclusive-language",
+    description: "Checks messages for non-inclusive language and sends educational reminders",
+    channels: ["*"],
+    priority: 10,
+    enabled: true,
+    timeout: 3000,
+
+    handle: function(message) {
+        // Skip bot messages
+        if (message.botId) {
+            return { handled: false };
+        }
+
+        // Normalize text: lowercase and remove accents
+        var text = removeAccents(message.text.toLowerCase());
+
+        for (var i = 0; i < filters.length; i++) {
+            var filter = filters[i];
+            var regex = new RegExp(filter.pattern, "i");
+
+            if (regex.test(text)) {
+                var reply = filter.reply + conductLinks;
+
+                try {
+                    slack.sendEphemeral(message.channel, message.user, reply, {
+                        threadTimestamp: message.threadTimestamp
+                    });
+                    console.info("Sent inclusive language reminder for pattern:", filter.pattern);
+                } catch (e) {
+                    console.error("Failed to send ephemeral:", e);
+                }
+
+                // Only send one reminder per message
+                return { handled: true, stopPropagation: false };
+            }
+        }
+
         return { handled: false };
     }
-
-    // Normalize text: lowercase and remove accents
-    var text = removeAccents(message.text.toLowerCase());
-
-    for (var i = 0; i < filters.length; i++) {
-        var filter = filters[i];
-        var regex = new RegExp(filter.pattern, "i");
-
-        if (regex.test(text)) {
-            var reply = filter.reply + conductLinks;
-
-            try {
-                slack.sendEphemeral(message.channel, message.user, reply, {
-                    threadTimestamp: message.threadTimestamp
-                });
-                console.info("Sent inclusive language reminder for pattern:", filter.pattern);
-            } catch (e) {
-                console.error("Failed to send ephemeral:", e);
-            }
-
-            // Only send one reminder per message
-            return { handled: true, stopPropagation: false };
-        }
-    }
-
-    return { handled: false };
-}
+};
