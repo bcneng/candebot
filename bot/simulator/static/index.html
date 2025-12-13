@@ -330,6 +330,29 @@
             background: var(--slack-hover);
         }
 
+        /* Ephemeral message styling */
+        .slack-message.ephemeral {
+            background: rgba(29, 155, 209, 0.05);
+            border-left: 3px solid var(--slack-link);
+            padding-left: calc(1.25rem - 3px);
+        }
+
+        .ephemeral-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            font-size: 0.75rem;
+            color: var(--slack-text-muted);
+            margin-bottom: 0.25rem;
+            padding-left: calc(36px + 0.75rem);
+        }
+
+        .ephemeral-indicator svg {
+            width: 14px;
+            height: 14px;
+            opacity: 0.7;
+        }
+
         .avatar {
             width: 36px;
             height: 36px;
@@ -1162,7 +1185,7 @@ function handle(message) {
                         return { channel, timestamp: `${Date.now()/1000}` };
                     },
                     sendEphemeral: (channel, user, text, opts) => {
-                        addMessage('slack', 'Bot', `[ephemeral] ${text}`, { action: 'ephemeral', user });
+                        addMessage('slack', 'Bot', text, { action: 'ephemeral', user, ephemeral: true });
                     },
                     addReaction: (channel, ts, emoji) => addMessage('slack', 'Bot', `Added :${emoji}: reaction`, { action: 'reaction' }),
                     deleteMessage: (channel, ts) => addMessage('slack', 'Bot', `Deleted message`, { action: 'delete' }),
@@ -1296,14 +1319,26 @@ function handle(message) {
                 const initial = m.author[0].toUpperCase();
                 const badge = m.type === 'api' ? '<span class="message-badge api">API</span>' :
                              m.type === 'error' ? '<span class="message-badge error">ERROR</span>' :
-                             m.type === 'state' ? '<span class="message-badge state">STATE</span>' : '';
+                             m.type === 'state' ? '<span class="message-badge state">STATE</span>' :
+                             m.type === 'slack' ? '<span class="message-badge api">APP</span>' : '';
 
                 let text = escapeHtml(m.text);
                 // Format channel mentions
                 text = text.replace(/#([\w-]+)/g, '<span class="channel">#$1</span>');
 
+                // Ephemeral message indicator
+                const ephemeralIndicator = m.ephemeral ? `
+                    <div class="ephemeral-indicator">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M12 5C5.636 5 1 12 1 12s4.636 7 11 7 11-7 11-7-4.636-7-11-7z"/>
+                        </svg>
+                        Only visible to you
+                    </div>` : '';
+
                 return `
-                    <div class="slack-message">
+                    ${ephemeralIndicator}
+                    <div class="slack-message${m.ephemeral ? ' ephemeral' : ''}">
                         <div class="avatar ${avatarClass}">${initial}</div>
                         <div class="message-content">
                             <div class="message-header">
