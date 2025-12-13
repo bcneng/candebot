@@ -1189,22 +1189,18 @@ function handle(message) {
 
         function buildMessage() {
             const now = Date.now();
-            const ts = document.getElementById('msgTimestamp').value || `${Math.floor(now/1000)}.${String(now%1000000).padStart(6,'0')}`;
-            const threadTs = document.getElementById('msgThreadTs').value;
+            const timestamp = document.getElementById('msgTimestamp').value || `${Math.floor(now/1000)}.${String(now%1000000).padStart(6,'0')}`;
+            const threadTimestamp = document.getElementById('msgThreadTs').value;
             return {
                 type: 'message',
-                channel: document.getElementById('msgChannel').value,
                 channelId: document.getElementById('msgChannel').value,
                 channelName: document.getElementById('msgChannelName').value,
                 channelType: document.getElementById('msgChannelType').value,
-                user: document.getElementById('msgUser').value,
                 userId: document.getElementById('msgUser').value,
                 text: document.getElementById('msgText').value,
-                ts,
-                timestamp: ts,  // alias for compatibility
-                threadTs,
-                threadTimestamp: threadTs,  // alias for compatibility
-                isThread: !!threadTs,
+                timestamp,
+                threadTimestamp,
+                isThread: !!threadTimestamp,
                 isDM: document.getElementById('msgChannelType').value === 'im',
                 botId: '',
                 subType: ''
@@ -1235,16 +1231,16 @@ function handle(message) {
                 },
                 slack: {
                     sendMessage: (channel, text, opts) => {
-                        const ts = `${Date.now()/1000}`;
-                        addMessage('slack', 'Bot', text, { action: 'sendMessage', channel, ts });
-                        return { channel, ts };
+                        const timestamp = `${Date.now()/1000}`;
+                        addMessage('slack', 'Bot', text, { action: 'sendMessage', channel, timestamp });
+                        return { channel, timestamp };
                     },
                     sendEphemeral: (channel, user, text, opts) => {
                         addMessage('slack', 'Bot', text, { action: 'ephemeral', user, ephemeral: true });
                     },
                     addReaction: (channel, ts, emoji) => addMessage('slack', 'Bot', `Added :${emoji}: reaction`, { action: 'reaction' }),
-                    deleteMessage: (channel, ts) => {
-                        const idx = messages.findIndex(m => m.ts === ts);
+                    deleteMessage: (channel, timestamp) => {
+                        const idx = messages.findIndex(m => m.timestamp === timestamp);
                         if (idx !== -1) {
                             messages.splice(idx, 1);
                         }
@@ -1303,8 +1299,8 @@ function handle(message) {
                 msgInput.value = `hello world ${helloWorldCounter}!`;
             }
 
-            // Add the user message first (with ts so it can be deleted by handler)
-            addMessage('user', 'Test User', message.text, { channel: message.channelName, ts: message.ts });
+            // Add the user message first (with timestamp so it can be deleted by handler)
+            addMessage('user', 'Test User', message.text, { channel: message.channelName, timestamp: message.timestamp });
 
             const start = performance.now();
             let result = null;
