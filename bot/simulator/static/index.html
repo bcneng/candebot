@@ -1461,13 +1461,21 @@ function handle(message) {
             showToast('Cleared');
         }
 
+        function getHandlerName() {
+            const filename = document.getElementById('handlerSelect').value;
+            return filename ? filename.replace('.js', '') : 'default';
+        }
+
         function loadState(highlight = false) {
             const cacheEditor = document.getElementById('cacheEditor');
             const storeEditor = document.getElementById('storeEditor');
-            cacheEditor.value = JSON.stringify(cacheState, null, 2);
-            storeEditor.value = JSON.stringify(storeState, null, 2);
+            const handlerName = getHandlerName();
+            const handlerCache = cacheState[handlerName] || {};
+            const handlerStore = storeState[handlerName] || {};
+            cacheEditor.value = JSON.stringify(handlerCache, null, 2);
+            storeEditor.value = JSON.stringify(handlerStore, null, 2);
 
-            if (highlight && Object.keys(cacheState).length > 0) {
+            if (highlight && Object.keys(handlerCache).length > 0) {
                 // Highlight cache section to show it changed
                 cacheEditor.style.borderColor = 'var(--slack-green)';
                 cacheEditor.style.boxShadow = '0 0 0 2px rgba(43, 172, 118, 0.3)';
@@ -1482,8 +1490,9 @@ function handle(message) {
 
         function saveState() {
             try {
-                cacheState = JSON.parse(document.getElementById('cacheEditor').value);
-                storeState = JSON.parse(document.getElementById('storeEditor').value);
+                const handlerName = getHandlerName();
+                cacheState[handlerName] = JSON.parse(document.getElementById('cacheEditor').value);
+                storeState[handlerName] = JSON.parse(document.getElementById('storeEditor').value);
                 localStorage.setItem('handlerSimStore', JSON.stringify(storeState));
                 showToast('Saved');
             } catch (e) { showToast('Invalid JSON'); }
