@@ -1167,9 +1167,12 @@ function handle(message) {
 
             const duration = (performance.now() - start).toFixed(2);
 
-            // Add result message
+            // Add result to console
             if (!error) {
-                addMessage('result', 'Handler', `Completed in ${duration}ms`, { result, success: true });
+                addConsoleLog('info', `Completed in ${duration}ms`);
+                if (result !== undefined) {
+                    addConsoleLog('log', 'Result:', JSON.stringify(result, null, 2));
+                }
             }
 
             // Save to history
@@ -1231,7 +1234,6 @@ function handle(message) {
                                 <span class="message-time">${formatTime(m.time)}</span>
                             </div>
                             <div class="message-text">${text}</div>
-                            ${m.result ? `<div class="result-block"><div class="result-header"><span class="result-status success">Success</span></div><pre>${escapeHtml(JSON.stringify(m.result, null, 2))}</pre></div>` : ''}
                         </div>
                     </div>`;
             }).join('');
