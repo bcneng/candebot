@@ -1,0 +1,179 @@
+// Rate Limiter
+// Enforces per-user, per-channel message rate limits using a sliding window.
+// Ported from Go: bot/ratelimiter.go
+//
+// Uses state.cache for in-memory state (resets on bot restart).
+// Configure channels and limits in the 'channelLimits' object below.
+
+var name = "rate-limiter";
+var description = "Enforces message rate limits in configured channels";
+var channels = ["*"]; // We filter internally based on channelLimits config
+var priority = 1; // Run early to catch rate-limited messages before other handlers
+var enabled = true;
+var timeout = 5000;
+
+// Configuration: Channel rate limits
+// Add channel names or IDs with their limits here
+var channelLimits = {
+    // Example configuration - customize as needed:
+    // "candebot-testing": { rateLimitSeconds: 60, maxMessages: 5, applyToStaff: true },
+    // "general": { rateLimitSeconds: 120, maxMessages: 10, applyToStaff: false },
+};
+
+// Staff members exempt from rate limits (unless applyToStaff is true)
+// Add user IDs here
+var staffMembers = [
+    "U2Y6QQHST", // gonzaloserrano
+    "U3256HZH9", // mavi
+    "U2XDM2L0G", // ronnylt
+    "U36H6F3CN", // sdecandelario
+    "U2WPLA0KA", // smoya
+];
+
+// Check if a user is a staff member
+function isStaff(userId) {
+    for (var i = 0; i < staffMembers.length; i++) {
+        if (staffMembers[i] === userId) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Get rate limit config for a channel (by ID or name)
+function getChannelLimit(channel, channelName) {
+    // Check by channel ID first
+    if (channelLimits[channel]) {
+        return channelLimits[channel];
+    }
+    // Then by channel name
+    if (channelLimits[channelName]) {
+        return channelLimits[channelName];
+    }
+    return null;
+}
+
+// Get current timestamp in milliseconds
+function now() {
+    return Date.now();
+}
+
+// Get state key for a user in a channel
+function getStateKey(channel, user) {
+    return channel + ":" + user;
+}
+
+// Check and update rate limit for a user
+function checkRateLimit(channel, user, limit) {
+    var key = getStateKey(channel, user);
+    var currentTime = now();
+    var windowMs = limit.rateLimitSeconds * 1000;
+
+    // Get existing state from cache
+    var stateJson = state.cache.get(key);
+    var userState = stateJson ? JSON.parse(stateJson) : null;
+
+    // Initialize state if not present or window has fully expired
+    if (!userState || currentTime > userState.nextReset) {
+        userState = {
+            messages: [currentTime],
+            nextReset: currentTime + windowMs
+        };
+        state.cache.set(key, JSON.stringify(userState));
+        return { allowed: true, nextAllowedTime: 0 };
+    }
+
+    // Filter messages within the current window
+    var cutoff = currentTime - windowMs;
+    var validMessages = [];
+    for (var i = 0; i < userState.messages.length; i++) {
+        if (userState.messages[i] > cutoff) {
+            validMessages.push(userState.messages[i]);
+        }
+    }
+
+    // Check if rate limited
+    if (validMessages.length >= limit.maxMessages) {
+        var oldestMessage = validMessages[0];
+        var nextAllowed = oldestMessage + windowMs;
+        return { allowed: false, nextAllowedTime: nextAllowed };
+    }
+
+    // Add current message and update state
+    validMessages.push(currentTime);
+    userState.messages = validMessages;
+    state.cache.set(key, JSON.stringify(userState));
+
+    return { allowed: true, nextAllowedTime: 0 };
+}
+
+// Format duration for display
+function formatDuration(ms) {
+    var seconds = Math.round(ms / 1000);
+    if (seconds < 60) {
+        return seconds + " seconds";
+    }
+    var minutes = Math.floor(seconds / 60);
+    seconds = seconds % 60;
+    if (seconds === 0) {
+        return minutes + " minute" + (minutes === 1 ? "" : "s");
+    }
+    return minutes + " minute" + (minutes === 1 ? "" : "s") + " and " + seconds + " second" + (seconds === 1 ? "" : "s");
+}
+
+function handle(message) {
+    // Skip bot messages
+    if (message.botId) {
+        return { handled: false };
+    }
+
+    // Only check non-thread messages
+    if (message.threadTimestamp) {
+        return { handled: false };
+    }
+
+    // Skip DMs
+    if (message.isDM) {
+        return { handled: false };
+    }
+
+    // Check if this channel has rate limiting configured
+    var limit = getChannelLimit(message.channel, message.channelName);
+    if (!limit) {
+        return { handled: false };
+    }
+
+    // Check staff exemption
+    var userIsStaff = isStaff(message.user);
+    if (userIsStaff && !limit.applyToStaff) {
+        return { handled: false };
+    }
+
+    // Check rate limit
+    var result = checkRateLimit(message.channel, message.user, limit);
+
+    if (result.allowed) {
+        return { handled: false };
+    }
+
+    // Rate limited - delete the message and notify user
+    var waitMs = result.nextAllowedTime - now();
+    if (waitMs < 0) waitMs = 0;
+
+    var msg = "Your message has been deleted because you've reached the rate limit for this channel.\n\n" +
+              "You can post again in approximately " + formatDuration(waitMs) + ".";
+
+    try {
+        slack.sendEphemeral(message.channel, message.user, msg, {
+            threadTimestamp: message.threadTimestamp
+        });
+
+        slack.deleteMessage(message.channel, message.timestamp);
+        console.info("Rate limited user", message.user, "in channel", message.channel);
+    } catch (e) {
+        console.error("Failed to handle rate limit:", e);
+    }
+
+    // Stop propagation since message was deleted
+    return { handled: true, stopPropagation: true };
+}

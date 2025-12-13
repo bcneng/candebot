@@ -48,3 +48,12 @@ apply_to_staff = true
 dir = "handlers/js"    # Directory containing JS handler files
 enabled = true              # Enable/disable the handler system
 default_timeout = 5000      # Default execution timeout in milliseconds
+
+# Built-in Go handlers configuration
+# Set any of these to false to use JavaScript implementations instead
+# This allows full customization via JS without modifying Go code
+[go_handlers]
+language_filter = true      # Inclusive language filter (Go: inclusion/language.go)
+tracking_detection = true   # URL tracking parameter detection (Go: internal/privacy/tracker.go)
+rate_limiter = true         # Per-channel rate limiting (Go: bot/ratelimiter.go)
+job_board_rules = true      # Job board posting rules (Go: handlers/message.go)

@@ -57,6 +57,7 @@ type Config struct {
 	Links               ConfigLinks               `env:",prefix=LINKS_"`
 	Twitter             ConfigTwitter             `env:",prefix=TWITTER_"`
 	Handlers            ConfigHandlers            `env:",prefix=HANDLERS_"`
+	GoHandlers          ConfigGoHandlers          `env:",prefix=GO_HANDLERS_" toml:"go_handlers"`
 	RateLimits          []RateLimitConfig         `toml:"rate_limits"`
 	TrackingDetection   []TrackingDetectionConfig `toml:"tracking_detection"`
 	TwitterContestToken string                    `env:"TWITTER_CONTEST_TOKEN"`
@@ -125,4 +126,17 @@ type ConfigHandlers struct {
 	StateFile string `env:"STATE_FILE,default=handlers/state.json"`
 	// StateFlushInterval is how often to flush state to disk in seconds (default: 5)
 	StateFlushInterval int `env:"STATE_FLUSH_INTERVAL,default=5"`
+}
+
+// ConfigGoHandlers controls which built-in Go handlers are enabled.
+// Set to false to use JS implementations instead.
+type ConfigGoHandlers struct {
+	// LanguageFilter enables the Go-based inclusive language filter (default: true)
+	LanguageFilter bool `env:"LANGUAGE_FILTER,default=true" toml:"language_filter"`
+	// TrackingDetection enables the Go-based tracking parameter detection (default: true)
+	TrackingDetection bool `env:"TRACKING_DETECTION,default=true" toml:"tracking_detection"`
+	// RateLimiter enables the Go-based rate limiter (default: true)
+	RateLimiter bool `env:"RATE_LIMITER,default=true" toml:"rate_limiter"`
+	// JobBoardRules enables the Go-based job board rules (default: true)
+	JobBoardRules bool `env:"JOB_BOARD_RULES,default=true" toml:"job_board_rules"`
 }

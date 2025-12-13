@@ -28,8 +28,13 @@ func MessageEventHandler(botCtx bot.Context, e slackevents.EventsAPIInnerEvent) 
 
 	if event.SubType == "" || event.SubType == "message_replied" {
 		// behaviors that apply to all messages posted by users both in channels or threads
-		go checkLanguage(botCtx, event)
-		go checkTracking(botCtx, event)
+		// Go handlers can be disabled via config to use JS implementations instead
+		if botCtx.Config.GoHandlers.LanguageFilter {
+			go checkLanguage(botCtx, event)
+		}
+		if botCtx.Config.GoHandlers.TrackingDetection {
+			go checkTracking(botCtx, event)
+		}
 		// Execute JS handlers asynchronously
 		go executeJSHandlers(botCtx, event)
 	}
@@ -47,7 +52,8 @@ func MessageEventHandler(botCtx bot.Context, e slackevents.EventsAPIInnerEvent) 
 		return nil
 	}
 
-	if botCtx.RateLimiter != nil && event.ThreadTimeStamp == "" {
+	// Rate limiting - can be disabled via config to use JS implementation instead
+	if botCtx.Config.GoHandlers.RateLimiter && botCtx.RateLimiter != nil && event.ThreadTimeStamp == "" {
 		isStaff := botCtx.IsStaff(event.User)
 		shouldCheckStaff := botCtx.RateLimiter.ShouldCheckStaff(event.Channel)
 
@@ -68,21 +74,24 @@ func MessageEventHandler(botCtx bot.Context, e slackevents.EventsAPIInnerEvent) 
 		}
 	}
 
-	switch event.Channel {
-	case botCtx.Config.Channels.Jobs:
-		// Staff members are allowed to post messages
-		if botCtx.IsStaff(event.User) {
-			return nil
-		}
+	// Channel-specific rules - can be disabled via config to use JS implementations
+	if botCtx.Config.GoHandlers.JobBoardRules {
+		switch event.Channel {
+		case botCtx.Config.Channels.Jobs:
+			// Staff members are allowed to post messages
+			if botCtx.IsStaff(event.User) {
+				return nil
+			}
 
-		// Users are allowed to only post messages in threads
-		if event.ThreadTimeStamp == "" {
-			log.Printf("Someone wrote a random message in %s and will be removed. %s %s", event.Channel, event.Text, event.TimeStamp)
-			_, _, _ = botCtx.AdminClient.DeleteMessage(event.Channel, event.TimeStamp)
-			return nil
+			// Users are allowed to only post messages in threads
+			if event.ThreadTimeStamp == "" {
+				log.Printf("Someone wrote a random message in %s and will be removed. %s %s", event.Channel, event.Text, event.TimeStamp)
+				_, _, _ = botCtx.AdminClient.DeleteMessage(event.Channel, event.TimeStamp)
+				return nil
+			}
+		case botCtx.Config.Channels.Playground:
+			// playground
 		}
-	case botCtx.Config.Channels.Playground:
-		// playground
 	}
 
 	return nil
