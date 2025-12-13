@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Handler Simulator</title>
+    <!-- CodeMirror -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/lint/lint.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/lint/lint.min.css">
     <style>
         :root {
             --slack-bg: #1a1d21;
@@ -126,22 +135,55 @@
 
         select { flex: 1; cursor: pointer; }
 
-        .code-editor {
+        /* CodeMirror customization */
+        .code-editor-wrapper {
             flex: 1;
-            width: 100%;
-            resize: none;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .CodeMirror {
+            height: 100%;
             font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
             font-size: 13px;
             line-height: 1.5;
-            padding: 1rem;
-            background: #0d1117;
-            border: none;
-            border-radius: 0;
-            color: #c9d1d9;
-            tab-size: 2;
         }
 
-        .code-editor:focus { box-shadow: none; }
+        .CodeMirror-gutters {
+            background: #0d1117;
+            border-right: 1px solid var(--slack-border);
+        }
+
+        /* Validation status indicator */
+        .validation-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 4px;
+            margin-left: auto;
+        }
+
+        .validation-status.valid {
+            color: var(--slack-green);
+        }
+
+        .validation-status.invalid {
+            color: var(--slack-red);
+        }
+
+        .validation-status.checking {
+            color: var(--slack-text-muted);
+        }
+
+        .validation-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
 
         /* Output Panel - Right side */
         .output-panel {
@@ -668,9 +710,6 @@
         <div class="logo">
             <span>Handler Simulator</span>
         </div>
-        <div class="header-actions">
-            <button class="btn btn-secondary" onclick="validateCode()">Validate</button>
-        </div>
     </header>
 
     <main class="container">
@@ -679,6 +718,10 @@
             <div class="tabs">
                 <button class="tab active" data-tab="code" onclick="switchCodeTab('code')">Handler Code</button>
                 <button class="tab" data-tab="api" onclick="switchCodeTab('api')">API Reference</button>
+                <div class="validation-status checking" id="validationStatus">
+                    <span class="validation-dot"></span>
+                    <span id="validationText">Checking...</span>
+                </div>
             </div>
             <div class="panel-content">
                 <div class="tab-view active" id="codeView">
@@ -688,7 +731,8 @@
                         </select>
                         <button class="btn-icon" onclick="refreshHandlers()" title="Refresh">Refresh</button>
                     </div>
-                    <textarea class="code-editor" id="codeEditor" spellcheck="false">// Example Handler
+                    <div class="code-editor-wrapper">
+                        <textarea id="codeEditor">// Example Handler
 var name = 'my-handler';
 var description = 'My custom handler';
 var channels = ['*'];
@@ -705,6 +749,7 @@ function handle(message) {
 
     return { handled: false };
 }</textarea>
+                    </div>
                 </div>
                 <div class="tab-view" id="apiView">
                     <div id="apiContainer"></div>
@@ -812,6 +857,8 @@ function handle(message) {
         let history = JSON.parse(localStorage.getItem('handlerSimHistory') || '[]');
         let cacheState = {};
         let storeState = JSON.parse(localStorage.getItem('handlerSimStore') || '{}');
+        let editor = null;
+        let validationTimeout = null;
 
         const templates = {
             tracking: { text: 'Check this out https://instagram.com/p/abc123/?igshid=xyz789', channelName: 'general' },
@@ -851,13 +898,65 @@ function handle(message) {
         `;
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Initialize CodeMirror
+            editor = CodeMirror.fromTextArea(document.getElementById('codeEditor'), {
+                mode: 'javascript',
+                theme: 'material-darker',
+                lineNumbers: true,
+                matchBrackets: true,
+                autoCloseBrackets: true,
+                indentUnit: 4,
+                tabSize: 4,
+                indentWithTabs: false,
+                lineWrapping: false,
+                extraKeys: {
+                    'Ctrl-Enter': executeHandler,
+                    'Cmd-Enter': executeHandler
+                }
+            });
+
+            // Auto-validate on code change (debounced)
+            editor.on('change', () => {
+                setValidationStatus('checking', 'Checking...');
+                clearTimeout(validationTimeout);
+                validationTimeout = setTimeout(autoValidate, 500);
+            });
+
             refreshHandlers();
             loadState();
             updateHistoryCount();
             document.getElementById('apiContainer').innerHTML = apiDocs;
             showEmptyState();
             showEmptyConsole();
+
+            // Initial validation
+            setTimeout(autoValidate, 100);
         });
+
+        function setValidationStatus(status, text) {
+            const el = document.getElementById('validationStatus');
+            const textEl = document.getElementById('validationText');
+            el.className = 'validation-status ' + status;
+            textEl.textContent = text;
+        }
+
+        function autoValidate() {
+            const code = editor.getValue();
+            try {
+                // Create a mock environment for validation
+                const mockApis = { console: {log:()=>{},info:()=>{},warn:()=>{},error:()=>{}}, slack: {}, http: {}, state: {cache:{},store:{}} };
+                const wrappedCode = `(function(console,slack,http,state){${code};return{hasHandle:typeof handle==='function',name:typeof name!=='undefined'?name:null}})`;
+                const check = eval(wrappedCode)(mockApis.console, mockApis.slack, mockApis.http, mockApis.state);
+
+                if (check.hasHandle) {
+                    setValidationStatus('valid', check.name ? `Valid: ${check.name}` : 'Valid');
+                } else {
+                    setValidationStatus('invalid', "Missing 'handle' function");
+                }
+            } catch (e) {
+                setValidationStatus('invalid', e.message.split('\n')[0].substring(0, 40));
+            }
+        }
 
         function switchCodeTab(tab) {
             document.querySelectorAll('.code-panel .tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
@@ -904,7 +1003,7 @@ function handle(message) {
             if (!filename) return;
             const handler = handlers.find(h => h.filename === filename);
             if (handler) {
-                document.getElementById('codeEditor').value = handler.code;
+                editor.setValue(handler.code);
                 switchCodeTab('code');
                 showToast('Loaded: ' + handler.name);
             }
@@ -1013,7 +1112,7 @@ function handle(message) {
         }
 
         function executeHandler() {
-            const code = document.getElementById('codeEditor').value;
+            const code = editor.getValue();
             const message = buildMessage();
             messages = [];
             consoleLogs = [];
@@ -1063,33 +1162,6 @@ function handle(message) {
             renderConsole();
             displayHistory();
             loadState(true);  // Highlight state changes
-            switchOutputTab('messages');
-        }
-
-        function validateCode() {
-            const code = document.getElementById('codeEditor').value;
-            messages = [];
-            consoleLogs = [];
-
-            try {
-                const apis = createMockAPIs('validator');
-                const wrappedCode = `(function(console,slack,http,state){${code};return{hasHandle:typeof handle==='function',name:typeof name!=='undefined'?name:null}})`;
-                const check = eval(wrappedCode)(apis.console, apis.slack, apis.http, apis.state);
-
-                if (check.hasHandle) {
-                    addMessage('result', 'Validator', `Code is valid! Handler: ${check.name || 'unnamed'}`, { success: true });
-                    addConsoleLog('info', 'Validation passed');
-                } else {
-                    addMessage('error', 'Validator', "Missing 'handle' function");
-                    addConsoleLog('error', "Missing 'handle' function");
-                }
-            } catch (e) {
-                addMessage('error', 'Validator', 'Syntax error: ' + e.message);
-                addConsoleLog('error', 'Syntax error:', e.message);
-            }
-
-            renderMessages();
-            renderConsole();
             switchOutputTab('messages');
         }
 
@@ -1253,10 +1325,6 @@ function handle(message) {
             div.textContent = text;
             return div.innerHTML;
         }
-
-        document.addEventListener('keydown', e => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); executeHandler(); }
-        });
 
         // Initialize
         displayHistory();
