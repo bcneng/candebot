@@ -849,16 +849,18 @@ var handler = {
     channels: ['*'],
     priority: 100,
     enabled: true,
+    skipBots: true,
 
     handle: function(message) {
         console.log('Received:', message.text);
 
         if (message.text.includes('hello')) {
-            slack.sendEphemeral(message.channel, message.user, 'Hello there!', {});
-            return { handled: true };
+            message.react('wave');
+            message.replyEphemeral('Hello there!');
+            return HANDLED;
         }
 
-        return { handled: false };
+        return SKIP;
     }
 };</textarea>
                     </div>
@@ -1231,6 +1233,33 @@ var handler = {
         }
 
         function createMockAPIs(handlerName) {
+            const slack = {
+                sendMessage: (channel, text, opts) => {
+                    const timestamp = `${Date.now()/1000}`;
+                    addMessage('slack', 'Bot', text, { action: 'sendMessage', channel, timestamp });
+                    return { channel, timestamp };
+                },
+                sendEphemeral: (channel, user, text, opts) => {
+                    addMessage('slack', 'Bot', text, { action: 'ephemeral', user, ephemeral: true });
+                },
+                addReaction: (channel, ts, emoji) => addMessage('slack', 'Bot', `Added :${emoji}: reaction`, { action: 'reaction' }),
+                removeReaction: (channel, ts, emoji) => addMessage('slack', 'Bot', `Removed :${emoji}: reaction`, { action: 'reaction' }),
+                deleteMessage: (channel, timestamp) => {
+                    const idx = messages.findIndex(m => m.timestamp === timestamp);
+                    if (idx !== -1) {
+                        messages.splice(idx, 1);
+                    }
+                },
+                getUserInfo: (userId) => {
+                    addMessage('api', 'API', `getUserInfo(${userId})`, { action: 'api' });
+                    return { id: userId, name: 'testuser', realName: 'Test User', isBot: false };
+                },
+                getChannelInfo: (channelId) => {
+                    addMessage('api', 'API', `getChannelInfo(${channelId})`, { action: 'api' });
+                    return { id: channelId, name: 'test-channel', isPrivate: false };
+                }
+            };
+
             return {
                 console: {
                     log: (...args) => addConsoleLog('log', ...args),
@@ -1238,31 +1267,7 @@ var handler = {
                     warn: (...args) => addConsoleLog('warn', ...args),
                     error: (...args) => addConsoleLog('error', ...args),
                 },
-                slack: {
-                    sendMessage: (channel, text, opts) => {
-                        const timestamp = `${Date.now()/1000}`;
-                        addMessage('slack', 'Bot', text, { action: 'sendMessage', channel, timestamp });
-                        return { channel, timestamp };
-                    },
-                    sendEphemeral: (channel, user, text, opts) => {
-                        addMessage('slack', 'Bot', text, { action: 'ephemeral', user, ephemeral: true });
-                    },
-                    addReaction: (channel, ts, emoji) => addMessage('slack', 'Bot', `Added :${emoji}: reaction`, { action: 'reaction' }),
-                    deleteMessage: (channel, timestamp) => {
-                        const idx = messages.findIndex(m => m.timestamp === timestamp);
-                        if (idx !== -1) {
-                            messages.splice(idx, 1);
-                        }
-                    },
-                    getUserInfo: (userId) => {
-                        addMessage('api', 'API', `getUserInfo(${userId})`, { action: 'api' });
-                        return { id: userId, name: 'testuser', realName: 'Test User', isBot: false };
-                    },
-                    getChannelInfo: (channelId) => {
-                        addMessage('api', 'API', `getChannelInfo(${channelId})`, { action: 'api' });
-                        return { id: channelId, name: 'test-channel', isPrivate: false };
-                    }
-                },
+                slack,
                 http: {
                     get: (url) => { addMessage('api', 'HTTP', `GET ${url}`); return { status: 200, body: '{}' }; },
                     post: (url) => { addMessage('api', 'HTTP', `POST ${url}`); return { status: 200, body: '{}' }; }
@@ -1291,9 +1296,23 @@ var handler = {
                         keys: () => Object.keys(storeState[handlerName] || {}),
                         clear: () => { storeState[handlerName] = {}; localStorage.setItem('handlerSimStore', JSON.stringify(storeState)); }
                     }
+                },
+                // Helper to add methods to message object
+                _augmentMessage: (msg) => {
+                    msg.isBot = !!msg.botId;
+                    msg.reply = (text, opts) => slack.sendMessage(msg.channel, text, { threadTimestamp: msg.threadTimestamp, ...opts });
+                    msg.replyEphemeral = (text, opts) => slack.sendEphemeral(msg.channel, msg.user, text, { threadTimestamp: msg.threadTimestamp, ...opts });
+                    msg.react = (emoji) => slack.addReaction(msg.channel, msg.timestamp, emoji);
+                    msg.delete = () => slack.deleteMessage(msg.channel, msg.timestamp);
+                    return msg;
                 }
             };
         }
+
+        // Return value constants
+        const SKIP = { handled: false };
+        const HANDLED = { handled: true };
+        const STOP = { handled: true, stopPropagation: true };
 
         function executeHandler() {
             const code = editor.getValue();
@@ -1317,11 +1336,25 @@ var handler = {
 
             try {
                 const apis = createMockAPIs(getHandlerName());
-                const wrappedCode = `(function(console, slack, http, state) { ${code}; return typeof handler === 'object' && typeof handler.handle === 'function' ? handler.handle : null; })`;
-                const handleFn = eval(wrappedCode)(apis.console, apis.slack, apis.http, apis.state);
+                // Augment message with helper methods
+                apis._augmentMessage(message);
 
-                if (typeof handleFn !== 'function') throw new Error("Missing 'handler.handle' function");
-                result = handleFn(message);
+                // Execute code and get handler object
+                const wrappedCode = `(function(console, slack, http, state, SKIP, HANDLED, STOP) { ${code}; return typeof handler === 'object' ? handler : null; })`;
+                const handlerObj = eval(wrappedCode)(apis.console, apis.slack, apis.http, apis.state, SKIP, HANDLED, STOP);
+
+                if (!handlerObj || typeof handlerObj.handle !== 'function') throw new Error("Missing 'handler.handle' function");
+
+                // Check skip options
+                if (handlerObj.skipBots && message.isBot) {
+                    result = SKIP;
+                } else if (handlerObj.skipThreads && message.isThread) {
+                    result = SKIP;
+                } else if (handlerObj.skipDMs && message.isDM) {
+                    result = SKIP;
+                } else {
+                    result = handlerObj.handle(message);
+                }
             } catch (e) {
                 error = e.message;
                 addMessage('error', 'Error', e.message);

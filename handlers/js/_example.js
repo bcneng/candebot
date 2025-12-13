@@ -1,109 +1,79 @@
 // Example Handler - demonstrates the full handler interface
-// File names starting with underscore are ignored by the loader (use for documentation)
+// File names starting with underscore are ignored by the loader
 
 var handler = {
+    // === HANDLER METADATA ===
     name: "example-handler",
     description: "Example handler that demonstrates all available features",
-    channels: ["playground", "offtopic-*"], // Matches 'playground' and any channel starting with 'offtopic-'
-    priority: 100, // Lower runs first (default: 100)
-    enabled: false, // Set to true to enable this handler
-    timeout: 5000, // Execution timeout in milliseconds (default: 5000)
+    channels: ["playground", "offtopic-*"],  // Glob patterns supported
+    priority: 100,    // Lower runs first (default: 100)
+    enabled: false,   // Set to true to enable
+    timeout: 5000,    // Execution timeout in ms (default: 5000)
 
-    // The main handler function - receives message data
+    // === SKIP OPTIONS (auto-skip before handle is called) ===
+    skipBots: true,      // Skip messages from bots
+    skipThreads: false,  // Skip thread replies
+    skipDMs: false,      // Skip direct messages
+
+    // === MAIN HANDLER ===
     handle: function(message) {
-        // Message object contains:
+        // Message object:
         // {
-        //   type: "message",
-        //   channel: "C12345678",      // Channel ID
-        //   channelName: "general",    // Channel name (may be same as ID)
-        //   channelType: "channel",    // "channel", "im", "mpim", "group"
-        //   user: "U12345678",         // User ID who sent the message
-        //   text: "Hello world",       // Message text
-        //   timestamp: "1234567890.123456",
-        //   threadTimestamp: "",       // Thread parent timestamp (empty if not in thread)
-        //   isThread: false,           // true if message is in a thread
-        //   isDM: false,               // true if direct message
-        //   isStaff: false,            // true if user is a staff member
-        //   botId: "",                 // Bot ID if message from a bot
-        //   subType: ""                // Message subtype (empty for normal messages)
+        //   channel: "C12345678",           // Channel ID
+        //   channelName: "general",         // Channel name
+        //   channelType: "channel",         // "channel", "im", "mpim", "group"
+        //   user: "U12345678",              // User ID
+        //   text: "Hello world",            // Message text
+        //   timestamp: "1234567890.123456", // Message timestamp
+        //   threadTimestamp: "",            // Thread parent timestamp
+        //   isThread: false,                // true if in a thread
+        //   isDM: false,                    // true if direct message
+        //   isBot: false,                   // true if from a bot
+        //   isStaff: false,                 // true if user is staff
+        //   botId: "",                      // Bot ID if from a bot
+        //   subType: ""                     // Message subtype
         // }
 
-        console.log("Received message:", message.text);
-        console.info("In channel:", message.channel);
+        console.log("Received:", message.text);
 
-        // === SLACK API ===
+        // === MESSAGE HELPER METHODS ===
+        // message.reply(text, opts)         - Send reply to channel
+        // message.replyEphemeral(text, opts) - Send ephemeral reply (only visible to user)
+        // message.react(emoji)              - Add reaction to message
+        // message.delete()                  - Delete the message
 
-        // Send a message to a channel
-        // slack.sendMessage(channel, text, options)
-        // Options: { threadTimestamp: "...", broadcast: true/false, unfurlLinks: true/false }
+        if (message.text.includes("hello")) {
+            message.react("wave");
+            message.replyEphemeral("Hello there!");
+            return HANDLED;
+        }
 
-        // Send an ephemeral message (only visible to one user)
-        // slack.sendEphemeral(channel, user, text, options)
-        // Options: { threadTimestamp: "..." }
-
-        // Add/remove reactions
+        // === SLACK API (for advanced use) ===
+        // slack.sendMessage(channel, text, opts)
+        // slack.sendEphemeral(channel, user, text, opts)
         // slack.addReaction(channel, timestamp, emoji)
         // slack.removeReaction(channel, timestamp, emoji)
-
-        // Get user info
-        // var user = slack.getUserInfo(userId)
-        // Returns: { id, name, realName, displayName, email, isBot, isAdmin, isOwner, timezone, avatar }
-
-        // Get channel info
-        // var channel = slack.getChannelInfo(channelId)
-        // Returns: { id, name, topic, purpose, isPrivate, isArchived, memberCount }
-
-        // Delete a message (requires admin permissions)
         // slack.deleteMessage(channel, timestamp)
-
-        // Update a message
-        // slack.updateMessage(channel, timestamp, newText)
+        // slack.getUserInfo(userId) -> { id, name, realName, isBot, ... }
+        // slack.getChannelInfo(channelId) -> { id, name, isPrivate, ... }
 
         // === HTTP API ===
+        // http.get(url, opts) -> { status, body, json, headers }
+        // http.post(url, body, opts)
+        // http.put(url, body, opts)
+        // http.delete(url, opts)
 
-        // HTTP GET request
-        // var response = http.get(url, options)
-        // Options: { headers: { "Authorization": "Bearer token" } }
+        // === STATE API (auto-serializes objects) ===
+        // state.cache.get(key)    - Get value (in-memory, lost on restart)
+        // state.cache.set(key, value)
+        // state.store.get(key)    - Get value (persisted)
+        // state.store.set(key, value)
 
-        // HTTP POST request
-        // var response = http.post(url, body, options)
-        // Body can be string, object (will be JSON-encoded), or any value
+        // === RETURN VALUES ===
+        // return SKIP;     // { handled: false } - didn't handle
+        // return HANDLED;  // { handled: true } - handled, continue to next handler
+        // return STOP;     // { handled: true, stopPropagation: true } - stop all handlers
 
-        // HTTP PUT request
-        // var response = http.put(url, body, options)
-
-        // HTTP DELETE request
-        // var response = http.delete(url, options)
-
-        // Generic HTTP fetch (similar to browser fetch API)
-        // var response = http.fetch(url, options)
-        // Options: { method: "GET/POST/PUT/DELETE", body: ..., headers: {...} }
-
-        // Response object:
-        // {
-        //   status: 200,
-        //   statusText: "200 OK",
-        //   ok: true,              // true if status 2xx
-        //   headers: {...},        // Response headers
-        //   body: "...",           // Raw response body as string
-        //   json: {...}            // Parsed JSON if Content-Type is application/json
-        // }
-
-        // === CONSOLE/LOG API ===
-
-        // console.log(...args)   - Standard log
-        // console.info(...args)  - Info level
-        // console.warn(...args)  - Warning level
-        // console.error(...args) - Error level
-        // console.debug(...args) - Debug level
-        // Also available as: log.info(), log.warn(), etc.
-
-        // === RETURN VALUE ===
-
-        // Return an object to control handler behavior:
-        return {
-            handled: true,           // Set to true if this handler processed the message
-            stopPropagation: false   // Set to true to prevent other handlers from running
-        };
+        return SKIP;
     }
 };

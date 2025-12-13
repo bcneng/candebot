@@ -1,8 +1,6 @@
 // Tracking Parameter Detector
 // Detects privacy-invasive tracking parameters in URLs and warns users.
-// Ported from Go: internal/privacy/tracker.go
 
-// Known tracking parameters and their associated platforms
 var trackedParams = [
     { name: "igsh", platform: "Instagram" },
     { name: "igshid", platform: "Instagram" },
@@ -13,184 +11,59 @@ var trackedParams = [
     { name: "si", platform: "YouTube/Spotify" },
 ];
 
-// URL regex pattern
 var urlPattern = /https?:\/\/[^\s<>]+/g;
 
-// Extract all URLs from text
-function extractURLs(text) {
-    var matches = text.match(urlPattern);
-    return matches || [];
+function parseURL(url) {
+    var result = { protocol: "", host: "", path: "", query: "", fragment: "" };
+    var fragmentIndex = url.indexOf("#");
+    if (fragmentIndex !== -1) { result.fragment = url.substring(fragmentIndex + 1); url = url.substring(0, fragmentIndex); }
+    var queryIndex = url.indexOf("?");
+    if (queryIndex !== -1) { result.query = url.substring(queryIndex + 1); url = url.substring(0, queryIndex); }
+    var protocolIndex = url.indexOf("://");
+    if (protocolIndex !== -1) { result.protocol = url.substring(0, protocolIndex); url = url.substring(protocolIndex + 3); }
+    var pathIndex = url.indexOf("/");
+    if (pathIndex !== -1) { result.host = url.substring(0, pathIndex); result.path = url.substring(pathIndex); }
+    else { result.host = url; }
+    return result;
 }
 
-// Parse query string into object
-function parseQueryString(queryString) {
+function parseQueryString(qs) {
     var params = {};
-    if (!queryString) return params;
-
-    var pairs = queryString.split("&");
+    if (!qs) return params;
+    var pairs = qs.split("&");
     for (var i = 0; i < pairs.length; i++) {
         var pair = pairs[i].split("=");
-        if (pair[0]) {
-            params[decodeURIComponent(pair[0])] = pair[1] ? decodeURIComponent(pair[1]) : "";
-        }
+        if (pair[0]) params[decodeURIComponent(pair[0])] = pair[1] ? decodeURIComponent(pair[1]) : "";
     }
     return params;
 }
 
-// Build query string from object
-function buildQueryString(params) {
-    var pairs = [];
-    for (var key in params) {
-        if (params.hasOwnProperty(key)) {
-            pairs.push(encodeURIComponent(key) + "=" + encodeURIComponent(params[key]));
-        }
-    }
-    return pairs.join("&");
-}
-
-// Parse URL into components
-function parseURL(url) {
-    var result = {
-        protocol: "",
-        host: "",
-        path: "",
-        query: "",
-        fragment: ""
-    };
-
-    // Extract fragment
-    var fragmentIndex = url.indexOf("#");
-    if (fragmentIndex !== -1) {
-        result.fragment = url.substring(fragmentIndex + 1);
-        url = url.substring(0, fragmentIndex);
-    }
-
-    // Extract query
-    var queryIndex = url.indexOf("?");
-    if (queryIndex !== -1) {
-        result.query = url.substring(queryIndex + 1);
-        url = url.substring(0, queryIndex);
-    }
-
-    // Extract protocol
-    var protocolIndex = url.indexOf("://");
-    if (protocolIndex !== -1) {
-        result.protocol = url.substring(0, protocolIndex);
-        url = url.substring(protocolIndex + 3);
-    }
-
-    // Extract path
-    var pathIndex = url.indexOf("/");
-    if (pathIndex !== -1) {
-        result.host = url.substring(0, pathIndex);
-        result.path = url.substring(pathIndex);
-    } else {
-        result.host = url;
-        result.path = "";
-    }
-
-    return result;
-}
-
-// Rebuild URL from components
-function buildURL(parts) {
+function buildURL(parts, params) {
+    var qs = Object.keys(params).map(function(k) { return encodeURIComponent(k) + "=" + encodeURIComponent(params[k]); }).join("&");
     var url = parts.protocol + "://" + parts.host + parts.path;
-    if (parts.query) {
-        url += "?" + parts.query;
-    }
-    if (parts.fragment) {
-        url += "#" + parts.fragment;
-    }
+    if (qs) url += "?" + qs;
+    if (parts.fragment) url += "#" + parts.fragment;
     return url;
 }
 
-// Detect tracking parameters in a URL
-function detectTracking(url) {
-    var parts = parseURL(url);
-    var params = parseQueryString(parts.query);
-
-    for (var i = 0; i < trackedParams.length; i++) {
-        var tp = trackedParams[i];
-        if (params.hasOwnProperty(tp.name)) {
-            return { param: tp.name, platform: tp.platform, found: true };
-        }
-    }
-
-    return { param: "", platform: "", found: false };
-}
-
-// Strip tracking parameters from URL
-function stripTracking(url) {
-    var parts = parseURL(url);
-    var params = parseQueryString(parts.query);
-    var modified = false;
-
-    for (var i = 0; i < trackedParams.length; i++) {
-        var tp = trackedParams[i];
-        if (params.hasOwnProperty(tp.name)) {
-            delete params[tp.name];
-            modified = true;
-        }
-    }
-
-    if (!modified) {
-        return { cleaned: url, stripped: false };
-    }
-
-    parts.query = buildQueryString(params);
-    return { cleaned: buildURL(parts), stripped: true };
-}
-
-// Find all tracked URLs in text
 function findTrackedURLs(text) {
-    var urls = extractURLs(text);
+    var urls = text.match(urlPattern) || [];
     var results = [];
-
     for (var i = 0; i < urls.length; i++) {
         var url = urls[i];
-        var detection = detectTracking(url);
-
-        if (!detection.found) {
-            continue;
+        var parts = parseURL(url);
+        var params = parseQueryString(parts.query);
+        for (var j = 0; j < trackedParams.length; j++) {
+            var tp = trackedParams[j];
+            if (params.hasOwnProperty(tp.name)) {
+                var cleanParams = {};
+                for (var k in params) { if (k !== tp.name) cleanParams[k] = params[k]; }
+                results.push({ original: url, cleaned: buildURL(parts, cleanParams), param: tp.name, platform: tp.platform });
+                break;
+            }
         }
-
-        var stripped = stripTracking(url);
-        results.push({
-            original: url,
-            cleaned: stripped.cleaned,
-            param: detection.param,
-            platform: detection.platform
-        });
     }
-
     return results;
-}
-
-// Format the warning message
-function formatWarningMessage(tracked) {
-    if (tracked.length === 0) {
-        return "";
-    }
-
-    var msg = ":warning: *Privacy Notice:* Your message contains tracking parameters that may expose who shared the link.\n\n";
-
-    for (var i = 0; i < tracked.length; i++) {
-        var t = tracked[i];
-
-        if (tracked.length > 1) {
-            msg += "*Link " + (i + 1) + ":*\n";
-        } else {
-            msg += "*Link detected:*\n";
-        }
-
-        msg += "* Platform: " + t.platform + "\n";
-        msg += "* Parameter: `" + t.param + "`\n";
-        msg += "* Cleaned link: " + t.cleaned + "\n\n";
-    }
-
-    msg += "Consider reposting with the cleaned link(s) above to protect your privacy.";
-
-    return msg;
 }
 
 var handler = {
@@ -199,31 +72,22 @@ var handler = {
     channels: ["*"],
     priority: 20,
     enabled: true,
-    timeout: 3000,
+    skipBots: true,
 
     handle: function(message) {
-        // Skip bot messages
-        if (message.botId) {
-            return { handled: false };
-        }
-
         var tracked = findTrackedURLs(message.text);
+        if (tracked.length === 0) return SKIP;
 
-        if (tracked.length === 0) {
-            return { handled: false };
+        var msg = ":warning: *Privacy Notice:* Your message contains tracking parameters that may expose who shared the link.\n\n";
+        for (var i = 0; i < tracked.length; i++) {
+            var t = tracked[i];
+            msg += (tracked.length > 1 ? "*Link " + (i + 1) + ":*\n" : "*Link detected:*\n");
+            msg += "* Platform: " + t.platform + "\n* Parameter: `" + t.param + "`\n* Cleaned link: " + t.cleaned + "\n\n";
         }
+        msg += "Consider reposting with the cleaned link(s) above to protect your privacy.";
 
-        var warning = formatWarningMessage(tracked);
-
-        try {
-            slack.sendEphemeral(message.channel, message.user, warning, {
-                threadTimestamp: message.threadTimestamp
-            });
-            console.info("Sent tracking warning for", tracked.length, "URL(s)");
-        } catch (e) {
-            console.error("Failed to send tracking warning:", e);
-        }
-
-        return { handled: true, stopPropagation: false };
+        message.replyEphemeral(msg);
+        console.info("Sent tracking warning for", tracked.length, "URL(s)");
+        return HANDLED;
     }
 };

@@ -7,48 +7,34 @@ var githubPattern = /https?:\/\/github\.com\/([^\/]+)\/([^\/]+)\/(issues|pull)\/
 var handler = {
     name: "github-link-info",
     description: "Adds reactions to messages containing GitHub issue/PR links",
-    channels: ["*"], // All channels - use with caution
-    priority: 200, // Run after other handlers
-    enabled: false, // Disabled by default - enable if you want this feature
-    timeout: 10000, // 10 second timeout for API calls
+    channels: ["*"],
+    priority: 200,
+    enabled: false,
+    timeout: 10000,
 
     handle: function(message) {
-        // Find GitHub links in the message
         var matches = [];
         var match;
-
-        // Reset regex lastIndex for global matching
         githubPattern.lastIndex = 0;
 
         while ((match = githubPattern.exec(message.text)) !== null) {
             matches.push({
-                url: match[0],
-                owner: match[1],
-                repo: match[2],
                 type: match[3], // "issues" or "pull"
                 number: match[4]
             });
         }
 
         if (matches.length === 0) {
-            return { handled: false };
+            return SKIP;
         }
 
         console.info("Found " + matches.length + " GitHub link(s) in message");
 
-        // Add appropriate emoji based on link type
         for (var i = 0; i < matches.length; i++) {
-            var link = matches[i];
-            var emoji = link.type === "pull" ? "git-pull-request" : "github";
-
-            try {
-                slack.addReaction(message.channel, message.timestamp, emoji);
-            } catch (e) {
-                // Reaction might already exist or emoji might not be available
-                console.debug("Could not add reaction:", e);
-            }
+            var emoji = matches[i].type === "pull" ? "git-pull-request" : "github";
+            message.react(emoji);
         }
 
-        return { handled: true };
+        return HANDLED;
     }
 };

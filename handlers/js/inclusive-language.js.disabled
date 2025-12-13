@@ -1,12 +1,10 @@
 // Inclusive Language Filter
 // Checks messages for non-inclusive language and sends gentle educational reminders.
-// Ported from Go: inclusion/language.go
 
 var conductLinks = "\nIn case of doubts please check our <https://bcneng.org/coc|Code of Conduct> and/or our <https://bcneng.org/netiquette|Netiquette> ";
 
-// Filter definitions - each has a pattern (regex) and reply message
 var filters = [
-    // English - Based on Rands Leadership Slack inclusive language guidelines
+    // English
     { pattern: "you guys", reply: "Instead of *guys*, perhaps you mean *pals*? You can read more information about it at https://www.dictionary.com/e/you-guys/... *[Please consider editing your message so it's more inclusive]*" },
     { pattern: "these guys", reply: "Instead of *guys*, perhaps you mean *gang*? You can read more information about it at https://www.dictionary.com/e/you-guys/... *[Please consider editing your message so it's more inclusive]*" },
     { pattern: "my guys", reply: "Instead of *guys*, perhaps you mean *crew*? You can read more information about it at https://www.dictionary.com/e/you-guys/... *[Please consider editing your message so it's more inclusive]*" },
@@ -15,51 +13,15 @@ var filters = [
     { pattern: "hi guys", reply: "Instead of *guys*, perhaps you mean *everyone*? You can read more information about it at https://www.dictionary.com/e/you-guys/... *[Please consider editing your message so it's more inclusive]*" },
     { pattern: "the guys", reply: "Instead of *guys*, perhaps you mean *folks*? You can read more information about it at https://www.dictionary.com/e/you-guys/... *[Please consider editing your message so it's more inclusive]*" },
     { pattern: "(?:^|\\W)guys(?:$|[^\\w+])", reply: "Instead of *guys*, have you considered a more gender-neutral pronoun like *folks*? You can read more information about it at https://www.dictionary.com/e/you-guys/... *[Please consider editing your message so it's more inclusive]*" },
-    { pattern: "(?:^|\\W)CHWD(?:$|[^\\w+])", reply: "Cisgender Hetero White Dude. But please consider using the full term \"cisgender, heterosexual white man\" or similar. That would both make it more approachable for those unfamiliar with this obscure initialism, and prevent reducing people down to initialisms." },
-    { pattern: "(?:^|\\W)URP(?:$|[^\\w+])", reply: "Underrepresented person(s). But please consider using the full term \"members of traditionally underrepresented groups\" or similar; people don't like to be made into acronyms, _especially_ when they are already marginalized. See: en.wikipedia.org/wiki/Underrepresented_group" },
-    { pattern: "(?:^|\\W)URPs(?:$|[^\\w+])", reply: "Underrepresented person(s). But please consider using the full term \"members of traditionally underrepresented groups\" or similar; people don't like to be made into acronyms, _especially_ when they are already marginalized. See: en.wikipedia.org/wiki/Underrepresented_group" },
-    { pattern: "(?:^|\\W)URM(?:$|[^\\w+])", reply: "Underrepresented minorit(y|ies). But please consider using the full term \"members of traditionally underrepresented groups\" or similar; people don't like to be made into acronyms, _especially_ when they are already marginalized. See: en.wikipedia.org/wiki/Underrepresented_group" },
-    { pattern: "(?:^|\\W)URG(?:$|[^\\w+])", reply: "Underrepresented group(s). But please consider using the full term \"members of traditionally underrepresented groups\" or similar; people don't like to be made into acronyms, _especially_ when they are already marginalized. See: en.wikipedia.org/wiki/Underrepresented_group" },
     { pattern: "(?:^|\\W)crazy(?:$|[^\\w+])", reply: "Using the word *crazy* is considered by some to be insensitive to sufferers of mental illness, maybe you mean *outrageous*, *unthinkable*, *nonsensical*, *incomprehensible*? Have you considered a different adjective like *ridiculous*? You can read more information about it at https://www.selfdefined.app/definitions/crazy/" },
     { pattern: "(?:^|\\W)insane(?:$|[^\\w+])", reply: "The word *insane* is considered by some to be insensitive to sufferers of mental illness. Perhaps you mean *outrageous*, *unthinkable*, *nonsensical*, *incomprehensible*? Have you considered a different adjective like *ridiculous*? You can read more information about it at https://www.selfdefined.app/definitions/crazy/" },
     { pattern: "(?:^|\\W)slave(?:$|[^\\w+])", reply: "If you are referring to a data replication strategy, please consider a term such as \"follower\" or \"replica\". You can read more information about it at https://www.selfdefined.app/definitions/master-slave/" },
-
-    // Spanish - Based on COCEMFE inclusive language guide
-    { pattern: "(?:^|\\W)discapacitad[ao](?:$|[^\\w+])", reply: "Ante todo somos personas, y no queremos que se nos etiquete, puesto que la discapacidad es una característica más de todas las que se tiene, no lo único por lo que se debe reconocer.\nPor eso es importante anteponer la palabra *persona* y lo más aconsejable es utilizar el término *persona con discapacidad* y no *discapacitado*.\nMás info en https://www.cocemfe.es/wp-content/uploads/2019/02/20181010_COCEMFE_Lenguaje_inclusivo.pdf" },
-    { pattern: "discapacitad[ao] fisic[ao]", reply: "Ante todo somos personas, y no queremos que se nos etiquete, puesto que la discapacidad es una característica más de todas las que se tiene, no lo único por lo que se debe reconocer.\nPor eso es importante anteponer la palabra *persona* y lo más aconsejable es utilizar el término *persona con discapacidad* y no *discapacitada física*.\nMás info en https://www.cocemfe.es/wp-content/uploads/2019/02/20181010_COCEMFE_Lenguaje_inclusivo.pdf" },
-    { pattern: "(?:^|\\W)minusvalid[ao](?:$|[^\\w+])", reply: "*Minusválido* es un término peyorativo y vulnera la dignidad de las personas con discapacidad, al atribuirse un nulo o reducido valor a una persona, o utilizarse generalmente con elevada carga negativa. Considera usar *persona con discapacidad*.\nMás info en https://www.cocemfe.es/wp-content/uploads/2019/02/20181010_COCEMFE_Lenguaje_inclusivo.pdf" },
-    { pattern: "diversidad funcional", reply: "COCEMFE considera que el término *diversidad funcional* es un eufemismo, cargado de condescendencia que genera confusión, inseguridad jurídica y rebaja la protección que todavía es necesaria. El término *discapacidad* es el que aglutina derechos reconocidos legalmente y que cuenta con el mayor respaldo social. Considera usarlo.\nMás info en https://www.cocemfe.es/wp-content/uploads/2019/02/20181010_COCEMFE_Lenguaje_inclusivo.pdf" },
-    { pattern: "(?:^|\\W)retrasad[ao](?:$|[^\\w+])", reply: "*Retrasado* y *Retraso mental* son términos despectivos eliminados del vocabulario psiquiátrico y, según la OMS, la forma correcta para referiste a ese grupo de enfermedades y transtornos es *Trastorno del desarrollo intelectual*" },
-    { pattern: "retraso mental", reply: "*Retrasado* y *Retraso mental* son términos despectivos eliminados del vocabulario psiquiátrico y, según la OMS, la forma correcta para referiste a ese grupo de enfermedades y transtornos es *Trastorno del desarrollo intelectual*" },
-
-    // Our own additions
-    { pattern: "(?:^|\\W)gentlem[ae]n(?:$|[^\\w+])", reply: "Instead of *gentleman/gentlemen*, perhaps you mean *folks*?... *[Please consider editing your message so it's more inclusive]*" },
-    { pattern: "(?:^|\\W)lad(?:y|ies)(?:$|[^\\w+])", reply: "Instead of *lady/ladies*, perhaps you mean *folks*?... *[Please consider editing your message so it's more inclusive]*" },
-    { pattern: "los chicos de", reply: "En vez de *los chicos de*, quizá quisiste decir *el equipo de*, *los integrantes de*? Para más información (en inglés), puedes consultar https://www.dictionary.com/e/you-guys/... *[Considera editar tu mensaje para que sea más inclusivo]*" },
-    { pattern: "(?:^|\\W)chicos(?:$|[^\\w+])", reply: "En vez de *chicos*, quizá quisiste decir *chiques*, *colegas*, *grupo*, *personas*? Para más información (en inglés), puedes consultar https://www.dictionary.com/e/you-guys/... *[Considera editar tu mensaje para que sea más inclusivo]*" },
-    { pattern: "(?:^|\\W)lgtb(?:$|[^\\w+])", reply: "Desde hace un tiempo, el colectivo *LGTB+* recomienda añadir el carácter `+` a la palabra *LGTB*, pues existen orientaciones e identidades que, a pesar de no ser tan predominantes, representan a muchas personas. *[Considera editar tu mensaje para que sea más inclusivo]*" },
-    { pattern: "(?:^|\\W)locura(?:$|[^\\w+])", reply: "La palabra *locura* es considerada por algunas personas como irrespetuosa hacia las personas que sufren alguna enfermedad mental.\nQuizá quisiste decir *indignante*, *impensable*, *absurdo*, *incomprensible*? Has considerado usar un adjetivo diferente como *ridículo*?" },
-    { pattern: "(?:^|\\W)locuron(?:$|[^\\w+])", reply: "La palabra *locurón* o *locura* es considerada por algunas personas como irrespetuosa hacia las personas que sufren alguna enfermedad mental.\nQuizá quisiste decir *indignante*, *impensable*, *absurdo*, *incomprensible*? Has considerado usar un adjetivo diferente como *ridículo*?" },
-    { pattern: "(?:^|\\W)loc[ao](?:$|[^\\w+])", reply: "La palabra *loco/loca* es considerada por algunas personas como irrespetuosa hacia las personas que sufren alguna enfermedad mental.\nQuizá quisiste decir *indignante*, *impensable*, *absurdo*, *incomprensible*? Has considerado usar un adjetivo diferente como *ridículo*?" },
-    { pattern: "(?:^|\\W)cakewalk(?:$|[^\\w+])", reply: "Instead of *cakewalk*, perhaps you mean *easy*?... *[Please consider editing your message so it's more inclusive]*" },
-    { pattern: "grandfathered in", reply: "Instead of *grandfathered in*, perhaps you mean *exempting*? You can read more information in https://www.selfdefined.app/definitions/grandfathering/ ... *[Please consider editing your message so it's more inclusive]*" },
-    { pattern: "(?:^|\\W)grandfathering(?:$|[^\\w+])", reply: "Instead of *grandfathering*, perhaps you mean *exempting*? You can read more information in https://www.selfdefined.app/definitions/grandfathering/ ... *[Please consider editing your message so it's more inclusive]*" },
     { pattern: "(?:^|\\W)whitelist(?:$|[^\\w+])", reply: "Instead of *whitelist*, perhaps you mean *allowlist*? You can read more information in https://www.linkedin.com/pulse/allowlist-blocklist-better-terms-everyone-lets-use-them-rob-black/ ... *[Please consider editing your message so it's more inclusive]*" },
     { pattern: "(?:^|\\W)blacklist(?:$|[^\\w+])", reply: "Instead of *blacklist*, perhaps you mean *blocklist*? You can read more information in https://www.linkedin.com/pulse/allowlist-blocklist-better-terms-everyone-lets-use-them-rob-black/ ... *[Please consider editing your message so it's more inclusive]*" },
-
-    // Catalan
-    { pattern: "(?:^|\\W)discapacita(?:t|da)(?:$|[^\\w+])", reply: "Abans de res som persones, i no volem que se'ns etiqueti, ja que la discapacitat és una característica més de totes les que es té, no l'únic pel que s'ha de reconèixer.\nPer això és important anteposar la paraula *persona* i el més aconsellable és utilitzar el terme *persona amb discapacitat* i no *discapacitat*.\nMés info a https://www.cocemfe.es/wp-content/uploads/2019/02/20181010_COCEMFE_Lenguaje_inclusivo.pdf" },
-    { pattern: "diversitat funcional", reply: "La COCEMFE considera que el terme *diversitat funcional* és un eufemisme, carregat de condescendència que genera confusió, inseguretat jurídica i rebaixa la protecció que encara és necessària. El terme *discapacitat* és el que aglutina drets reconeguts legalment i que compta amb el major suport social. Considereu utilitzar-lo.\nMés info a https://www.cocemfe.es/wp-content/uploads/2019/02/20181010_COCEMFE_Lenguaje_inclusivo.pdf" },
-    { pattern: "(?:^|\\W)retrass*a(?:t|da)(?:$|[^\\w+])", reply: "*Retrassat/retrassada* i *Retràs mental* són termes despectius eliminats del vocabulari psiquiàtric i, segons l'OMS, la forma correcta per referir-vos a aquest grup de malalties i trastorns és *Trastorn del desenvolupament intel·lectual*" },
-    { pattern: "retras mental", reply: "*Retrassat/retrassada* i *Retràs mental* són termes despectius eliminats del vocabulari psiquiàtric i, segons l'OMS, la forma correcta per referir-vos a aquest grup de malalties i trastorns és *Trastorn del desenvolupament intel·lectual*" },
-    { pattern: "(?:^|\\W)retarda(?:t|da)(?:$|[^\\w+])", reply: "*Retardat/retardada* i *Retard mental* són termes despectius eliminats del vocabulari psiquiàtric i, segons l'OMS, la forma correcta per referir-vos a aquest grup de malalties i trastorns és *Trastorn del desenvolupament intel·lectual*" },
-    { pattern: "retard mental", reply: "*Retardat/retardada* i *Retard mental* són termes despectius eliminats del vocabulari psiquiàtric i, segons l'OMS, la forma correcta per referir-vos a aquest grup de malalties i trastorns és *Trastorn del desenvolupament intel·lectual*" },
-    { pattern: "(?:^|\\W)noi(?:a|es|s)*(?:$|[^\\w+])", reply: "En lloc de *noi/noia/nois/noies*, potser et refereixes a *gent*?... *[Si us plau, considera editar el teu missatge perquè sigui més inclusiu]*" },
-    { pattern: "(?:^|\\W)bo(?:g|j)eria(?:$|[^\\w+])", reply: "La paraula *bogeria* és considerada per algunes persones com a irrespectuosa cap a les persones que pateixen alguna malaltia mental.\nPotser has volgut dir *indignant*, *impensable*, *absurd* o *incomprensible*? Has considerat fer servir un adjectiu diferent com *ridícul*?" },
-    { pattern: "(?:^|\\W)bo(?:ig|ja|jos)(?:$|[^\\w+])", reply: "La paraula *boig/boja* és considerada per algunes persones com a irrespectuosa cap a les persones que pateixen alguna malaltia mental.\nPotser has volgut dir *indignant*, *impensable*, *absurd* o *incomprensible*? Has considerat fer servir un adjectiu diferent com *ridícul*?" },
+    // Spanish
+    { pattern: "(?:^|\\W)chicos(?:$|[^\\w+])", reply: "En vez de *chicos*, quizá quisiste decir *chiques*, *colegas*, *grupo*, *personas*? Para más información (en inglés), puedes consultar https://www.dictionary.com/e/you-guys/... *[Considera editar tu mensaje para que sea más inclusivo]*" },
 ];
 
-// Remove accents/diacritics from text for matching
 function removeAccents(str) {
     return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
@@ -70,15 +32,9 @@ var handler = {
     channels: ["*"],
     priority: 10,
     enabled: true,
-    timeout: 3000,
+    skipBots: true,
 
     handle: function(message) {
-        // Skip bot messages
-        if (message.botId) {
-            return { handled: false };
-        }
-
-        // Normalize text: lowercase and remove accents
         var text = removeAccents(message.text.toLowerCase());
 
         for (var i = 0; i < filters.length; i++) {
@@ -86,22 +42,12 @@ var handler = {
             var regex = new RegExp(filter.pattern, "i");
 
             if (regex.test(text)) {
-                var reply = filter.reply + conductLinks;
-
-                try {
-                    slack.sendEphemeral(message.channel, message.user, reply, {
-                        threadTimestamp: message.threadTimestamp
-                    });
-                    console.info("Sent inclusive language reminder for pattern:", filter.pattern);
-                } catch (e) {
-                    console.error("Failed to send ephemeral:", e);
-                }
-
-                // Only send one reminder per message
-                return { handled: true, stopPropagation: false };
+                message.replyEphemeral(filter.reply + conductLinks);
+                console.info("Sent inclusive language reminder for pattern:", filter.pattern);
+                return HANDLED;
             }
         }
 
-        return { handled: false };
+        return SKIP;
     }
 };

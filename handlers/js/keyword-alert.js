@@ -1,9 +1,7 @@
 // Keyword Alert Handler
 // Monitors channels for specific keywords and can notify via webhook or reactions
 
-// Configure your keywords and reactions here
 var config = {
-    // Keywords to watch for (case-insensitive)
     keywords: [
         { word: "urgent", reaction: "rotating_light" },
         { word: "help", reaction: "raised_hands" },
@@ -12,37 +10,26 @@ var config = {
         { word: "down", reaction: "warning" },
         { word: "outage", reaction: "fire" }
     ],
-
-    // Optional webhook URL for external notifications
     // webhookUrl: "https://hooks.slack.com/services/xxx/yyy/zzz",
-
-    // Only alert on new threads (not replies)
     onlyNewThreads: true
 };
 
 var handler = {
     name: "keyword-alert",
     description: "Monitors messages for specific keywords and adds reactions",
-    channels: [], // Empty by default - configure with your channels
+    channels: [],
     priority: 150,
-    enabled: false, // Enable and configure before use
-    timeout: 5000,
+    enabled: false,
+    skipBots: true,
 
     handle: function(message) {
-        // Skip if only monitoring new threads and this is a reply
         if (config.onlyNewThreads && message.isThread) {
-            return { handled: false };
-        }
-
-        // Skip bot messages
-        if (message.botId) {
-            return { handled: false };
+            return SKIP;
         }
 
         var text = message.text.toLowerCase();
         var matchedKeywords = [];
 
-        // Check for keywords
         for (var i = 0; i < config.keywords.length; i++) {
             var kw = config.keywords[i];
             if (text.indexOf(kw.word.toLowerCase()) !== -1) {
@@ -51,44 +38,29 @@ var handler = {
         }
 
         if (matchedKeywords.length === 0) {
-            return { handled: false };
+            return SKIP;
         }
 
-        // Add reactions for matched keywords
         for (var j = 0; j < matchedKeywords.length; j++) {
-            try {
-                slack.addReaction(message.channel, message.timestamp, matchedKeywords[j].reaction);
-            } catch (e) {
-                console.debug("Could not add reaction:", e);
-            }
+            message.react(matchedKeywords[j].reaction);
         }
 
-        // Send webhook notification if configured
         if (config.webhookUrl) {
-            try {
-                var payload = {
-                    text: "Keyword alert triggered",
-                    attachments: [{
-                        color: "warning",
-                        fields: [
-                            { title: "Channel", value: message.channel, short: true },
-                            { title: "User", value: message.user, short: true },
-                            { title: "Keywords", value: matchedKeywords.map(function(k) { return k.word; }).join(", "), short: true },
-                            { title: "Message", value: message.text.substring(0, 200) }
-                        ]
-                    }]
-                };
-
-                http.post(config.webhookUrl, payload, {
-                    headers: { "Content-Type": "application/json" }
-                });
-            } catch (e) {
-                console.error("Failed to send webhook:", e);
-            }
+            http.post(config.webhookUrl, {
+                text: "Keyword alert triggered",
+                attachments: [{
+                    color: "warning",
+                    fields: [
+                        { title: "Channel", value: message.channel, short: true },
+                        { title: "User", value: message.user, short: true },
+                        { title: "Keywords", value: matchedKeywords.map(function(k) { return k.word; }).join(", "), short: true },
+                        { title: "Message", value: message.text.substring(0, 200) }
+                    ]
+                }]
+            }, { headers: { "Content-Type": "application/json" } });
         }
 
         console.info("Keyword alert triggered for:", matchedKeywords.map(function(k) { return k.word; }).join(", "));
-
-        return { handled: true };
+        return HANDLED;
     }
 };
