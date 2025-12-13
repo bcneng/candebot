@@ -67,21 +67,30 @@
 
         /* Layout - Code on left, Output on right */
         .container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            grid-template-rows: 1fr auto;
+            display: flex;
             height: calc(100vh - 52px);
         }
 
         .panel {
             background: var(--slack-secondary);
-            border-right: 1px solid var(--slack-border);
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
 
-        .panel:last-child { border-right: none; }
+        /* Horizontal resize handle */
+        .horizontal-resize-handle {
+            width: 6px;
+            background: var(--slack-border);
+            cursor: ew-resize;
+            transition: background 0.15s ease;
+            flex-shrink: 0;
+        }
+
+        .horizontal-resize-handle:hover,
+        .horizontal-resize-handle.dragging {
+            background: var(--slack-accent);
+        }
 
         .panel-header {
             padding: 0.75rem 1rem;
@@ -102,8 +111,10 @@
 
         /* Code Editor Panel - Left side */
         .code-panel {
-            grid-column: 1;
-            grid-row: 1;
+            width: 50%;
+            min-width: 300px;
+            max-width: 80%;
+            border-right: none;
         }
 
         .code-panel .panel-content {
@@ -220,10 +231,10 @@
 
         /* Output Panel - Right side */
         .output-panel {
-            grid-column: 2;
-            grid-row: 1;
+            flex: 1;
             display: flex;
             flex-direction: column;
+            min-width: 300px;
         }
 
         /* Message Composer - At top of output panel */
@@ -564,20 +575,20 @@
             color: var(--slack-text);
         }
 
-        /* State Panel */
+        /* State Panel - inside output panel */
         .state-panel {
-            grid-column: 1 / -1;
-            grid-row: 2;
             border-top: 1px solid var(--slack-border);
-            max-height: 200px;
+            flex-shrink: 0;
         }
 
         .state-panel .panel-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+            display: flex;
+            flex-direction: column;
             gap: 1px;
             background: var(--slack-border);
             padding: 0;
+            max-height: 200px;
+            overflow-y: auto;
         }
 
         .state-section {
@@ -770,11 +781,19 @@
 
         @media (max-width: 1000px) {
             .container {
-                grid-template-columns: 1fr;
-                grid-template-rows: auto 1fr auto;
+                flex-direction: column;
             }
-            .code-panel { max-height: 300px; grid-column: 1; }
-            .output-panel { grid-column: 1; }
+            .code-panel {
+                width: 100% !important;
+                max-width: 100%;
+                max-height: 300px;
+            }
+            .output-panel {
+                min-width: 100%;
+            }
+            .horizontal-resize-handle {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -829,6 +848,9 @@ function handle(message) {
                 </div>
             </div>
         </section>
+
+        <!-- Horizontal Resize Handle -->
+        <div class="horizontal-resize-handle" id="horizontalResizeHandle"></div>
 
         <!-- Right Panel: Message & Output -->
         <section class="panel output-panel">
@@ -897,27 +919,27 @@ function handle(message) {
                     </div>
                     <div class="console-output" id="consoleOutput"></div>
                 </div>
-            </div>
-        </section>
 
-        <!-- Bottom: State Panel -->
-        <section class="panel state-panel">
-            <div class="panel-header">
-                <span>State</span>
-                <div style="display:flex;gap:0.5rem">
-                    <button class="btn-icon" onclick="loadState()" title="Refresh">Refresh</button>
-                    <button class="btn-icon" onclick="saveState()" title="Save">Save</button>
-                    <button class="btn-icon" onclick="clearState()" title="Clear">Clear</button>
-                </div>
-            </div>
-            <div class="panel-content">
-                <div class="state-section">
-                    <h4>Cache (Session) - lost on refresh</h4>
-                    <textarea class="state-editor" id="cacheEditor">{}</textarea>
-                </div>
-                <div class="state-section">
-                    <h4>Store (Persistent) - localStorage</h4>
-                    <textarea class="state-editor" id="storeEditor">{}</textarea>
+                <!-- State Panel -->
+                <div class="state-panel">
+                    <div class="section-header">
+                        <span>State</span>
+                        <div style="display:flex;gap:0.5rem">
+                            <button class="btn-icon" onclick="loadState()" title="Refresh">Refresh</button>
+                            <button class="btn-icon" onclick="saveState()" title="Save">Save</button>
+                            <button class="btn-icon" onclick="clearState()" title="Clear">Clear</button>
+                        </div>
+                    </div>
+                    <div class="panel-content">
+                        <div class="state-section">
+                            <h4>Cache (Session)</h4>
+                            <textarea class="state-editor" id="cacheEditor">{}</textarea>
+                        </div>
+                        <div class="state-section">
+                            <h4>Store (Persistent)</h4>
+                            <textarea class="state-editor" id="storeEditor">{}</textarea>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -1507,9 +1529,45 @@ function handle(message) {
             });
         }
 
+        // Horizontal panel resize functionality
+        function initHorizontalResize() {
+            const handle = document.getElementById('horizontalResizeHandle');
+            const codePanel = document.querySelector('.code-panel');
+            let isResizing = false;
+            let startX = 0;
+            let startWidth = 0;
+
+            handle.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                startX = e.clientX;
+                startWidth = codePanel.offsetWidth;
+                handle.classList.add('dragging');
+                document.body.style.cursor = 'ew-resize';
+                document.body.style.userSelect = 'none';
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+                const delta = e.clientX - startX;
+                const containerWidth = document.querySelector('.container').offsetWidth;
+                const newWidth = Math.max(300, Math.min(containerWidth * 0.8, startWidth + delta));
+                codePanel.style.width = newWidth + 'px';
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (!isResizing) return;
+                isResizing = false;
+                handle.classList.remove('dragging');
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+            });
+        }
+
         // Initialize
         displayHistory();
         initConsoleResize();
+        initHorizontalResize();
     </script>
 </body>
 </html>
