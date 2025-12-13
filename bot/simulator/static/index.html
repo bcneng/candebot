@@ -442,17 +442,26 @@
             border-radius: 3px;
         }
 
+        /* Bottom panel container (console + state) */
+        .bottom-panel {
+            height: 300px;
+            min-height: 150px;
+            max-height: 70vh;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
         /* Console section */
         .console-section {
-            height: 150px;
-            min-height: 80px;
-            max-height: 60vh;
+            flex: 1;
+            min-height: 60px;
             display: flex;
             flex-direction: column;
         }
 
-        /* Console resize handle */
-        .console-resize-handle {
+        /* Resize handles */
+        .resize-handle-ns {
             height: 6px;
             background: var(--slack-border);
             cursor: ns-resize;
@@ -460,8 +469,8 @@
             flex-shrink: 0;
         }
 
-        .console-resize-handle:hover,
-        .console-resize-handle.dragging {
+        .resize-handle-ns:hover,
+        .resize-handle-ns.dragging {
             background: var(--slack-accent);
         }
 
@@ -575,19 +584,21 @@
             color: var(--slack-text);
         }
 
-        /* State Panel - inside output panel */
+        /* State Panel - inside bottom panel */
         .state-panel {
-            border-top: 1px solid var(--slack-border);
-            flex-shrink: 0;
+            flex: 1;
+            min-height: 60px;
+            display: flex;
+            flex-direction: column;
         }
 
         .state-panel .panel-content {
+            flex: 1;
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 1px;
             background: var(--slack-border);
             padding: 0;
-            max-height: 200px;
             overflow-y: auto;
         }
 
@@ -910,34 +921,40 @@ function handle(message) {
                     </div>
                 </div>
 
-                <!-- Console section -->
-                <div class="console-resize-handle" id="consoleResizeHandle"></div>
-                <div class="console-section" id="consoleSection">
-                    <div class="section-header">
-                        <span>Console</span>
-                        <button class="btn-icon" onclick="clearConsole()" title="Clear console">Clear</button>
+                <!-- Bottom panel: Console + State -->
+                <div class="resize-handle-ns" id="bottomPanelResizeHandle"></div>
+                <div class="bottom-panel" id="bottomPanel">
+                    <!-- Console section -->
+                    <div class="console-section" id="consoleSection">
+                        <div class="section-header">
+                            <span>Console</span>
+                            <button class="btn-icon" onclick="clearConsole()" title="Clear console">Clear</button>
+                        </div>
+                        <div class="console-output" id="consoleOutput"></div>
                     </div>
-                    <div class="console-output" id="consoleOutput"></div>
-                </div>
 
-                <!-- State Panel -->
-                <div class="state-panel">
-                    <div class="section-header">
-                        <span>State</span>
-                        <div style="display:flex;gap:0.5rem">
-                            <button class="btn-icon" onclick="loadState()" title="Refresh">Refresh</button>
-                            <button class="btn-icon" onclick="saveState()" title="Save">Save</button>
-                            <button class="btn-icon" onclick="clearState()" title="Clear">Clear</button>
+                    <!-- Resize handle between console and state -->
+                    <div class="resize-handle-ns" id="consoleStateResizeHandle"></div>
+
+                    <!-- State Panel -->
+                    <div class="state-panel" id="statePanel">
+                        <div class="section-header">
+                            <span>State</span>
+                            <div style="display:flex;gap:0.5rem">
+                                <button class="btn-icon" onclick="loadState()" title="Refresh">Refresh</button>
+                                <button class="btn-icon" onclick="saveState()" title="Save">Save</button>
+                                <button class="btn-icon" onclick="clearState()" title="Clear">Clear</button>
+                            </div>
                         </div>
-                    </div>
-                    <div class="panel-content">
-                        <div class="state-section">
-                            <h4>Cache (Session)</h4>
-                            <textarea class="state-editor" id="cacheEditor">{}</textarea>
-                        </div>
-                        <div class="state-section">
-                            <h4>Store (Persistent)</h4>
-                            <textarea class="state-editor" id="storeEditor">{}</textarea>
+                        <div class="panel-content">
+                            <div class="state-section">
+                                <h4>Cache (Session)</h4>
+                                <textarea class="state-editor" id="cacheEditor">{}</textarea>
+                            </div>
+                            <div class="state-section">
+                                <h4>Store (Persistent)</h4>
+                                <textarea class="state-editor" id="storeEditor">{}</textarea>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1492,10 +1509,10 @@ function handle(message) {
             return div.innerHTML;
         }
 
-        // Console resize functionality
-        function initConsoleResize() {
-            const handle = document.getElementById('consoleResizeHandle');
-            const consoleSection = document.getElementById('consoleSection');
+        // Bottom panel resize functionality (resizes console + state together)
+        function initBottomPanelResize() {
+            const handle = document.getElementById('bottomPanelResizeHandle');
+            const bottomPanel = document.getElementById('bottomPanel');
             let isResizing = false;
             let startY = 0;
             let startHeight = 0;
@@ -1503,7 +1520,7 @@ function handle(message) {
             handle.addEventListener('mousedown', (e) => {
                 isResizing = true;
                 startY = e.clientY;
-                startHeight = consoleSection.offsetHeight;
+                startHeight = bottomPanel.offsetHeight;
                 handle.classList.add('dragging');
                 document.body.style.cursor = 'ns-resize';
                 document.body.style.userSelect = 'none';
@@ -1512,10 +1529,50 @@ function handle(message) {
 
             document.addEventListener('mousemove', (e) => {
                 if (!isResizing) return;
-                // Dragging up (negative delta) increases height
                 const delta = startY - e.clientY;
-                const newHeight = Math.max(80, Math.min(window.innerHeight * 0.6, startHeight + delta));
-                consoleSection.style.height = newHeight + 'px';
+                const newHeight = Math.max(150, Math.min(window.innerHeight * 0.7, startHeight + delta));
+                bottomPanel.style.height = newHeight + 'px';
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (!isResizing) return;
+                isResizing = false;
+                handle.classList.remove('dragging');
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+            });
+        }
+
+        // Console/State divider resize functionality
+        function initConsoleStateResize() {
+            const handle = document.getElementById('consoleStateResizeHandle');
+            const consoleSection = document.getElementById('consoleSection');
+            const statePanel = document.getElementById('statePanel');
+            let isResizing = false;
+            let startY = 0;
+            let startConsoleHeight = 0;
+            let startStateHeight = 0;
+
+            handle.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                startY = e.clientY;
+                startConsoleHeight = consoleSection.offsetHeight;
+                startStateHeight = statePanel.offsetHeight;
+                handle.classList.add('dragging');
+                document.body.style.cursor = 'ns-resize';
+                document.body.style.userSelect = 'none';
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+                const delta = e.clientY - startY;
+                const newConsoleHeight = Math.max(60, startConsoleHeight + delta);
+                const newStateHeight = Math.max(60, startStateHeight - delta);
+                consoleSection.style.flex = 'none';
+                statePanel.style.flex = 'none';
+                consoleSection.style.height = newConsoleHeight + 'px';
+                statePanel.style.height = newStateHeight + 'px';
             });
 
             document.addEventListener('mouseup', () => {
@@ -1564,7 +1621,8 @@ function handle(message) {
 
         // Initialize
         displayHistory();
-        initConsoleResize();
+        initBottomPanelResize();
+        initConsoleStateResize();
         initHorizontalResize();
     </script>
 </body>
