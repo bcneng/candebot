@@ -1127,7 +1127,7 @@ function handle(message) {
             try {
                 // Create a mock environment for validation
                 const mockApis = { console: {log:()=>{},info:()=>{},warn:()=>{},error:()=>{}}, slack: {}, http: {}, state: {cache:{},store:{}} };
-                const wrappedCode = `(function(console,slack,http,state){${code};return{hasHandle:typeof handle==='function',name:typeof name!=='undefined'?name:null}})`;
+                const wrappedCode = `(function(console,slack,http,state){${code};return{hasHandle:typeof handle==='function'||(typeof handler==='object'&&typeof handler.handle==='function'),name:typeof handler==='object'?handler.name:(typeof name!=='undefined'?name:null)}})`;
                 const check = eval(wrappedCode)(mockApis.console, mockApis.slack, mockApis.http, mockApis.state);
 
                 if (check.hasHandle) {
@@ -1315,7 +1315,7 @@ function handle(message) {
 
             try {
                 const apis = createMockAPIs(getHandlerName());
-                const wrappedCode = `(function(console, slack, http, state) { ${code}; return typeof handle === 'function' ? handle : null; })`;
+                const wrappedCode = `(function(console, slack, http, state) { ${code}; return typeof handle === 'function' ? handle : (typeof handler === 'object' && typeof handler.handle === 'function' ? handler.handle : null); })`;
                 const handleFn = eval(wrappedCode)(apis.console, apis.slack, apis.http, apis.state);
 
                 if (typeof handleFn !== 'function') throw new Error("Missing 'handle' function");
