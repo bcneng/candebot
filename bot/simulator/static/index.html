@@ -599,12 +599,15 @@
             gap: 1px;
             background: var(--slack-border);
             padding: 0;
-            overflow-y: auto;
+            overflow: hidden;
         }
 
         .state-section {
             background: var(--slack-secondary);
             padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
         .state-section h4 {
@@ -612,11 +615,13 @@
             color: var(--slack-text-muted);
             margin-bottom: 0.5rem;
             font-weight: 600;
+            flex-shrink: 0;
         }
 
         .state-editor {
             width: 100%;
-            min-height: 80px;
+            flex: 1;
+            min-height: 40px;
             resize: none;
             font-family: 'Monaco', 'Menlo', monospace;
             font-size: 11px;
