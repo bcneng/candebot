@@ -783,13 +783,13 @@ function handle(message) {
                 <input type="hidden" id="msgThreadTs" value="">
                 <textarea class="composer-input" id="msgText" rows="2" placeholder="Write a message to test your handler...">hello world!</textarea>
                 <div class="composer-actions">
+                    <button class="btn btn-primary" onclick="executeHandler()">Send</button>
                     <div class="templates">
                         <button class="template-btn" onclick="applyTemplate('tracking')">Tracking URL</button>
                         <button class="template-btn" onclick="applyTemplate('inclusive')">Inclusive lang</button>
                         <button class="template-btn" onclick="applyTemplate('thread')">Thread</button>
                         <button class="template-btn" onclick="applyTemplate('job')">Job post</button>
                     </div>
-                    <button class="btn btn-primary" onclick="executeHandler()">Send Message</button>
                 </div>
             </div>
 
