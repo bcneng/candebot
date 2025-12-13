@@ -1230,14 +1230,20 @@ function handle(message) {
                 },
                 slack: {
                     sendMessage: (channel, text, opts) => {
-                        addMessage('slack', 'Bot', text, { action: 'sendMessage', channel });
-                        return { channel, timestamp: `${Date.now()/1000}` };
+                        const timestamp = `${Date.now()/1000}`;
+                        addMessage('slack', 'Bot', text, { action: 'sendMessage', channel, ts: timestamp });
+                        return { channel, timestamp };
                     },
                     sendEphemeral: (channel, user, text, opts) => {
                         addMessage('slack', 'Bot', text, { action: 'ephemeral', user, ephemeral: true });
                     },
                     addReaction: (channel, ts, emoji) => addMessage('slack', 'Bot', `Added :${emoji}: reaction`, { action: 'reaction' }),
-                    deleteMessage: (channel, ts) => addMessage('slack', 'Bot', `Deleted message`, { action: 'delete' }),
+                    deleteMessage: (channel, ts) => {
+                        const idx = messages.findIndex(m => m.ts === ts);
+                        if (idx !== -1) {
+                            messages.splice(idx, 1);
+                        }
+                    },
                     getUserInfo: (userId) => {
                         addMessage('api', 'API', `getUserInfo(${userId})`, { action: 'api' });
                         return { id: userId, name: 'testuser', realName: 'Test User', isBot: false };
