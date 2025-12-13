@@ -1182,7 +1182,7 @@ function handle(message) {
         }
 
         function addMessage(type, author, text, extra = {}) {
-            messages.push({ type, author, text, time: new Date(), ...extra });
+            messages.unshift({ type, author, text, time: new Date(), ...extra });
         }
 
         function addConsoleLog(level, ...args) {
@@ -1257,7 +1257,6 @@ function handle(message) {
         function executeHandler() {
             const code = editor.getValue();
             const message = buildMessage();
-            messages = [];
             consoleLogs = [];
 
             // Add the user message first
@@ -1366,7 +1365,7 @@ function handle(message) {
                     </div>`;
             }).join('');
 
-            container.scrollTop = container.scrollHeight;
+            container.scrollTop = 0;
         }
 
         function renderConsole() {
