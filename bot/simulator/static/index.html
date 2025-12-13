@@ -410,9 +410,24 @@
         /* Console section */
         .console-section {
             height: 150px;
-            min-height: 100px;
+            min-height: 80px;
+            max-height: 60vh;
             display: flex;
             flex-direction: column;
+        }
+
+        /* Console resize handle */
+        .console-resize-handle {
+            height: 6px;
+            background: var(--slack-border);
+            cursor: ns-resize;
+            transition: background 0.15s ease;
+            flex-shrink: 0;
+        }
+
+        .console-resize-handle:hover,
+        .console-resize-handle.dragging {
+            background: var(--slack-accent);
         }
 
         .console-output {
@@ -849,7 +864,8 @@ function handle(message) {
                 </div>
 
                 <!-- Console section -->
-                <div class="console-section">
+                <div class="console-resize-handle" id="consoleResizeHandle"></div>
+                <div class="console-section" id="consoleSection">
                     <div class="section-header">
                         <span>Console</span>
                         <button class="btn-icon" onclick="clearConsole()" title="Clear console">Clear</button>
@@ -1418,8 +1434,44 @@ function handle(message) {
             return div.innerHTML;
         }
 
+        // Console resize functionality
+        function initConsoleResize() {
+            const handle = document.getElementById('consoleResizeHandle');
+            const consoleSection = document.getElementById('consoleSection');
+            let isResizing = false;
+            let startY = 0;
+            let startHeight = 0;
+
+            handle.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                startY = e.clientY;
+                startHeight = consoleSection.offsetHeight;
+                handle.classList.add('dragging');
+                document.body.style.cursor = 'ns-resize';
+                document.body.style.userSelect = 'none';
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+                // Dragging up (negative delta) increases height
+                const delta = startY - e.clientY;
+                const newHeight = Math.max(80, Math.min(window.innerHeight * 0.6, startHeight + delta));
+                consoleSection.style.height = newHeight + 'px';
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (!isResizing) return;
+                isResizing = false;
+                handle.classList.remove('dragging');
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+            });
+        }
+
         // Initialize
         displayHistory();
+        initConsoleResize();
     </script>
 </body>
 </html>
