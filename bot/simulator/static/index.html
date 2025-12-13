@@ -1272,7 +1272,7 @@ function handle(message) {
 
             // Add result to console
             if (!error) {
-                addConsoleLog('info', `Completed in ${duration}ms`);
+                addConsoleLog('info', `#${message.channelName} completed in ${duration}ms`);
                 if (result !== undefined) {
                     addConsoleLog('result', 'Result:', JSON.stringify(result));
                 }
@@ -1282,6 +1282,7 @@ function handle(message) {
             history.unshift({
                 id: Date.now(),
                 time: new Date().toLocaleString(),
+                channel: message.channelName,
                 message: message.text.substring(0, 40),
                 success: !error,
                 duration,
@@ -1381,7 +1382,7 @@ function handle(message) {
             container.innerHTML = history.map(h => `
                 <div class="history-item" onclick="viewHistoryItem(${h.id})">
                     <div class="history-header">
-                        <span class="history-time">${h.time}</span>
+                        <span class="history-time">${h.channel ? '#' + escapeHtml(h.channel) + ' · ' : ''}${h.time}</span>
                         <span class="result-status ${h.success ? 'success' : 'error'}">${h.success ? 'OK' : 'ERR'} ${h.duration}ms</span>
                     </div>
                     <div class="history-message">"${escapeHtml(h.message)}..."</div>
