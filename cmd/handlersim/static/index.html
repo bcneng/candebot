@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Handler Simulator</title>
+    <style>
+        :root {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-tertiary: #0f3460;
+            --accent: #e94560;
+            --accent-light: #ff6b6b;
+            --text-primary: #eee;
+            --text-secondary: #aaa;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --error: #f87171;
+            --info: #60a5fa;
+            --border-radius: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            background: radial-gradient(circle at 30% 30%, rgba(233, 69, 96, 0.05) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 70%, rgba(96, 165, 250, 0.05) 0%, transparent 50%);
+            animation: bgPulse 15s ease-in-out infinite;
+        }
+
+        @keyframes bgPulse {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.1) rotate(5deg); }
+        }
+
+        /* Header */
+        header {
+            background: rgba(22, 33, 62, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            animation: slideDown 0.5s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-icon {
+            font-size: 2rem;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        /* Main container */
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto 1fr auto;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            max-width: 1800px;
+            margin: 0 auto;
+            min-height: calc(100vh - 70px);
+        }
+
+        /* Panels */
+        .panel {
+            background: rgba(22, 33, 62, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: var(--border-radius);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            animation: fadeInUp 0.6s ease-out backwards;
+            transition: var(--transition);
+        }
+
+        .panel:hover {
+            border-color: rgba(233, 69, 96, 0.3);
+            box-shadow: 0 8px 32px rgba(233, 69, 96, 0.1);
+        }
+
+        .panel:nth-child(1) { animation-delay: 0.1s; }
+        .panel:nth-child(2) { animation-delay: 0.2s; }
+        .panel:nth-child(3) { animation-delay: 0.3s; }
+        .panel:nth-child(4) { animation-delay: 0.4s; }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .panel-header {
+            padding: 1rem 1.25rem;
+            background: rgba(15, 52, 96, 0.5);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .panel-title {
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .panel-title-icon {
+            font-size: 1.2rem;
+        }
+
+        .panel-content {
+            padding: 1rem;
+            height: calc(100% - 56px);
+            overflow: auto;
+        }
+
+        /* Code editor panel */
+        .editor-panel {
+            grid-column: 1;
+            grid-row: 1 / 3;
+        }
+
+        .editor-panel .panel-content {
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .handler-select {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: rgba(15, 52, 96, 0.3);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        select, input, textarea {
+            background: rgba(26, 26, 46, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+
+        select:focus, input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.2);
+        }
+
+        select {
+            flex: 1;
+            cursor: pointer;
+        }
+
+        .code-editor {
+            flex: 1;
+            width: 100%;
+            resize: none;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            padding: 1rem;
+            background: rgba(26, 26, 46, 0.5);
+            border: none;
+            border-radius: 0;
+        }
+
+        .code-editor:focus {
+            box-shadow: none;
+            border: none;
+        }
+
+        /* Message panel */
+        .message-panel {
+            grid-column: 2;
+            grid-row: 1;
+        }
+
+        .message-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .message-form .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .form-group label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input {
+            padding: 0.5rem 0.75rem;
+        }
+
+        /* Output panel */
+        .output-panel {
+            grid-column: 2;
+            grid-row: 2;
+        }
+
+        .output-panel .panel-content {
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .output-tabs {
+            display: flex;
+            background: rgba(15, 52, 96, 0.3);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .output-tab {
+            padding: 0.75rem 1.25rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .output-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .output-tab.active {
+            color: var(--accent);
+        }
+
+        .output-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: scaleX(0); }
+            to { transform: scaleX(1); }
+        }
+
+        .output-content {
+            flex: 1;
+            overflow: auto;
+            padding: 1rem;
+            font-family: 'JetBrains Mono', 'Consolas', monospace;
+            font-size: 12px;
+        }
+
+        .output-view {
+            display: none;
+        }
+
+        .output-view.active {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Log entries */
+        .log-entry {
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.5rem;
+            border-radius: 6px;
+            background: rgba(26, 26, 46, 0.5);
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+            animation: logSlide 0.3s ease-out;
+        }
+
+        @keyframes logSlide {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .log-time {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            white-space: nowrap;
+        }
+
+        .log-level {
+            padding: 0.125rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .log-level.log { background: rgba(96, 165, 250, 0.2); color: var(--info); }
+        .log-level.info { background: rgba(74, 222, 128, 0.2); color: var(--success); }
+        .log-level.warn { background: rgba(251, 191, 36, 0.2); color: var(--warning); }
+        .log-level.error { background: rgba(248, 113, 113, 0.2); color: var(--error); }
+        .log-level.debug { background: rgba(170, 170, 170, 0.2); color: var(--text-secondary); }
+        .log-level.slack { background: rgba(233, 69, 96, 0.2); color: var(--accent); }
+        .log-level.http { background: rgba(139, 92, 246, 0.2); color: #a78bfa; }
+        .log-level.state { background: rgba(236, 72, 153, 0.2); color: #f472b6; }
+
+        .log-message {
+            flex: 1;
+            word-break: break-word;
+        }
+
+        /* State panel */
+        .state-panel {
+            grid-column: 1 / -1;
+            grid-row: 3;
+        }
+
+        .state-panel .panel-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .state-section {
+            background: rgba(26, 26, 46, 0.5);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .state-section h4 {
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .state-editor {
+            width: 100%;
+            min-height: 120px;
+            resize: vertical;
+            font-family: 'JetBrains Mono', 'Consolas', monospace;
+            font-size: 12px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(233, 69, 96, 0.3);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 6px 20px rgba(233, 69, 96, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .btn-icon {
+            padding: 0.5rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 6px;
+            transition: var(--transition);
+        }
+
+        .btn-icon:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        /* Status indicator */
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .status-dot.ready { background: var(--success); }
+        .status-dot.running { background: var(--warning); }
+        .status-dot.error { background: var(--error); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Result display */
+        .result-display {
+            background: rgba(26, 26, 46, 0.8);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .result-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .result-badge.success {
+            background: rgba(74, 222, 128, 0.2);
+            color: var(--success);
+        }
+
+        .result-badge.error {
+            background: rgba(248, 113, 113, 0.2);
+            color: var(--error);
+        }
+
+        .result-duration {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .result-json {
+            background: rgba(15, 52, 96, 0.5);
+            border-radius: 6px;
+            padding: 0.75rem;
+            font-family: 'JetBrains Mono', 'Consolas', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        /* Validation */
+        .validation-result {
+            padding: 1rem;
+        }
+
+        .validation-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            padding: 0.5rem 0;
+        }
+
+        .validation-icon {
+            font-size: 1rem;
+        }
+
+        .validation-icon.error { color: var(--error); }
+        .validation-icon.warning { color: var(--warning); }
+        .validation-icon.success { color: var(--success); }
+
+        /* Loading spinner */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .toast {
+            background: var(--bg-tertiary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            animation: toastIn 0.3s ease-out;
+        }
+
+        .toast.hiding {
+            animation: toastOut 0.3s ease-out forwards;
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes toastOut {
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto auto;
+            }
+
+            .editor-panel {
+                grid-column: 1;
+                grid-row: 1;
+                min-height: 400px;
+            }
+
+            .message-panel {
+                grid-column: 1;
+                grid-row: 2;
+            }
+
+            .output-panel {
+                grid-column: 1;
+                grid-row: 3;
+                min-height: 300px;
+            }
+
+            .state-panel {
+                grid-column: 1;
+                grid-row: 4;
+            }
+
+            .state-panel .panel-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+
+    <header>
+        <div class="logo">
+            <span class="logo-icon">🤖</span>
+            <span>Handler Simulator</span>
+        </div>
+        <div class="header-actions">
+            <div class="status">
+                <span class="status-dot ready" id="statusDot"></span>
+                <span id="statusText">Ready</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Code Editor Panel -->
+        <section class="panel editor-panel">
+            <div class="panel-header">
+                <h2 class="panel-title">
+                    <span class="panel-title-icon">📝</span>
+                    Handler Code
+                </h2>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-secondary btn-sm" onclick="validateCode()">
+                        ✓ Validate
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="executeHandler()">
+                        ▶ Run
+                    </button>
+                </div>
+            </div>
+            <div class="panel-content">
+                <div class="handler-select">
+                    <select id="handlerSelect" onchange="loadHandler()">
+                        <option value="">-- Load existing handler --</option>
+                    </select>
+                    <button class="btn-icon" onclick="refreshHandlers()" title="Refresh list">🔄</button>
+                </div>
+                <textarea class="code-editor" id="codeEditor" spellcheck="false" placeholder="// Write your handler code here...
+
+var name = 'my-handler';
+var description = 'My custom handler';
+var channels = ['*'];
+var priority = 100;
+var enabled = true;
+
+function handle(message) {
+    console.log('Received message:', message.text);
+
+    // Your handler logic here
+
+    return { handled: false };
+}"></textarea>
+            </div>
+        </section>
+
+        <!-- Message Panel -->
+        <section class="panel message-panel">
+            <div class="panel-header">
+                <h2 class="panel-title">
+                    <span class="panel-title-icon">💬</span>
+                    Test Message
+                </h2>
+                <button class="btn btn-primary btn-sm" onclick="executeHandler()">
+                    📤 Send Message
+                </button>
+            </div>
+            <div class="panel-content">
+                <div class="message-form">
+                    <div class="form-group">
+                        <label>Channel</label>
+                        <input type="text" id="msgChannel" value="C12345678" placeholder="Channel ID">
+                    </div>
+                    <div class="form-group">
+                        <label>Channel Name</label>
+                        <input type="text" id="msgChannelName" value="general" placeholder="Channel name">
+                    </div>
+                    <div class="form-group">
+                        <label>User</label>
+                        <input type="text" id="msgUser" value="U87654321" placeholder="User ID">
+                    </div>
+                    <div class="form-group">
+                        <label>Timestamp</label>
+                        <input type="text" id="msgTimestamp" value="" placeholder="Auto-generated">
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Message Text</label>
+                        <input type="text" id="msgText" value="Hello, this is a test message!" placeholder="Enter message text">
+                    </div>
+                    <div class="form-group">
+                        <label>Thread Timestamp</label>
+                        <input type="text" id="msgThreadTs" value="" placeholder="Empty = not a thread">
+                    </div>
+                    <div class="form-group">
+                        <label>Channel Type</label>
+                        <select id="msgChannelType">
+                            <option value="channel">Channel</option>
+                            <option value="im">Direct Message</option>
+                            <option value="group">Private Group</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Output Panel -->
+        <section class="panel output-panel">
+            <div class="panel-header">
+                <h2 class="panel-title">
+                    <span class="panel-title-icon">📊</span>
+                    Output
+                </h2>
+                <button class="btn-icon" onclick="clearOutput()" title="Clear output">🗑️</button>
+            </div>
+            <div class="panel-content">
+                <div class="output-tabs">
+                    <button class="output-tab active" data-tab="logs" onclick="switchTab('logs')">Logs</button>
+                    <button class="output-tab" data-tab="result" onclick="switchTab('result')">Result</button>
+                    <button class="output-tab" data-tab="validation" onclick="switchTab('validation')">Validation</button>
+                </div>
+                <div class="output-content">
+                    <div class="output-view active" id="logsView">
+                        <div id="logsContainer"></div>
+                    </div>
+                    <div class="output-view" id="resultView">
+                        <div id="resultContainer"></div>
+                    </div>
+                    <div class="output-view" id="validationView">
+                        <div id="validationContainer"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- State Panel -->
+        <section class="panel state-panel">
+            <div class="panel-header">
+                <h2 class="panel-title">
+                    <span class="panel-title-icon">💾</span>
+                    State Storage
+                </h2>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-secondary btn-sm" onclick="refreshState()">🔄 Refresh</button>
+                    <button class="btn btn-secondary btn-sm" onclick="saveState()">💾 Save</button>
+                    <button class="btn btn-secondary btn-sm" onclick="clearState()">🗑️ Clear All</button>
+                </div>
+            </div>
+            <div class="panel-content">
+                <div class="state-section">
+                    <h4>
+                        <span>🔄 Cache (In-Memory)</span>
+                        <span style="font-weight: 400; font-size: 0.75rem; color: var(--text-secondary);">Resets on restart</span>
+                    </h4>
+                    <textarea class="state-editor" id="cacheEditor" placeholder="{}">{}</textarea>
+                </div>
+                <div class="state-section">
+                    <h4>
+                        <span>📁 Store (Persistent)</span>
+                        <span style="font-weight: 400; font-size: 0.75rem; color: var(--text-secondary);">Saved to disk</span>
+                    </h4>
+                    <textarea class="state-editor" id="storeEditor" placeholder="{}">{}</textarea>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // State
+        let currentTab = 'logs';
+        let isRunning = false;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshHandlers();
+            refreshState();
+        });
+
+        // Tab switching
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.output-tab').forEach(t => {
+                t.classList.toggle('active', t.dataset.tab === tab);
+            });
+            document.querySelectorAll('.output-view').forEach(v => {
+                v.classList.toggle('active', v.id === tab + 'View');
+            });
+        }
+
+        // Load handlers list
+        async function refreshHandlers() {
+            try {
+                const res = await fetch('/api/handlers');
+                const handlers = await res.json();
+
+                const select = document.getElementById('handlerSelect');
+                select.innerHTML = '<option value="">-- Load existing handler --</option>';
+
+                handlers.forEach(h => {
+                    const opt = document.createElement('option');
+                    opt.value = h.filename;
+                    opt.textContent = `${h.name} ${h.enabled ? '' : '(disabled)'} - ${h.description || 'No description'}`;
+                    select.appendChild(opt);
+                });
+
+                showToast('Handlers list refreshed', 'success');
+            } catch (err) {
+                showToast('Failed to load handlers: ' + err.message, 'error');
+            }
+        }
+
+        // Load handler code
+        async function loadHandler() {
+            const filename = document.getElementById('handlerSelect').value;
+            if (!filename) return;
+
+            try {
+                const res = await fetch('/api/handler/' + encodeURIComponent(filename));
+                if (!res.ok) throw new Error('Handler not found');
+
+                const code = await res.text();
+                document.getElementById('codeEditor').value = code;
+
+                showToast('Handler loaded: ' + filename, 'success');
+                validateCode();
+            } catch (err) {
+                showToast('Failed to load handler: ' + err.message, 'error');
+            }
+        }
+
+        // Validate code
+        async function validateCode() {
+            const code = document.getElementById('codeEditor').value;
+
+            try {
+                const res = await fetch('/api/validate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code })
+                });
+
+                const result = await res.json();
+                displayValidation(result);
+                switchTab('validation');
+
+                if (result.valid) {
+                    showToast('Code is valid!', 'success');
+                } else {
+                    showToast('Code has errors', 'error');
+                }
+            } catch (err) {
+                showToast('Validation failed: ' + err.message, 'error');
+            }
+        }
+
+        // Display validation result
+        function displayValidation(result) {
+            const container = document.getElementById('validationContainer');
+            let html = '<div class="validation-result">';
+
+            if (result.valid) {
+                html += `
+                    <div class="validation-item">
+                        <span class="validation-icon success">✓</span>
+                        <span>Code is valid and ready to execute</span>
+                    </div>`;
+            }
+
+            if (result.errors && result.errors.length > 0) {
+                result.errors.forEach(err => {
+                    html += `
+                        <div class="validation-item">
+                            <span class="validation-icon error">✗</span>
+                            <span>${escapeHtml(err)}</span>
+                        </div>`;
+                });
+            }
+
+            if (result.warnings && result.warnings.length > 0) {
+                result.warnings.forEach(warn => {
+                    html += `
+                        <div class="validation-item">
+                            <span class="validation-icon warning">⚠</span>
+                            <span>${escapeHtml(warn)}</span>
+                        </div>`;
+                });
+            }
+
+            if (result.metadata) {
+                html += `
+                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <h4 style="margin-bottom: 0.5rem;">Metadata</h4>
+                        <div class="result-json">${escapeHtml(JSON.stringify(result.metadata, null, 2))}</div>
+                    </div>`;
+            }
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // Execute handler
+        async function executeHandler() {
+            if (isRunning) return;
+
+            const code = document.getElementById('codeEditor').value;
+            const message = buildMessage();
+
+            setStatus('running', 'Executing...');
+            isRunning = true;
+
+            try {
+                const res = await fetch('/api/execute', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code, message })
+                });
+
+                const result = await res.json();
+                displayResult(result);
+                displayLogs(result.logs || []);
+                switchTab('logs');
+
+                if (result.success) {
+                    showToast(`Executed in ${result.duration}`, 'success');
+                    setStatus('ready', 'Ready');
+                } else {
+                    showToast('Execution failed: ' + result.error, 'error');
+                    setStatus('error', 'Error');
+                    setTimeout(() => setStatus('ready', 'Ready'), 3000);
+                }
+
+                refreshState();
+            } catch (err) {
+                showToast('Execution failed: ' + err.message, 'error');
+                setStatus('error', 'Error');
+                setTimeout(() => setStatus('ready', 'Ready'), 3000);
+            } finally {
+                isRunning = false;
+            }
+        }
+
+        // Build message object
+        function buildMessage() {
+            const ts = document.getElementById('msgTimestamp').value ||
+                       `${Math.floor(Date.now() / 1000)}.${String(Date.now() % 1000000).padStart(6, '0')}`;
+            const threadTs = document.getElementById('msgThreadTs').value;
+
+            return {
+                type: 'message',
+                channel: document.getElementById('msgChannel').value,
+                channelName: document.getElementById('msgChannelName').value,
+                channelType: document.getElementById('msgChannelType').value,
+                user: document.getElementById('msgUser').value,
+                text: document.getElementById('msgText').value,
+                timestamp: ts,
+                threadTimestamp: threadTs,
+                isThread: !!threadTs,
+                isDM: document.getElementById('msgChannelType').value === 'im',
+                botId: '',
+                subType: ''
+            };
+        }
+
+        // Display execution result
+        function displayResult(result) {
+            const container = document.getElementById('resultContainer');
+
+            let html = '<div class="result-display">';
+            html += '<div class="result-header">';
+            html += `<span class="result-badge ${result.success ? 'success' : 'error'}">${result.success ? 'Success' : 'Error'}</span>`;
+            html += `<span class="result-duration">Duration: ${result.duration}</span>`;
+            html += '</div>';
+
+            if (result.error) {
+                html += `<div style="color: var(--error); margin-bottom: 0.75rem;">${escapeHtml(result.error)}</div>`;
+            }
+
+            if (result.result) {
+                html += '<h4 style="margin-bottom: 0.5rem; font-size: 0.85rem;">Return Value:</h4>';
+                html += `<div class="result-json">${escapeHtml(JSON.stringify(result.result, null, 2))}</div>`;
+            }
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // Display logs
+        function displayLogs(logs) {
+            const container = document.getElementById('logsContainer');
+
+            if (logs.length === 0) {
+                container.innerHTML = '<div style="color: var(--text-secondary); text-align: center; padding: 2rem;">No logs yet. Execute a handler to see logs.</div>';
+                return;
+            }
+
+            let html = '';
+            logs.forEach((log, i) => {
+                html += `
+                    <div class="log-entry" style="animation-delay: ${i * 50}ms">
+                        <span class="log-time">${log.time}</span>
+                        <span class="log-level ${log.level}">${log.level}</span>
+                        <span class="log-message">${escapeHtml(log.message)}</span>
+                    </div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Clear output
+        function clearOutput() {
+            document.getElementById('logsContainer').innerHTML = '';
+            document.getElementById('resultContainer').innerHTML = '';
+            document.getElementById('validationContainer').innerHTML = '';
+            showToast('Output cleared', 'success');
+        }
+
+        // State management
+        async function refreshState() {
+            try {
+                const [cacheRes, storeRes] = await Promise.all([
+                    fetch('/api/state/cache'),
+                    fetch('/api/state/store')
+                ]);
+
+                const cacheData = await cacheRes.json();
+                const storeData = await storeRes.json();
+
+                document.getElementById('cacheEditor').value = JSON.stringify(cacheData, null, 2);
+                document.getElementById('storeEditor').value = JSON.stringify(storeData, null, 2);
+            } catch (err) {
+                showToast('Failed to refresh state: ' + err.message, 'error');
+            }
+        }
+
+        async function saveState() {
+            try {
+                const cacheData = JSON.parse(document.getElementById('cacheEditor').value);
+                const storeData = JSON.parse(document.getElementById('storeEditor').value);
+
+                await Promise.all([
+                    fetch('/api/state/cache', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(cacheData)
+                    }),
+                    fetch('/api/state/store', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(storeData)
+                    })
+                ]);
+
+                showToast('State saved', 'success');
+            } catch (err) {
+                showToast('Failed to save state: ' + err.message, 'error');
+            }
+        }
+
+        async function clearState() {
+            try {
+                await Promise.all([
+                    fetch('/api/state/cache', { method: 'DELETE' }),
+                    fetch('/api/state/store', { method: 'DELETE' })
+                ]);
+
+                document.getElementById('cacheEditor').value = '{}';
+                document.getElementById('storeEditor').value = '{}';
+                showToast('State cleared', 'success');
+            } catch (err) {
+                showToast('Failed to clear state: ' + err.message, 'error');
+            }
+        }
+
+        // Status indicator
+        function setStatus(status, text) {
+            const dot = document.getElementById('statusDot');
+            const textEl = document.getElementById('statusText');
+
+            dot.className = 'status-dot ' + status;
+            textEl.textContent = text;
+        }
+
+        // Toast notifications
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+
+            const icons = {
+                success: '✓',
+                error: '✗',
+                warning: '⚠',
+                info: 'ℹ'
+            };
+
+            const colors = {
+                success: 'var(--success)',
+                error: 'var(--error)',
+                warning: 'var(--warning)',
+                info: 'var(--info)'
+            };
+
+            toast.innerHTML = `
+                <span style="color: ${colors[type]}; font-size: 1.25rem;">${icons[type]}</span>
+                <span>${escapeHtml(message)}</span>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('hiding');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Utility
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    executeHandler();
+                } else if (e.key === 's') {
+                    e.preventDefault();
+                    validateCode();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

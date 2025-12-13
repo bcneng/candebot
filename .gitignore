@@ -15,4 +15,4 @@ candebot
 *.out
 
 # .env files
-*.env
+*.envhandlersim
