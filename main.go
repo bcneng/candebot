@@ -73,6 +73,9 @@ func ensureInterruptionsGracefullyShutdown(cancel context.CancelFunc) {
 		<-c
 		log.Println("Shutting down the app")
 
+		// Clean up resources (flush state, etc.)
+		bot.Shutdown()
+
 		cancel()
 		time.Sleep(time.Second)
 		os.Exit(0)

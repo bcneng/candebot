@@ -150,6 +150,69 @@ console.error("Error message")
 console.debug("Debug message")
 ```
 
+### State API (`state`)
+
+Handlers can persist data using two storage backends:
+
+- **`state.cache`** - In-memory storage (fast, cleared on restart)
+- **`state.store`** - File-backed storage (persistent across restarts)
+
+```javascript
+// Cache: fast, volatile (good for rate limiting, caching)
+state.cache.get("key")              // returns value or null
+state.cache.set("key", value)       // value can be string, number, object, array
+state.cache.delete("key")
+state.cache.has("key")              // returns boolean
+state.cache.keys()                  // returns array of all keys
+state.cache.clear()                 // clears all keys for this handler
+
+// Store: persistent (good for counters, user preferences)
+state.store.get("key")
+state.store.set("key", value)
+state.store.delete("key")
+state.store.has("key")
+state.store.keys()
+state.store.clear()
+
+// Cross-handler access (read/write other handlers' state)
+state.cache.global.get("other-handler", "key")
+state.cache.global.set("other-handler", "key", value)
+state.store.global.get("other-handler", "key")
+```
+
+**Size limits:**
+- 5MB per handler
+- 50MB total across all handlers
+
+**Example: Rate limiting with cache**
+```javascript
+function handle(message) {
+    var key = "ratelimit:" + message.user;
+    var count = state.cache.get(key) || 0;
+
+    if (count >= 5) {
+        slack.sendEphemeral(message.channel, message.user, "Slow down!");
+        return { handled: true, stopPropagation: true };
+    }
+
+    state.cache.set(key, count + 1);
+    return { handled: false };
+}
+```
+
+**Example: Persistent counter with store**
+```javascript
+function handle(message) {
+    var count = state.store.get("messageCount") || 0;
+    state.store.set("messageCount", count + 1);
+
+    if (count % 1000 === 0) {
+        slack.sendMessage(message.channel, "Milestone: " + count + " messages!");
+    }
+    return { handled: true };
+}
+```
+
 ## Examples
 
 ### React to Mentions of Keywords
@@ -217,9 +280,11 @@ The handler system can be configured via environment variables or the `.bot.toml
 
 ```toml
 [handlers]
-dir = "handlers/js"  # Directory containing handler files
-enabled = true            # Enable/disable the entire handler system
-default_timeout = 5000    # Default timeout in milliseconds
+dir = "handlers/js"           # Directory containing handler files
+enabled = true                # Enable/disable the entire handler system
+default_timeout = 5000        # Default timeout in milliseconds
+state_file = "handlers/state.json"  # Path to persistent state file
+state_flush_interval = 5      # How often to save state to disk (seconds)
 ```
 
 Or via environment variables:
@@ -227,6 +292,8 @@ Or via environment variables:
 BOT_HANDLERS_DIR=handlers/js
 BOT_HANDLERS_ENABLED=true
 BOT_HANDLERS_DEFAULT_TIMEOUT=5000
+BOT_HANDLERS_STATE_FILE=handlers/state.json
+BOT_HANDLERS_STATE_FLUSH_INTERVAL=5
 ```
 
 ## Security Considerations

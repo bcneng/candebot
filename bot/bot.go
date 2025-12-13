@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/asaskevich/EventBus"
 
@@ -17,6 +18,22 @@ import (
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"github.com/slack-go/slack"
 )
+
+var shutdownFuncs []func() error
+
+// RegisterShutdownFunc registers a function to be called during shutdown.
+func RegisterShutdownFunc(f func() error) {
+	shutdownFuncs = append(shutdownFuncs, f)
+}
+
+// Shutdown calls all registered shutdown functions.
+func Shutdown() {
+	for _, f := range shutdownFuncs {
+		if err := f(); err != nil {
+			log.Printf("[WARN] Shutdown error: %v", err)
+		}
+	}
+}
 
 // WakeUp wakes up the bot.
 func WakeUp(_ context.Context, conf Config, bus EventBus.Bus) error {
@@ -86,6 +103,34 @@ func WakeUp(_ context.Context, conf Config, bus EventBus.Bus) error {
 
 		slackClient := jsruntime.NewSlackClient(client, cliContext.AdminClient)
 		jsRuntime := jsruntime.NewRuntime(runtimeConfig, slackClient)
+
+		// Set up state stores (cache = in-memory, store = file-backed)
+		cacheStore := jsruntime.NewMemoryStateStore()
+
+		stateFile := conf.Handlers.StateFile
+		if stateFile == "" {
+			stateFile = "handlers/state.json"
+		}
+		flushInterval := conf.Handlers.StateFlushInterval
+		if flushInterval <= 0 {
+			flushInterval = 5
+		}
+
+		fileStore, err := jsruntime.NewFileStateStore(stateFile, time.Duration(flushInterval)*time.Second)
+		if err != nil {
+			log.Printf("[WARN] Failed to create file state store: %v (using memory-only)", err)
+			fileStore = nil
+		}
+
+		if fileStore != nil {
+			jsRuntime.SetStateStores(cacheStore, fileStore)
+			log.Printf("[INFO] JS handler state stores initialized (cache: memory, store: %s)", stateFile)
+		} else {
+			// Fall back to memory for both if file store failed
+			jsRuntime.SetStateStores(cacheStore, cacheStore)
+			log.Println("[WARN] JS handler state.store falling back to memory (not persistent)")
+		}
+
 		jsLoader := jsruntime.NewLoader(jsRuntime, handlersDir)
 
 		if err := jsLoader.LoadAll(); err != nil {
@@ -94,6 +139,12 @@ func WakeUp(_ context.Context, conf Config, bus EventBus.Bus) error {
 
 		cliContext.JSRuntime = jsRuntime
 		cliContext.JSLoader = jsLoader
+
+		// Register cleanup for graceful shutdown
+		RegisterShutdownFunc(func() error {
+			log.Println("[INFO] Closing JS runtime (flushing state)...")
+			return jsRuntime.Close()
+		})
 
 		log.Printf("[INFO] JS handlers system initialized with %d handlers", len(jsRuntime.GetHandlers()))
 	} else {

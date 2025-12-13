@@ -351,48 +351,57 @@ func (s *FileStateStore) flush() error {
 }
 
 // CreateStateAPI creates the state API object to be exposed to JS handlers.
-func CreateStateAPI(store StateStore, handlerName string) map[string]interface{} {
+// It provides both cache (in-memory) and store (file-backed) storage.
+func CreateStateAPI(cache StateStore, store StateStore, handlerName string) map[string]interface{} {
+	return map[string]interface{}{
+		"cache": createScopedStateAPI(cache, handlerName),
+		"store": createScopedStateAPI(store, handlerName),
+	}
+}
+
+// createScopedStateAPI creates the API for a single state store scoped to a handler.
+func createScopedStateAPI(s StateStore, handlerName string) map[string]interface{} {
 	return map[string]interface{}{
 		"get": func(key string) interface{} {
-			if value, ok := store.Get(handlerName, key); ok {
+			if value, ok := s.Get(handlerName, key); ok {
 				return value
 			}
 			return nil
 		},
 		"set": func(key string, value interface{}) error {
-			return store.Set(handlerName, key, value)
+			return s.Set(handlerName, key, value)
 		},
 		"delete": func(key string) error {
-			return store.Delete(handlerName, key)
+			return s.Delete(handlerName, key)
 		},
 		"has": func(key string) bool {
-			return store.Has(handlerName, key)
+			return s.Has(handlerName, key)
 		},
 		"keys": func() []string {
-			return store.Keys(handlerName)
+			return s.Keys(handlerName)
 		},
 		"clear": func() error {
-			return store.Clear(handlerName)
+			return s.Clear(handlerName)
 		},
 		// Global access to other handlers' state
 		"global": map[string]interface{}{
 			"get": func(handler, key string) interface{} {
-				if value, ok := store.Get(handler, key); ok {
+				if value, ok := s.Get(handler, key); ok {
 					return value
 				}
 				return nil
 			},
 			"set": func(handler, key string, value interface{}) error {
-				return store.Set(handler, key, value)
+				return s.Set(handler, key, value)
 			},
 			"delete": func(handler, key string) error {
-				return store.Delete(handler, key)
+				return s.Delete(handler, key)
 			},
 			"has": func(handler, key string) bool {
-				return store.Has(handler, key)
+				return s.Has(handler, key)
 			},
 			"keys": func(handler string) []string {
-				return store.Keys(handler)
+				return s.Keys(handler)
 			},
 		},
 	}

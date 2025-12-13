@@ -121,4 +121,8 @@ type ConfigHandlers struct {
 	Enabled bool `env:"ENABLED,default=true"`
 	// DefaultTimeout is the default handler execution timeout in ms (default: 5000)
 	DefaultTimeout int `env:"DEFAULT_TIMEOUT,default=5000"`
+	// StateFile is the path to the persistent state JSON file (default: "handlers/state.json")
+	StateFile string `env:"STATE_FILE,default=handlers/state.json"`
+	// StateFlushInterval is how often to flush state to disk in seconds (default: 5)
+	StateFlushInterval int `env:"STATE_FLUSH_INTERVAL,default=5"`
 }

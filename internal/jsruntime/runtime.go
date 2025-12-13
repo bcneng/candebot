@@ -15,6 +15,8 @@ type Runtime struct {
 	config      RuntimeConfig
 	httpClient  *HTTPClient
 	slackClient *SlackClient
+	cacheStore  StateStore // in-memory state (volatile)
+	fileStore   StateStore // file-backed state (persistent)
 	handlers    []*Handler
 	mu          sync.RWMutex
 }
@@ -27,6 +29,31 @@ func NewRuntime(config RuntimeConfig, slackClient *SlackClient) *Runtime {
 		slackClient: slackClient,
 		handlers:    make([]*Handler, 0),
 	}
+}
+
+// SetStateStores configures the state stores for the runtime.
+func (r *Runtime) SetStateStores(cache, file StateStore) {
+	r.cacheStore = cache
+	r.fileStore = file
+}
+
+// Close cleans up runtime resources.
+func (r *Runtime) Close() error {
+	var errs []error
+	if r.cacheStore != nil {
+		if err := r.cacheStore.Close(); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if r.fileStore != nil {
+		if err := r.fileStore.Close(); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if len(errs) > 0 {
+		return errs[0]
+	}
+	return nil
 }
 
 // RegisterHandler adds a handler to the runtime.
@@ -131,6 +158,15 @@ func (r *Runtime) executeHandler(ctx context.Context, handler *Handler, message 
 	if err := vm.Set("http", httpAPI); err != nil {
 		result.Error = fmt.Sprintf("failed to set http: %v", err)
 		return result
+	}
+
+	// Set up State API (cache + store)
+	if r.cacheStore != nil && r.fileStore != nil {
+		stateAPI := CreateStateAPI(r.cacheStore, r.fileStore, handler.Metadata.Name)
+		if err := vm.Set("state", stateAPI); err != nil {
+			result.Error = fmt.Sprintf("failed to set state: %v", err)
+			return result
+		}
 	}
 
 	// Run the handler source code to define the handler
