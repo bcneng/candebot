@@ -1306,7 +1306,7 @@ function handle(message) {
             let error = null;
 
             try {
-                const apis = createMockAPIs('simulator');
+                const apis = createMockAPIs(getHandlerName());
                 const wrappedCode = `(function(console, slack, http, state) { ${code}; return typeof handle === 'function' ? handle : null; })`;
                 const handleFn = eval(wrappedCode)(apis.console, apis.slack, apis.http, apis.state);
 
