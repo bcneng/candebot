@@ -1201,10 +1201,10 @@ var handler = {
             const threadTimestamp = document.getElementById('msgThreadTs').value;
             return {
                 type: 'message',
-                channelId: document.getElementById('msgChannel').value,
+                channel: document.getElementById('msgChannel').value,
                 channelName: document.getElementById('msgChannelName').value,
                 channelType: document.getElementById('msgChannelType').value,
-                userId: document.getElementById('msgUser').value,
+                user: document.getElementById('msgUser').value,
                 text: document.getElementById('msgText').value,
                 timestamp,
                 threadTimestamp,
