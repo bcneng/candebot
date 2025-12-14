@@ -421,23 +421,9 @@
         .message-badge.error { background: rgba(224, 30, 90, 0.2); color: var(--slack-red); }
         .message-badge.state { background: rgba(232, 163, 0, 0.2); color: var(--slack-yellow); }
 
-        .thread-indicator {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            font-size: 0.6875rem;
-            color: var(--slack-link);
-            margin-bottom: 0.25rem;
-            padding-left: 0.25rem;
-            border-left: 2px solid var(--slack-link);
-        }
-        .thread-indicator svg {
-            width: 12px;
-            height: 12px;
-        }
         .slack-message.thread-reply {
             margin-left: 1.5rem;
-            border-left: 2px solid var(--slack-border);
+            border-left: 2px solid var(--slack-link);
             padding-left: 0.75rem;
         }
 
@@ -1504,15 +1490,6 @@ var handler = {
                         Only visible to you
                     </div>` : '';
 
-                // Thread reply indicator
-                const threadIndicator = m.isThreadReply ? `
-                    <div class="thread-indicator">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                        </svg>
-                        Thread reply
-                    </div>` : '';
-
                 const messageClasses = [
                     'slack-message',
                     m.ephemeral ? 'ephemeral' : '',
@@ -1522,7 +1499,6 @@ var handler = {
                 return `
                     <div class="${messageClasses}">
                         ${ephemeralIndicator}
-                        ${threadIndicator}
                         <div class="avatar ${avatarClass}">${initial}</div>
                         <div class="message-content">
                             <div class="message-header">
