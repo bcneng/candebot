@@ -1407,6 +1407,7 @@ var handler = {
                 const response = await fetch('/_simulator/api/execute', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({
                         code: code,
                         message: {
