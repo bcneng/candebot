@@ -1135,6 +1135,8 @@ var handler = {
             try {
                 const res = await fetch('https://raw.githubusercontent.com/bcneng/website/refs/heads/main/data/channels.json');
                 channels = await res.json();
+                // Add private channel not in public list
+                channels.push({ id: 'CK32YCX5M', name: 'candebot-testing' });
                 // Sort by name, but put candebot-testing first
                 channels.sort((a, b) => {
                     if (a.id === 'CK32YCX5M') return -1;
