@@ -101,6 +101,7 @@ func WakeUp(_ context.Context, conf Config, bus EventBus.Bus) error {
 		if conf.Handlers.DefaultTimeout > 0 {
 			runtimeConfig.DefaultTimeout = conf.Handlers.DefaultTimeout
 		}
+		runtimeConfig.GeminiAPIKey = conf.Handlers.GeminiAPIKey
 
 		slackClient := jsruntime.NewSlackClient(client, cliContext.AdminClient)
 		jsRuntime := jsruntime.NewRuntime(runtimeConfig, slackClient)

@@ -114,6 +114,8 @@ type RuntimeConfig struct {
 	AllowedHosts []string
 	// BlockedHosts is a list of hosts that handlers cannot make HTTP requests to
 	BlockedHosts []string
+	// GeminiAPIKey is the API key for Google Gemini AI
+	GeminiAPIKey string
 }
 
 // DefaultRuntimeConfig returns the default runtime configuration.

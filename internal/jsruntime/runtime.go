@@ -15,6 +15,7 @@ type Runtime struct {
 	config      RuntimeConfig
 	httpClient  *HTTPClient
 	slackClient *SlackClient
+	aiClient    *AIClient
 	cacheStore  StateStore // in-memory state (volatile)
 	fileStore   StateStore // file-backed state (persistent)
 	handlers    []*Handler
@@ -27,6 +28,7 @@ func NewRuntime(config RuntimeConfig, slackClient *SlackClient) *Runtime {
 		config:      config,
 		httpClient:  NewHTTPClient(config),
 		slackClient: slackClient,
+		aiClient:    NewAIClient(config.GeminiAPIKey, time.Duration(config.DefaultTimeout)*time.Millisecond),
 		handlers:    make([]*Handler, 0),
 	}
 }
@@ -158,6 +160,15 @@ func (r *Runtime) executeHandler(ctx context.Context, handler *Handler, message 
 	if err := vm.Set("http", httpAPI); err != nil {
 		result.Error = fmt.Sprintf("failed to set http: %v", err)
 		return result
+	}
+
+	// Set up AI API
+	if r.aiClient != nil && r.aiClient.IsConfigured() {
+		aiAPI := CreateAIAPI(r.aiClient, ctx)
+		if err := vm.Set("ai", aiAPI); err != nil {
+			result.Error = fmt.Sprintf("failed to set ai: %v", err)
+			return result
+		}
 	}
 
 	// Set up State API (cache + store)

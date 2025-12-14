@@ -126,6 +126,8 @@ type ConfigHandlers struct {
 	StateFile string `env:"STATE_FILE,default=handlers/state.json"`
 	// StateFlushInterval is how often to flush state to disk in seconds (default: 5)
 	StateFlushInterval int `env:"STATE_FLUSH_INTERVAL,default=5"`
+	// GeminiAPIKey is the Google Gemini API key for AI features
+	GeminiAPIKey string `env:"GEMINI_API_KEY"`
 }
 
 // ConfigGoHandlers controls which built-in Go handlers are enabled.
