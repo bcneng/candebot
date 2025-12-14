@@ -58,10 +58,11 @@ var handler = {
         // slack.getChannelInfo(channelId) -> { id, name, isPrivate, ... }
 
         // === HTTP API ===
-        // http.get(url, opts) -> { status, body, json, headers }
-        // http.post(url, body, opts)
-        // http.put(url, body, opts)
-        // http.delete(url, opts)
+        // http.get(url, opts) -> { status, body, headers }
+        // http.post(url, body, opts) -> { status, body, headers }
+
+        // === AI API (Gemini) ===
+        // ai.generate(prompt) -> string response
 
         // === STATE API (auto-serializes objects) ===
         // state.cache.get(key)    - Get value (in-memory, lost on restart)

@@ -1036,6 +1036,15 @@ var handler = {
                 </div>
             </div>
             <div class="api-section">
+                <h4>AI API</h4>
+                <div class="api-method"><code>ai.generate(prompt)</code><div class="desc">Generate text using Gemini AI</div></div>
+            </div>
+            <div class="api-section">
+                <h4>HTTP API</h4>
+                <div class="api-method"><code>http.get(url)</code><div class="desc">Fetch URL, returns {status, body}</div></div>
+                <div class="api-method"><code>http.post(url, body)</code><div class="desc">POST to URL, returns {status, body}</div></div>
+            </div>
+            <div class="api-section">
                 <h4>State API</h4>
                 <div class="api-method"><code>state.cache.get(key)</code><div class="desc">Get value (in-memory, lost on restart)</div></div>
                 <div class="api-method"><code>state.cache.set(key, value)</code><div class="desc">Set value (auto-serializes objects)</div></div>
@@ -1143,9 +1152,9 @@ var handler = {
             const code = editor.getValue();
             try {
                 // Create a mock environment for validation
-                const mockApis = { console: {log:()=>{},info:()=>{},warn:()=>{},error:()=>{}}, slack: {}, http: {}, state: {cache:{},store:{}} };
-                const wrappedCode = `(function(console,slack,http,state){${code};return{hasHandle:typeof handler==='object'&&typeof handler.handle==='function',name:typeof handler==='object'?handler.name:null}})`;
-                const check = eval(wrappedCode)(mockApis.console, mockApis.slack, mockApis.http, mockApis.state);
+                const mockApis = { console: {log:()=>{},info:()=>{},warn:()=>{},error:()=>{}}, slack: {}, http: {}, ai: {generate:()=>''}, state: {cache:{},store:{}} };
+                const wrappedCode = `(function(console,slack,http,ai,state){${code};return{hasHandle:typeof handler==='object'&&typeof handler.handle==='function',name:typeof handler==='object'?handler.name:null}})`;
+                const check = eval(wrappedCode)(mockApis.console, mockApis.slack, mockApis.http, mockApis.ai, mockApis.state);
 
                 if (check.hasHandle) {
                     setValidationStatus('valid', check.name ? `Valid: ${check.name}` : 'Valid');
@@ -1282,8 +1291,14 @@ var handler = {
                 },
                 slack,
                 http: {
-                    get: (url) => { addMessage('api', 'HTTP', `GET ${url}`); return { status: 200, body: '{}' }; },
-                    post: (url) => { addMessage('api', 'HTTP', `POST ${url}`); return { status: 200, body: '{}' }; }
+                    get: (url) => { addMessage('api', 'HTTP', `GET ${url}`); return { status: 200, body: 'Sample page content for testing. This is a mock response.' }; },
+                    post: (url, body) => { addMessage('api', 'HTTP', `POST ${url}`); return { status: 200, body: '{}' }; }
+                },
+                ai: {
+                    generate: (prompt) => {
+                        addMessage('api', 'AI', `generate() called with ${prompt.length} char prompt`);
+                        return 'This is a mock AI summary for testing purposes. The linked content discusses various topics that would normally be summarized by the Gemini AI model.';
+                    }
                 },
                 state: {
                     cache: {
@@ -1353,8 +1368,8 @@ var handler = {
                 apis._augmentMessage(message);
 
                 // Execute code and get handler object
-                const wrappedCode = `(function(console, slack, http, state, SKIP, HANDLED, STOP) { ${code}; return typeof handler === 'object' ? handler : null; })`;
-                const handlerObj = eval(wrappedCode)(apis.console, apis.slack, apis.http, apis.state, SKIP, HANDLED, STOP);
+                const wrappedCode = `(function(console, slack, http, ai, state, SKIP, HANDLED, STOP) { ${code}; return typeof handler === 'object' ? handler : null; })`;
+                const handlerObj = eval(wrappedCode)(apis.console, apis.slack, apis.http, apis.ai, apis.state, SKIP, HANDLED, STOP);
 
                 if (!handlerObj || typeof handlerObj.handle !== 'function') throw new Error("Missing 'handler.handle' function");
 
