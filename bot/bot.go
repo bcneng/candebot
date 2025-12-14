@@ -195,7 +195,7 @@ func serve(conf Config, cliContext Context) error {
 	if handlersDir == "" {
 		handlersDir = "handlers/js"
 	}
-	sim := simulator.NewServer(handlersDir)
+	sim := simulator.NewServer(handlersDir, cliContext.JSRuntime)
 	sim.RegisterRoutes(http.DefaultServeMux)
 	log.Println("[INFO] Handler simulator available at /_simulator/")
 

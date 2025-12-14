@@ -4,11 +4,14 @@ package simulator
 import (
 	"embed"
 	"encoding/json"
+	"io"
 	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/bcneng/candebot/internal/jsruntime"
 )
 
 //go:embed static/*
@@ -26,11 +29,16 @@ type Handler struct {
 // Server provides HTTP handlers for the simulator
 type Server struct {
 	handlersDir string
+	executor    *jsruntime.Executor
 }
 
 // NewServer creates a new simulator server
-func NewServer(handlersDir string) *Server {
-	return &Server{handlersDir: handlersDir}
+func NewServer(handlersDir string, runtime *jsruntime.Runtime) *Server {
+	var executor *jsruntime.Executor
+	if runtime != nil {
+		executor = jsruntime.NewExecutor(runtime)
+	}
+	return &Server{handlersDir: handlersDir, executor: executor}
 }
 
 // RegisterRoutes registers the simulator routes on the given mux
@@ -41,6 +49,9 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 
 	// API endpoint to get all handlers with their code
 	mux.HandleFunc("/_simulator/api/handlers", s.handleGetHandlers)
+
+	// API endpoint to execute handler code
+	mux.HandleFunc("/_simulator/api/execute", s.handleExecute)
 }
 
 func (s *Server) handleGetHandlers(w http.ResponseWriter, r *http.Request) {
@@ -89,4 +100,35 @@ func (s *Server) handleGetHandlers(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(handlers)
+}
+
+func (s *Server) handleExecute(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	if s.executor == nil {
+		http.Error(w, "Production runtime not available", http.StatusServiceUnavailable)
+		return
+	}
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Failed to read request body", http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	var req jsruntime.ExecuteRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Execute the handler
+	resp := s.executor.Execute(r.Context(), req)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
 }

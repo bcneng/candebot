@@ -847,6 +847,10 @@
                         </select>
                         <button class="btn-icon" onclick="refreshHandlers()" title="Refresh">Refresh</button>
                         <button class="btn-icon" onclick="copyCode()" title="Copy code to clipboard">Copy</button>
+                        <select id="executionMode" title="Execution mode" style="margin-left: auto;">
+                            <option value="browser">Browser (Mock)</option>
+                            <option value="production">Production Runtime</option>
+                        </select>
                     </div>
                     <div class="code-editor-wrapper">
                         <textarea id="codeEditor">// Example Handler
@@ -1373,6 +1377,134 @@ var handler = {
         const STOP = { handled: true, stopPropagation: true };
 
         function executeHandler() {
+            const mode = document.getElementById('executionMode').value;
+            if (mode === 'production') {
+                executeHandlerProduction();
+            } else {
+                executeHandlerBrowser();
+            }
+        }
+
+        async function executeHandlerProduction() {
+            const code = editor.getValue();
+            const message = buildMessage();
+            messages = [];
+            consoleLogs = [];
+
+            // Auto-increment "hello world!" messages
+            const msgInput = document.getElementById('msgText');
+            const helloPattern = /^hello world( \d+)?!$/i;
+            if (helloPattern.test(message.text)) {
+                helloWorldCounter++;
+                msgInput.value = `hello world ${helloWorldCounter}!`;
+            }
+
+            // Add the user message first
+            addMessage('user', 'Test User', message.text, { channel: message.channelName, timestamp: message.timestamp });
+            renderMessages();
+
+            try {
+                const response = await fetch('/_simulator/api/execute', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        code: code,
+                        message: {
+                            type: 'message',
+                            channel: message.channel,
+                            channelName: message.channelName,
+                            channelType: message.channelType,
+                            user: message.user,
+                            text: message.text,
+                            timestamp: message.timestamp,
+                            threadTimestamp: message.threadTimestamp,
+                            isThread: message.isThread,
+                            isDM: message.isDM,
+                            botId: message.botId || '',
+                            subType: ''
+                        },
+                        options: { mockAPIs: true, dryRun: false }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(await response.text());
+                }
+
+                const result = await response.json();
+
+                // Process API calls into messages
+                if (result.apiCalls) {
+                    for (const call of result.apiCalls) {
+                        if (call.type === 'slack') {
+                            if (call.method === 'sendMessage') {
+                                const isThreadReply = call.args?.opts?.threadTimestamp;
+                                addMessage('slack', 'Bot', call.args.text, {
+                                    action: 'sendMessage',
+                                    isThreadReply: !!isThreadReply
+                                });
+                            } else if (call.method === 'sendEphemeral') {
+                                addMessage('slack', 'Bot', call.args.text, {
+                                    action: 'ephemeral',
+                                    ephemeral: true
+                                });
+                            } else if (call.method === 'addReaction') {
+                                addMessage('slack', 'Bot', `Added :${call.args.emoji}: reaction`, { action: 'reaction' });
+                            } else if (call.method === 'deleteMessage') {
+                                addMessage('api', 'API', `deleteMessage(${call.args.timestamp})`, { action: 'api' });
+                            }
+                        } else if (call.type === 'http') {
+                            addMessage('api', 'HTTP', `${call.method.toUpperCase()} ${call.args.url}`, { action: 'api' });
+                        } else if (call.type === 'ai') {
+                            addMessage('api', 'AI', `${call.method}()`, { action: 'api' });
+                        }
+                    }
+                }
+
+                // Process console logs
+                if (result.consoleLogs) {
+                    for (const log of result.consoleLogs) {
+                        consoleLogs.push({ level: log.level, text: log.args.join(' '), time: new Date(log.time) });
+                    }
+                }
+
+                // Add completion info
+                addConsoleLog('info', `[Production] #${message.channelName} completed in ${result.duration}ms`);
+                if (result.result) {
+                    addConsoleLog('result', 'Result:', JSON.stringify(result.result));
+                }
+                if (result.error) {
+                    addMessage('error', 'Error', result.error);
+                    addConsoleLog('error', result.error);
+                }
+
+                // Save to history
+                history.unshift({
+                    id: Date.now(),
+                    time: new Date().toLocaleString(),
+                    channel: message.channelName,
+                    message: message.text.substring(0, 40),
+                    success: !result.error,
+                    duration: result.duration,
+                    messages: [...messages],
+                    consoleLogs: [...consoleLogs]
+                });
+                if (history.length > 30) history.pop();
+                localStorage.setItem('handlerSimHistory', JSON.stringify(history));
+                updateHistoryCount();
+
+            } catch (e) {
+                addMessage('error', 'Error', e.message);
+                addConsoleLog('error', e.message);
+            }
+
+            renderMessages();
+            renderConsole();
+            displayHistory();
+            switchOutputTab('messages');
+        }
+
+        function executeHandlerBrowser() {
             const code = editor.getValue();
             const message = buildMessage();
             consoleLogs = [];
@@ -1423,7 +1555,7 @@ var handler = {
 
             // Add result to console
             if (!error) {
-                addConsoleLog('info', `#${message.channelName} completed in ${duration}ms`);
+                addConsoleLog('info', `[Browser] #${message.channelName} completed in ${duration}ms`);
                 if (result !== undefined) {
                     addConsoleLog('result', 'Result:', JSON.stringify(result));
                 }
