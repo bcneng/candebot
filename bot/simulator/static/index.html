@@ -847,7 +847,7 @@
                         </select>
                         <button class="btn-icon" onclick="refreshHandlers()" title="Refresh">Refresh</button>
                         <button class="btn-icon" onclick="copyCode()" title="Copy code to clipboard">Copy</button>
-                        <select id="executionMode" title="Execution mode" style="margin-left: auto;">
+                        <select id="executionMode" title="Execution mode" style="margin-left: auto;" onchange="onExecutionModeChange()">
                             <option value="browser">Browser (Mock)</option>
                             <option value="production">Production Runtime</option>
                         </select>
@@ -1227,6 +1227,37 @@ var handler = {
             }).catch(() => {
                 showToast('Failed to copy');
             });
+        }
+
+        async function onExecutionModeChange() {
+            const mode = document.getElementById('executionMode').value;
+            if (mode === 'production') {
+                // Check if we can access the production API (triggers auth if needed)
+                try {
+                    const response = await fetch('/_simulator/api/execute', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ code: '', message: {}, options: { mockAPIs: true } })
+                    });
+
+                    if (response.status === 401 || response.status === 403) {
+                        // Auth required - the browser should have been redirected
+                        // If we get here, show a message
+                        showToast('Authentication required');
+                        document.getElementById('executionMode').value = 'browser';
+                        return;
+                    }
+
+                    if (response.ok || response.status === 400) {
+                        // 400 is expected for empty code, but means we're authenticated
+                        showToast('Production runtime ready');
+                    }
+                } catch (e) {
+                    showToast('Production runtime unavailable');
+                    document.getElementById('executionMode').value = 'browser';
+                }
+            }
         }
 
         function loadHandler() {
