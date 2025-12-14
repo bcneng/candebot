@@ -860,6 +860,7 @@
                             <option value="">Load existing handler...</option>
                         </select>
                         <button class="btn-icon" onclick="refreshHandlers()" title="Refresh">Refresh</button>
+                        <button class="btn-icon" onclick="copyCode()" title="Copy code to clipboard">Copy</button>
                     </div>
                     <div class="code-editor-wrapper">
                         <textarea id="codeEditor">// Example Handler
@@ -1227,6 +1228,15 @@ var handler = {
             } catch (e) {
                 showToast('Failed to load handlers');
             }
+        }
+
+        function copyCode() {
+            const code = editor.getValue();
+            navigator.clipboard.writeText(code).then(() => {
+                showToast('Copied to clipboard');
+            }).catch(() => {
+                showToast('Failed to copy');
+            });
         }
 
         function loadHandler() {
