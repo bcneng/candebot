@@ -1004,8 +1004,8 @@ var handler = {
         const apiDocs = `
             <div class="api-section">
                 <h4>Message Helpers</h4>
-                <div class="api-method"><code>message.reply(text, opts)</code><div class="desc">Send reply to channel</div></div>
-                <div class="api-method"><code>message.replyEphemeral(text, opts)</code><div class="desc">Send ephemeral reply (only visible to user)</div></div>
+                <div class="api-method"><code>message.reply(text)</code><div class="desc">Send reply to channel</div></div>
+                <div class="api-method"><code>message.replyEphemeral(text)</code><div class="desc">Send ephemeral reply (only visible to user)</div></div>
                 <div class="api-method"><code>message.react(emoji)</code><div class="desc">Add reaction to message</div></div>
                 <div class="api-method"><code>message.delete()</code><div class="desc">Delete the message</div></div>
             </div>
@@ -1037,17 +1037,10 @@ var handler = {
             </div>
             <div class="api-section">
                 <h4>State API</h4>
-                <div class="api-method"><code>state.cache.get(key)</code><div class="desc">Get value (in-memory)</div></div>
+                <div class="api-method"><code>state.cache.get(key)</code><div class="desc">Get value (in-memory, lost on restart)</div></div>
                 <div class="api-method"><code>state.cache.set(key, value)</code><div class="desc">Set value (auto-serializes objects)</div></div>
                 <div class="api-method"><code>state.store.get(key)</code><div class="desc">Get value (persisted)</div></div>
                 <div class="api-method"><code>state.store.set(key, value)</code><div class="desc">Set value (persisted)</div></div>
-            </div>
-            <div class="api-section">
-                <h4>Slack API (advanced)</h4>
-                <div class="api-method"><code>slack.sendMessage(channel, text, opts)</code><div class="desc">Send message</div></div>
-                <div class="api-method"><code>slack.sendEphemeral(channel, user, text, opts)</code><div class="desc">Send ephemeral</div></div>
-                <div class="api-method"><code>slack.addReaction(channel, ts, emoji)</code><div class="desc">Add reaction</div></div>
-                <div class="api-method"><code>slack.getUserInfo(userId)</code><div class="desc">Get user info</div></div>
             </div>
         `;
 
