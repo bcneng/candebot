@@ -1360,8 +1360,10 @@ var handler = {
                 // Helper to add methods to message object
                 _augmentMessage: (msg) => {
                     msg.isBot = !!msg.botId;
-                    msg.reply = (text, opts) => slack.sendMessage(msg.channel, text, { threadTimestamp: msg.threadTimestamp, ...opts });
-                    msg.replyEphemeral = (text, opts) => slack.sendEphemeral(msg.channel, msg.user, text, { threadTimestamp: msg.threadTimestamp, ...opts });
+                    // Always reply in thread: use existing thread or start new one from message
+                    const threadTs = msg.threadTimestamp || msg.timestamp;
+                    msg.reply = (text, opts) => slack.sendMessage(msg.channel, text, { threadTimestamp: threadTs, ...opts });
+                    msg.replyEphemeral = (text, opts) => slack.sendEphemeral(msg.channel, msg.user, text, { threadTimestamp: threadTs, ...opts });
                     msg.react = (emoji) => slack.addReaction(msg.channel, msg.timestamp, emoji);
                     msg.delete = () => slack.deleteMessage(msg.channel, msg.timestamp);
                     return msg;

@@ -200,8 +200,39 @@ func (r *Runtime) executeHandler(ctx context.Context, handler *Handler, message 
 		return result
 	}
 
-	// Call the handle function with the message
-	messageVal := vm.ToValue(messageToMap(message))
+	// Call the handle function with the message (including helper methods)
+	msgMap := messageToMap(message)
+	// Add isBot convenience property
+	msgMap["isBot"] = message.BotID != ""
+	// Always reply in thread: use existing thread or start new one from message
+	threadTs := message.ThreadTimestamp
+	if threadTs == "" {
+		threadTs = message.Timestamp
+	}
+	// Add helper methods to message object
+	if r.slackClient != nil {
+		msgMap["reply"] = func(text string, opts map[string]interface{}) (map[string]interface{}, error) {
+			if opts == nil {
+				opts = make(map[string]interface{})
+			}
+			opts["threadTimestamp"] = threadTs
+			return r.slackClient.SendMessage(message.Channel, text, opts)
+		}
+		msgMap["replyEphemeral"] = func(text string, opts map[string]interface{}) error {
+			if opts == nil {
+				opts = make(map[string]interface{})
+			}
+			opts["threadTimestamp"] = threadTs
+			return r.slackClient.SendEphemeral(message.Channel, message.User, text, opts)
+		}
+		msgMap["react"] = func(emoji string) error {
+			return r.slackClient.AddReaction(message.Channel, message.Timestamp, emoji)
+		}
+		msgMap["delete"] = func() error {
+			return r.slackClient.DeleteMessage(message.Channel, message.Timestamp)
+		}
+	}
+	messageVal := vm.ToValue(msgMap)
 	retVal, err := fn(goja.Undefined(), messageVal)
 	if err != nil {
 		if interruptErr, ok := err.(*goja.InterruptedError); ok {
