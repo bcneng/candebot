@@ -1135,12 +1135,18 @@ var handler = {
             try {
                 const res = await fetch('https://raw.githubusercontent.com/bcneng/website/refs/heads/main/data/channels.json');
                 channels = await res.json();
+                // Sort by name, but put candebot-testing first
+                channels.sort((a, b) => {
+                    if (a.id === 'CK32YCX5M') return -1;
+                    if (b.id === 'CK32YCX5M') return 1;
+                    return a.name.localeCompare(b.name);
+                });
                 const select = document.getElementById('msgChannelName');
                 select.innerHTML = channels.map(c =>
                     `<option value="${c.name}" data-id="${c.id}">${c.name}</option>`
                 ).join('');
-                // Select general by default
-                select.value = 'general';
+                // Select candebot-testing by default
+                select.value = 'candebot-testing';
                 updateChannelId();
             } catch (e) {
                 console.error('Failed to fetch channels:', e);
