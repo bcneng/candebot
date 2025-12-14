@@ -7,7 +7,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
+	"strings"
 	"time"
+
+	"golang.org/x/net/html"
 )
 
 // AIClient provides AI functionality to JS handlers using Google Gemini.
@@ -144,11 +148,115 @@ func (c *AIClient) Generate(ctx context.Context, prompt string) (string, error) 
 	return geminiResp.Candidates[0].Content.Parts[0].Text, nil
 }
 
+// Summarize fetches a URL and returns an AI-generated summary.
+func (c *AIClient) Summarize(ctx context.Context, url string) (string, error) {
+	if c.apiKey == "" {
+		return "", fmt.Errorf("AI API key not configured")
+	}
+
+	// Fetch the URL content
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("User-Agent", "Candebot/1.0 (Link Summarizer)")
+	req.Header.Set("Accept", "text/html,application/xhtml+xml,text/plain")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to fetch URL: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
+	}
+
+	// Read body with limit
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1024*1024)) // 1MB limit
+	if err != nil {
+		return "", fmt.Errorf("failed to read response: %w", err)
+	}
+
+	// Extract text from HTML
+	content := extractTextFromHTML(string(body))
+	if len(content) < 100 {
+		return "", fmt.Errorf("content too short to summarize")
+	}
+
+	// Truncate if too long
+	if len(content) > 12000 {
+		content = content[:12000]
+	}
+
+	// Generate summary
+	prompt := "Provide a brief TL;DR summary (2-3 sentences max) of the following web page content. " +
+		"Focus on the main topic and key points. Be concise and informative. " +
+		"Do not use markdown formatting.\n\nContent:\n" + content
+
+	return c.Generate(ctx, prompt)
+}
+
+// extractTextFromHTML extracts readable text from HTML content.
+func extractTextFromHTML(htmlContent string) string {
+	doc, err := html.Parse(strings.NewReader(htmlContent))
+	if err != nil {
+		// Fallback: strip tags with regex
+		return stripHTMLTags(htmlContent)
+	}
+
+	var textParts []string
+	var extractText func(*html.Node)
+
+	extractText = func(n *html.Node) {
+		// Skip script, style, nav, footer, header elements
+		if n.Type == html.ElementNode {
+			switch n.Data {
+			case "script", "style", "nav", "footer", "header", "aside", "noscript":
+				return
+			}
+		}
+
+		if n.Type == html.TextNode {
+			text := strings.TrimSpace(n.Data)
+			if text != "" {
+				textParts = append(textParts, text)
+			}
+		}
+
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			extractText(c)
+		}
+	}
+
+	extractText(doc)
+
+	// Join and clean up whitespace
+	result := strings.Join(textParts, " ")
+	// Collapse multiple spaces
+	spaceRegex := regexp.MustCompile(`\s+`)
+	result = spaceRegex.ReplaceAllString(result, " ")
+
+	return strings.TrimSpace(result)
+}
+
+// stripHTMLTags is a fallback for when HTML parsing fails.
+func stripHTMLTags(s string) string {
+	tagRegex := regexp.MustCompile(`<[^>]*>`)
+	result := tagRegex.ReplaceAllString(s, " ")
+	spaceRegex := regexp.MustCompile(`\s+`)
+	result = spaceRegex.ReplaceAllString(result, " ")
+	return strings.TrimSpace(result)
+}
+
 // CreateAIAPI creates the AI API object to be exposed to JS handlers.
 func CreateAIAPI(client *AIClient, ctx context.Context) map[string]interface{} {
 	return map[string]interface{}{
 		"generate": func(prompt string) (string, error) {
 			return client.Generate(ctx, prompt)
+		},
+		"summarize": func(url string) (string, error) {
+			return client.Summarize(ctx, url)
 		},
 	}
 }

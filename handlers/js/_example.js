@@ -62,6 +62,7 @@ var handler = {
         // http.post(url, body, opts) -> { status, body, headers }
 
         // === AI API (Gemini) ===
+        // ai.summarize(url) -> string summary (fetches URL and summarizes content)
         // ai.generate(prompt) -> string response
 
         // === STATE API (auto-serializes objects) ===

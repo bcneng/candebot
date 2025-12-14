@@ -1037,7 +1037,8 @@ var handler = {
             </div>
             <div class="api-section">
                 <h4>AI API</h4>
-                <div class="api-method"><code>ai.generate(prompt)</code><div class="desc">Generate text using Gemini AI</div></div>
+                <div class="api-method"><code>ai.summarize(url)</code><div class="desc">Fetch URL and return AI summary</div></div>
+                <div class="api-method"><code>ai.generate(prompt)</code><div class="desc">Generate text from prompt</div></div>
             </div>
             <div class="api-section">
                 <h4>HTTP API</h4>
@@ -1152,7 +1153,7 @@ var handler = {
             const code = editor.getValue();
             try {
                 // Create a mock environment for validation
-                const mockApis = { console: {log:()=>{},info:()=>{},warn:()=>{},error:()=>{}}, slack: {}, http: {}, ai: {generate:()=>''}, state: {cache:{},store:{}} };
+                const mockApis = { console: {log:()=>{},info:()=>{},warn:()=>{},error:()=>{}}, slack: {}, http: {}, ai: {generate:()=>'',summarize:()=>''}, state: {cache:{},store:{}} };
                 const wrappedCode = `(function(console,slack,http,ai,state){${code};return{hasHandle:typeof handler==='object'&&typeof handler.handle==='function',name:typeof handler==='object'?handler.name:null}})`;
                 const check = eval(wrappedCode)(mockApis.console, mockApis.slack, mockApis.http, mockApis.ai, mockApis.state);
 
@@ -1297,7 +1298,11 @@ var handler = {
                 ai: {
                     generate: (prompt) => {
                         addMessage('api', 'AI', `generate() called with ${prompt.length} char prompt`);
-                        return 'This is a mock AI summary for testing purposes. The linked content discusses various topics that would normally be summarized by the Gemini AI model.';
+                        return 'This is a mock AI response for testing purposes.';
+                    },
+                    summarize: (url) => {
+                        addMessage('api', 'AI', `summarize(${url})`);
+                        return 'This is a mock summary. The linked article discusses key topics and provides insights that would normally be extracted and summarized by the AI.';
                     }
                 },
                 state: {
