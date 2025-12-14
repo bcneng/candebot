@@ -11,3 +11,9 @@ build: clean
 
 test:
 	go test -v ./...
+
+run:
+	go run .
+
+simulator:
+	open http://localhost:8080/_simulator/
