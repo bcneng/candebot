@@ -28,7 +28,7 @@ var initConf = initConfig{}
 
 func init() {
 	flag.StringVar(&initConf.ConfigFilePath, "config", "./.bot.toml", "path to config file (TOML)")
-	flag.StringVar(&initConf.EnvVarsPrefix, "env-prefix", "BOT_", "path to config file (TOML)")
+	flag.StringVar(&initConf.EnvVarsPrefix, "env-prefix", "", "prefix for environment variables")
 
 	flag.Parse()
 }
