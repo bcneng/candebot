@@ -187,8 +187,20 @@ func (r *Runtime) executeHandler(ctx context.Context, handler *Handler, message 
 		return result
 	}
 
-	// Get the handle function
-	handleFn := vm.Get("handle")
+	// Get the handler object
+	handlerObj := vm.Get("handler")
+	if handlerObj == nil || goja.IsUndefined(handlerObj) || goja.IsNull(handlerObj) {
+		result.Error = "handler does not export a 'handler' object"
+		return result
+	}
+
+	obj := handlerObj.ToObject(vm)
+	if obj == nil {
+		result.Error = "handler does not export a 'handler' object"
+		return result
+	}
+
+	handleFn := obj.Get("handle")
 	if handleFn == nil || goja.IsUndefined(handleFn) || goja.IsNull(handleFn) {
 		result.Error = "handler does not export a 'handle' function"
 		return result
@@ -318,8 +330,18 @@ func (r *Runtime) ValidateHandler(source string) (*HandlerMetadata, error) {
 		return nil, fmt.Errorf("syntax error: %w", err)
 	}
 
-	// Check for required exports
-	handleFn := vm.Get("handle")
+	// Check for handler object with handle method
+	handlerObj := vm.Get("handler")
+	if handlerObj == nil || goja.IsUndefined(handlerObj) || goja.IsNull(handlerObj) {
+		return nil, fmt.Errorf("handler must export a 'handler' object")
+	}
+
+	obj := handlerObj.ToObject(vm)
+	if obj == nil {
+		return nil, fmt.Errorf("handler must export a 'handler' object")
+	}
+
+	handleFn := obj.Get("handle")
 	if handleFn == nil || goja.IsUndefined(handleFn) || goja.IsNull(handleFn) {
 		return nil, fmt.Errorf("handler must export a 'handle' function")
 	}
@@ -328,7 +350,7 @@ func (r *Runtime) ValidateHandler(source string) (*HandlerMetadata, error) {
 		return nil, fmt.Errorf("'handle' must be a function")
 	}
 
-	// Extract metadata
+	// Extract metadata from handler object
 	metadata := &HandlerMetadata{
 		Name:     "unnamed",
 		Enabled:  true,
@@ -336,24 +358,24 @@ func (r *Runtime) ValidateHandler(source string) (*HandlerMetadata, error) {
 		Timeout:  r.config.DefaultTimeout,
 	}
 
-	if name := vm.Get("name"); name != nil && !goja.IsUndefined(name) {
+	if name := obj.Get("name"); name != nil && !goja.IsUndefined(name) {
 		metadata.Name = name.String()
 	}
 
-	if desc := vm.Get("description"); desc != nil && !goja.IsUndefined(desc) {
+	if desc := obj.Get("description"); desc != nil && !goja.IsUndefined(desc) {
 		metadata.Description = desc.String()
 	}
 
-	if channels := vm.Get("channels"); channels != nil && !goja.IsUndefined(channels) {
-		obj := channels.ToObject(vm)
-		if obj != nil {
+	if channels := obj.Get("channels"); channels != nil && !goja.IsUndefined(channels) {
+		chObj := channels.ToObject(vm)
+		if chObj != nil {
 			// Try to iterate as array
-			length := obj.Get("length")
+			length := chObj.Get("length")
 			if length != nil && !goja.IsUndefined(length) {
 				l := int(length.ToInteger())
 				metadata.Channels = make([]string, 0, l)
 				for i := 0; i < l; i++ {
-					v := obj.Get(fmt.Sprintf("%d", i))
+					v := chObj.Get(fmt.Sprintf("%d", i))
 					if v != nil && !goja.IsUndefined(v) {
 						metadata.Channels = append(metadata.Channels, v.String())
 					}
@@ -362,15 +384,15 @@ func (r *Runtime) ValidateHandler(source string) (*HandlerMetadata, error) {
 		}
 	}
 
-	if priority := vm.Get("priority"); priority != nil && !goja.IsUndefined(priority) {
+	if priority := obj.Get("priority"); priority != nil && !goja.IsUndefined(priority) {
 		metadata.Priority = int(priority.ToInteger())
 	}
 
-	if enabled := vm.Get("enabled"); enabled != nil && !goja.IsUndefined(enabled) {
+	if enabled := obj.Get("enabled"); enabled != nil && !goja.IsUndefined(enabled) {
 		metadata.Enabled = enabled.ToBoolean()
 	}
 
-	if timeout := vm.Get("timeout"); timeout != nil && !goja.IsUndefined(timeout) {
+	if timeout := obj.Get("timeout"); timeout != nil && !goja.IsUndefined(timeout) {
 		metadata.Timeout = int(timeout.ToInteger())
 	}
 
