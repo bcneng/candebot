@@ -264,6 +264,10 @@ func interactAPIHandler(botContext Context) http.HandlerFunc {
 				if err := botContext.Client.OpenDialog(message.TriggerID, generateSubmitJobFormDialog()); err != nil {
 					log.Println(err)
 				}
+			case "suggest_channel":
+				if resp, err := botContext.Client.OpenView(message.TriggerID, suggestChannelModal()); err != nil {
+					logModalError(err, resp)
+				}
 			}
 		}
 	}
@@ -536,6 +540,23 @@ func buildPublisherInput() *slack.DialogInputSelect {
 	publisherInput.Optional = false
 
 	return publisherInput
+}
+
+func suggestChannelModal() slack.ModalViewRequest {
+	text := "To suggest a new channel, edit the channels file and submit a Pull Request:\n\n" +
+		"<https://github.com/bcneng/website/edit/main/data/channels.json|:pencil: Edit channels.json on GitHub>"
+
+	return slack.ModalViewRequest{
+		Type:  slack.VTModal,
+		Title: slack.NewTextBlockObject(slack.PlainTextType, "Suggest new channel", false, false),
+		Blocks: slack.Blocks{BlockSet: []slack.Block{
+			slack.NewSectionBlock(
+				slack.NewTextBlockObject(slack.MarkdownType, text, false, false),
+				nil,
+				nil,
+			),
+		}},
+	}
 }
 
 func sanitizeReportState(state string) string {

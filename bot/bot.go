@@ -104,6 +104,10 @@ func serve(conf Config, cliContext Context) error {
 		}
 	})
 
+	if conf.APIKey != "" {
+		http.HandleFunc("/api/channels", apiCreateChannelHandler(cliContext))
+	}
+
 	http.HandleFunc("/events", eventsAPIHandler(cliContext))
 	http.HandleFunc("/interact", interactAPIHandler(cliContext))
 

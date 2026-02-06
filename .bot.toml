@@ -21,6 +21,7 @@ reports = "G983W7L9F" # staff
 playground = "CK32YCX5M" # candebot_testing
 jobs = "C30CUFT2B" # hiring-job-board
 staff = "G983W7L9F" #staff
+general = "C2Y6L58TX" # general
 
 [twitter]
 contestURL = "https://bcneng-twitter-contest.netlify.app/.netlify/functions/contest"

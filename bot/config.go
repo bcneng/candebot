@@ -61,6 +61,7 @@ type Config struct {
 	TwitterContestToken string                    `env:"TWITTER_CONTEST_TOKEN"`
 	TwitterContestURL   string                    `env:"TWITTER_CONTEST_URL"`
 	NewRelicLicenseKey  string                    `env:"NEW_RELIC_LICENSE_KEY"`
+	APIKey              string                    `env:"API_KEY"`
 	Debug               bool                      `env:"DEBUG"`
 	Version             string                    `env:"VERSION"`
 }
@@ -83,6 +84,7 @@ type ConfigChannels struct {
 	Playground string `env:"PLAYGROUND"`
 	Jobs       string `env:"JOBS"`
 	Staff      string `env:"STAFF"`
+	General    string `env:"GENERAL"`
 }
 
 type ConfigLinks struct {
