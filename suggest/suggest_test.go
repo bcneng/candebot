@@ -43,7 +43,7 @@ func TestFilterSuggestable_ExcludesDefaultTag(t *testing.T) {
 
 func TestFilterSuggestable_EmptyInput(t *testing.T) {
 	result := FilterSuggestable(nil)
-	assert.Nil(t, result)
+	assert.Empty(t, result)
 }
 
 func TestSelectRandom(t *testing.T) {

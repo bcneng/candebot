@@ -22,7 +22,7 @@ type Context struct {
 	RateLimiter         *RateLimiter
 	ChannelResolver     *slackx.ChannelResolver
 	TrackingDetector    *privacy.TrackingDetector
-	ChannelSuggester   *suggest.ChannelSuggester
+	ChannelSuggester    *suggest.ChannelSuggester
 
 	Bus EventBus.Bus
 

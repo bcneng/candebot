@@ -72,7 +72,7 @@ func (s *ChannelSuggester) FetchChannels() ([]Channel, error) {
 // FilterSuggestable filters out channels that should not be suggested,
 // such as core channels that everyone already knows about.
 func FilterSuggestable(channels []Channel) []Channel {
-	var result []Channel
+	result := make([]Channel, 0, len(channels))
 	for _, ch := range channels {
 		if ch.Category == "core" {
 			continue
