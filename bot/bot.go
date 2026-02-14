@@ -12,13 +12,14 @@ import (
 
 	"github.com/bcneng/candebot/internal/privacy"
 	"github.com/bcneng/candebot/slackx"
+	"github.com/bcneng/candebot/suggest"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"github.com/slack-go/slack"
 )
 
 // WakeUp wakes up the bot.
-func WakeUp(_ context.Context, conf Config, bus EventBus.Bus) error {
+func WakeUp(ctx context.Context, conf Config, bus EventBus.Bus) error {
 	client := slack.New(conf.Bot.UserToken)
 	cliContext := Context{
 		Client:      client,
@@ -69,6 +70,12 @@ func WakeUp(_ context.Context, conf Config, bus EventBus.Bus) error {
 		return err
 	}
 	cliContext.TrackingDetector = trackingDetector
+
+	if conf.Channels.General != "" && conf.ChannelSuggester.NumChannels > 0 {
+		channelSuggester := suggest.NewChannelSuggester(http.DefaultClient, client)
+		cliContext.ChannelSuggester = channelSuggester
+		go channelSuggester.StartWeekly(ctx, conf.Channels.General, conf.ChannelSuggester.NumChannels)
+	}
 
 	return serve(conf, cliContext)
 }

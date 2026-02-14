@@ -26,6 +26,11 @@ general = "C2Y6L58TX" # general
 [twitter]
 contestURL = "https://bcneng-twitter-contest.netlify.app/.netlify/functions/contest"
 
+# Channel weekly suggester configuration
+# Posts random channel suggestions to #general every week
+[channel_suggester]
+num_channels = 3
+
 # Rate limiting configuration
 # Limits how many non-thread messages a user can post in specific channels
 # Staff members are exempt from rate limits

@@ -58,6 +58,7 @@ type Config struct {
 	Twitter             ConfigTwitter             `env:",prefix=TWITTER_"`
 	RateLimits          []RateLimitConfig         `toml:"rate_limits"`
 	TrackingDetection   []TrackingDetectionConfig `toml:"tracking_detection"`
+	ChannelSuggester    ChannelSuggesterConfig    `toml:"channel_suggester" env:",prefix=CHANNEL_SUGGESTER_"`
 	TwitterContestToken string                    `env:"TWITTER_CONTEST_TOKEN"`
 	TwitterContestURL   string                    `env:"TWITTER_CONTEST_URL"`
 	NewRelicLicenseKey  string                    `env:"NEW_RELIC_LICENSE_KEY"`
@@ -112,4 +113,8 @@ type RateLimitConfig struct {
 
 type TrackingDetectionConfig struct {
 	ChannelName string `toml:"channel_name"`
+}
+
+type ChannelSuggesterConfig struct {
+	NumChannels int `toml:"num_channels" env:"NUM_CHANNELS,default=3"`
 }
