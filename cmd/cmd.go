@@ -15,6 +15,7 @@ type CLI struct {
 	Candebirthday CandeBirthday `cmd:"" help:"Days until @sdecandelario birthday!"`
 	Echo          Echo          `cmd:"" help:"Sends a message from the bot user" placeholder:"echo #general Hi folks!"`
 	Contest       Contest       `cmd:"" help:"Runs a contest on Twitter"`
+	Suggest       Suggest       `cmd:"" help:"Suggests random channels to discover"`
 	Help          Help          `cmd:""`
 }
 
