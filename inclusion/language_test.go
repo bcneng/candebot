@@ -23,7 +23,14 @@ func TestFilter(t *testing.T) {
 		{name: "'ladies' is not usually used in the right context", input: "hi ladies!", filtered: true},
 		{name: "'retrassada' should be 'Trastorn del desenvolupament intel·lectual'", input: "L'entrega ha sigut retrassada", filtered: true},
 		{name: "'noi' should be 'persona'", input: "És un noi simpàtic", filtered: true},
+		{name: "'noies' should be 'gent'", input: "Hola noies", filtered: true},
+		{name: "'nois' should be 'gent'", input: "Hola nois", filtered: true},
+		{name: "'noia' should be 'persona'", input: "És una noia simpàtica", filtered: true},
 		{name: "'noible' should be ok", input: "És una persona noible", filtered: false},
+		{name: "URL containing 'noises' should be ok", input: "https://abcnews.com/US/meow-meow-pilots-scolded-after-animal-noises-heard/story?id=132076661", filtered: false},
+		{name: "'noises' inside a sentence should be ok", input: "the animal noises were loud", filtered: false},
+		{name: "'paranoid' should be ok", input: "don't be paranoid", filtered: false},
+		{name: "'noir' should be ok", input: "I love film noir", filtered: false},
 	}
 
 	extraFilters := []InclusiveFilter{
