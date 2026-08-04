@@ -21,6 +21,7 @@ var knownTrackedParams = []trackedParam{
 	{name: "ttclid", platform: "TikTok"},
 	{name: "li_fat_id", platform: "LinkedIn"},
 	{name: "si", platform: "YouTube/Spotify"},
+	{name: "is", platform: "YouTube"},
 }
 
 var urlRegex = regexp.MustCompile(`https?://[^\s<>]+`)

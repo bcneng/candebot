@@ -71,6 +71,18 @@ func TestDetectTracking(t *testing.T) {
 			wantFound:    true,
 		},
 		{
+			name:         "YouTube is parameter on youtu.be",
+			url:          "https://youtu.be/abc123?is=xyz789",
+			wantParam:    "is",
+			wantPlatform: "YouTube",
+			wantFound:    true,
+		},
+		{
+			name:      "param with is substring is not flagged",
+			url:       "https://www.youtube.com/playlist?list=PLabc123",
+			wantFound: false,
+		},
+		{
 			name:      "clean URL without tracking",
 			url:       "https://example.com/article?page=1",
 			wantFound: false,
@@ -118,6 +130,12 @@ func TestStripTracking(t *testing.T) {
 			name:         "strip YouTube si",
 			url:          "https://www.youtube.com/watch?v=abc123&si=xyz789",
 			wantCleaned:  "https://www.youtube.com/watch?v=abc123",
+			wantStripped: true,
+		},
+		{
+			name:         "strip YouTube is",
+			url:          "https://youtu.be/abc123?is=xyz789",
+			wantCleaned:  "https://youtu.be/abc123",
 			wantStripped: true,
 		},
 		{
@@ -216,6 +234,11 @@ func TestFindTrackedURLs(t *testing.T) {
 			name:      "multiple tracked URLs",
 			text:      "See https://facebook.com?fbclid=a and https://youtube.com/watch?v=b&si=c",
 			wantCount: 2,
+		},
+		{
+			name:      "youtu.be with is param",
+			text:      "Watch this https://youtu.be/abc123?is=xyz789",
+			wantCount: 1,
 		},
 		{
 			name:      "mixed tracked and clean URLs",
