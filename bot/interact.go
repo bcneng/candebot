@@ -72,7 +72,22 @@ func interactAPIHandler(botContext Context) http.HandlerFunc {
 				if resp, err := botContext.Client.OpenView(message.TriggerID, modal); err != nil {
 					logModalError(err, resp)
 				}
+			case "export_thread":
+				if !botContext.IsStaff(message.User.ID) {
+					if resp, err := botContext.Client.OpenView(message.TriggerID, userNotAllowedModal()); err != nil {
+						logModalError(err, resp)
+					}
+					log.Printf("The user @%s (%s) is trying to execute the message action `export_thread` and it doesn't have permissions", message.User.Name, message.User.ID)
+					break
+				}
 
+				threadTS := message.Message.ThreadTimestamp // set when the action is triggered on a reply
+				if threadTS == "" {
+					threadTS = message.MessageTs
+				}
+
+				// Slack expects a response within 3 seconds, so the export runs in background and is delivered via DM.
+				go exportThread(botContext, message.User.ID, message.Channel.ID, message.Channel.Name, threadTS)
 			}
 		case slack.InteractionTypeViewSubmission:
 			switch message.View.CallbackID {
