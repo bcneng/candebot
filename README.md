@@ -19,6 +19,7 @@ Our lovely opinionated Slack bot. Find it in [BcnEng Slack workspace](https://sl
 - Tracking parameter detection. Detects privacy-invasive tracking parameters in shared URLs and privately warns users with cleaned alternatives.
 - Message actions. For example:
   - Deleting a message and the whole thread. Only available to admins.
+  - Exporting a whole thread as a Markdown file, sent to the requester via DM. Only available to admins.
   - Report messages to the admins.
 
 ## Configuration
